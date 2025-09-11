@@ -24,7 +24,7 @@ dotnet_diagnostic.IDE0046.severity = suggestion
 dotnet_diagnostic.IDE0160.severity = none
 # IDE0161
 csharp_style_namespace_declarations = file_scoped
-dotnet_diagnostic.IDE0161.severity = error
+dotnet_diagnostic.IDE0161.severity = none
 
 # CA2007: Do not directly await without ConfigureAwait
 dotnet_diagnostic.CA2007.severity = none

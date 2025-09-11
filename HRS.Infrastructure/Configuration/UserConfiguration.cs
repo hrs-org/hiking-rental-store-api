@@ -1,25 +1,21 @@
 using HRS.Domain.Entities;
 using HRS.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace HRS.Infrastructure.Data;
+namespace HRS.Infrastructure.Configuration;
 
-public class AppDbContext : DbContext
+public class UserConfiguration : IEntityTypeConfiguration<User>
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
-    public DbSet<User> Users { get; set; }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public void Configure(EntityTypeBuilder<User> builder)
     {
-        modelBuilder
-            .Entity<User>()
+        builder
             .Property(u => u.Role)
             .HasConversion<string>();
-        
+
         var adminPassword = BCrypt.Net.BCrypt.HashPassword("Admin123!");
 
-        modelBuilder.Entity<User>().HasData(new User
+        builder.HasData(new User
         {
             Id = 1,
             FirstName = "System",
@@ -31,7 +27,5 @@ public class AppDbContext : DbContext
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
-
-        base.OnModelCreating(modelBuilder);
     }
 }
