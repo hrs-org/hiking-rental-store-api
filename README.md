@@ -89,6 +89,14 @@ Update **`appsettings.Development.json`**:
 }
 ```
 
+### 3. Apply Git Hooks
+
+Ensure code quality:
+
+```bash
+chmod +x .git/hooks/pre-push
+```
+
 ---
 
 ## 📦 Database Migration
@@ -99,7 +107,13 @@ Run EF Core migration:
 dotnet ef database update --project HRS.Migrations --startup-project HRS.API
 ```
 
-This applies schema and seeds the default admin user.
+This will update your current database
+
+Create EF Core migration:
+
+```bash
+dotnet ef mirations add <migration-name> --project HRS.Migrations --startup-project HRS.API
+```
 
 ---
 

@@ -1,9 +1,14 @@
 using System.Text;
+using FluentValidation;
+using HRS.API.Filters;
 using HRS.API.Mappings;
 using HRS.API.Middleware;
 using HRS.API.Services;
 using HRS.API.Services.Interfaces;
-using HRS.Infrastructure.Data;
+using HRS.API.Validators.Auth;
+using HRS.Domain.Interfaces;
+using HRS.Infrastructure;
+using HRS.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -13,10 +18,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => { options.Filters.Add<ValidationFilter>(); });
+
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestDtoValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<RefreshTokenRequestDtoValidators>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

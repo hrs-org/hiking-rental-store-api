@@ -2,7 +2,8 @@ using AutoMapper;
 using HRS.API.Contracts.DTOs.User;
 using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
-using HRS.Infrastructure.Data;
+using HRS.Domain.Interfaces;
+using HRS.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRS.API.Services;
@@ -11,22 +12,24 @@ public class UserService : IUserService
 {
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IUserRepository _userRepository;
 
-    public UserService(AppDbContext context, IMapper mapper)
+    public UserService(AppDbContext context, IMapper mapper, IUserRepository userRepository)
     {
         _context = context;
         _mapper = mapper;
+        _userRepository = userRepository;
     }
 
     public async Task<IEnumerable<UserDto>> GetUsers()
     {
-        var users = await _context.Users.ToListAsync();
+        var users = await _userRepository.GetAllAsync();
         return _mapper.Map<IEnumerable<UserDto>>(users);
     }
 
     public async Task<UserDto> GetUserById(int id)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        var user = await _userRepository.GetByIdAsync(id);
         return _mapper.Map<UserDto>(user);
     }
 

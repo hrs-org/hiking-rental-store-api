@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRS.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250831061850_SeedAdminUser")]
-    partial class SeedAdminUser
+    [Migration("20250910181841_AddRefreshToken")]
+    partial class AddRefreshToken
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -55,6 +55,12 @@ namespace HRS.Migrations.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("RefreshTokenExpiry")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -62,7 +68,15 @@ namespace HRS.Migrations.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UpdatedByUserId");
 
                     b.ToTable("Users");
 
@@ -70,15 +84,25 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 8, 31, 6, 18, 49, 812, DateTimeKind.Utc).AddTicks(7600),
+                            CreatedAt = new DateTime(2025, 9, 10, 18, 18, 40, 881, DateTimeKind.Utc).AddTicks(2270),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$GT5RNHXUtUYZFUKVH6bT2eAx04bD449/o5wLDkIqwbbkUYbMGdoCa",
+                            PasswordHash = "$2a$11$VzRmFuyyXsigazkYuA2RMuvFulVyMoIuHfsMkjW/1nAay38Qg0isS",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 8, 31, 6, 18, 49, 812, DateTimeKind.Utc).AddTicks(7600)
+                            UpdatedAt = new DateTime(2025, 9, 10, 18, 18, 40, 881, DateTimeKind.Utc).AddTicks(2270),
+                            UpdatedBy = 0
                         });
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.User", b =>
+                {
+                    b.HasOne("HRS.Domain.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId");
+
+                    b.Navigation("UpdatedByUser");
                 });
 #pragma warning restore 612, 618
         }

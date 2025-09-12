@@ -1,0 +1,9 @@
+using HRS.Domain.Entities;
+
+namespace HRS.Domain.Interfaces;
+
+public interface IUserRepository : ICrudRepository<User>
+{
+    Task<User?> GetByEmailAsync(string email);
+    Task UpdateUserAsync(User user);
+}
