@@ -74,14 +74,17 @@ jobs:
               with:
                   name: build-artifacts
 
-            - name: Install dotCover
-              run: dotnet tool install --global JetBrains.dotCover.GlobalTool
-
             - name: Create coverage directory
               run: mkdir -p ./coverage
 
-            - name: Run tests with dotCover
-              run: dotnet dotcover test HikingRentalStore.sln --configuration Release --no-build --dcReportType=DetailedXML --dcOutput=./coverage/dotcover.xml --dcFilters="+:HRS.*"
+            - name: Run tests with coverage
+              run: dotnet test HikingRentalStore.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage --logger "trx;LogFileName=TestResults.trx"
+
+            - name: Convert coverage to SonarQube format
+              run: |
+                  # Find the coverage file and copy it to a known location
+                  find ./coverage -name "coverage.cobertura.xml" -exec cp {} ./coverage/coverage.xml \; || echo "Cobertura format not found, trying OpenCover format"
+                  find ./coverage -name "*.xml" -path "*/coverage.opencover.xml" -exec cp {} ./coverage/coverage.xml \; || echo "OpenCover format not found"
 
             - name: Upload test results
               uses: actions/upload-artifact@v4
@@ -147,7 +150,8 @@ jobs:
                     /o:"hrs-org" \
                     /d:sonar.token="${{ secrets.SONARQUBE_TOKEN }}" \
                     /d:sonar.host.url="https://sonarcloud.io" \
-                    /d:sonar.cs.dotcover.reportsPaths="**/dotcover.xml"
+                    /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+                    /d:sonar.cs.vstest.reportsPaths="**/TestResults.trx"
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
@@ -183,11 +187,6 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-nuget-
 
-            - name: Download build artifacts
-              uses: actions/download-artifact@v4
-              with:
-                  name: build-artifacts
-
             - name: Restore dependencies
               run: dotnet restore HikingRentalStore.sln
 
@@ -199,8 +198,8 @@ jobs:
               with:
                   languages: csharp
 
-            - name: Build for CodeQL (reuse artifacts)
-              run: echo "Using pre-built artifacts for CodeQL analysis"
+            - name: Build for CodeQL analysis
+              run: dotnet build HikingRentalStore.sln --configuration Release --no-restore
 
             - name: Perform CodeQL Analysis
               uses: github/codeql-action/analyze@v3
