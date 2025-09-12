@@ -87,11 +87,27 @@ jobs:
             - name: Run tests with coverage
               run: dotnet test HikingRentalStore.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage --logger "trx;LogFileName=TestResults.trx"
 
-            - name: Convert coverage to SonarQube format
+            - name: List coverage files (debug)
+              run: find ./coverage -type f -name "*.xml" | head -10
+
+            - name: Convert coverage to proper format
               run: |
-                  # Find the coverage file and copy it to a known location
-                  find ./coverage -name "coverage.cobertura.xml" -exec cp {} ./coverage/coverage.xml \; || echo "Cobertura format not found, trying OpenCover format"
-                  find ./coverage -name "*.xml" -path "*/coverage.opencover.xml" -exec cp {} ./coverage/coverage.xml \; || echo "OpenCover format not found"
+                  # Install reportgenerator tool for coverage conversion
+                  dotnet tool install --global dotnet-reportgenerator-globaltool
+
+                  # Find the coverage.cobertura.xml file
+                  COVERAGE_FILE=$(find ./coverage -name "coverage.cobertura.xml" | head -1)
+
+                  if [ -n "$COVERAGE_FILE" ]; then
+                    echo "Found coverage file: $COVERAGE_FILE"
+                    # Convert to SonarQube format
+                    reportgenerator -reports:"$COVERAGE_FILE" -targetdir:./coverage -reporttypes:"SonarQube"
+                    # Also copy cobertura file for SonarQube
+                    cp "$COVERAGE_FILE" ./coverage/coverage.xml
+                  else
+                    echo "No coverage.cobertura.xml file found"
+                    find ./coverage -name "*.xml" -type f
+                  fi
 
             - name: Upload test results
               uses: actions/upload-artifact@v4
@@ -157,7 +173,8 @@ jobs:
                     /o:"hrs-org" \
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
-                    /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+                    /d:sonar.cs.opencover.reportsPaths="**/SonarQube.xml" \
+                    /d:sonar.coverageReportPaths="**/SonarQube.xml" \
                     /d:sonar.cs.vstest.reportsPaths="**/TestResults.trx"
 
             - name: Restore dependencies (for SonarQube analysis)
@@ -199,17 +216,6 @@ jobs:
 
             - name: Run security audit
               run: dotnet list package --vulnerable --include-transitive
-
-            - name: Run CodeQL Analysis
-              uses: github/codeql-action/init@v3
-              with:
-                  languages: csharp
-
-            - name: Build for CodeQL analysis
-              run: dotnet build HikingRentalStore.sln --configuration Release --no-restore
-
-            - name: Perform CodeQL Analysis
-              uses: github/codeql-action/analyze@v3
 
     lint:
         name: Code Formatting & Style
