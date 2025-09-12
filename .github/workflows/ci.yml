@@ -153,7 +153,9 @@ jobs:
                   dotnet test HikingRentalStore.sln --configuration Release --no-build \
                     --collect:"XPlat Code Coverage" \
                     --results-directory ./manual-coverage \
-                    --settings ./coverage.runsettings || echo "Manual coverage with runsettings failed"            - name: Upload test results
+                    --settings ./coverage.runsettings || echo "Manual coverage with runsettings failed"
+
+            - name: Upload test results
               uses: actions/upload-artifact@v4
               if: always()
               with:
