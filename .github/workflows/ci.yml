@@ -1,0 +1,228 @@
+name: CI Pipeline
+
+on:
+    pull_request:
+        branches: [main, develop]
+    push:
+        branches: [main]
+
+env:
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+    DOTNET_NOLOGO: true
+
+jobs:
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  global-json-file: global.json
+
+            - name: Cache NuGet packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+
+            - name: Restore dependencies
+              run: dotnet restore HikingRentalStore.sln
+
+            - name: Build solution
+              run: dotnet build HikingRentalStore.sln --configuration Release --no-restore
+
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-artifacts
+                  path: |
+                      **/bin/Release/**
+                      **/obj/Release/**
+                  retention-days: 1
+
+    test:
+        name: Run Tests
+        runs-on: ubuntu-latest
+        needs: build
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  global-json-file: global.json
+
+            - name: Cache NuGet packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-artifacts
+
+            - name: Install dotCover
+              run: dotnet tool install --global JetBrains.dotCover.GlobalTool
+
+            - name: Create coverage directory
+              run: mkdir -p ./coverage
+
+            - name: Run tests with dotCover
+              run: dotnet dotcover test HikingRentalStore.sln --configuration Release --no-build --dcReportType=DetailedXML --dcOutput=./coverage/dotcover.xml --dcFilters="+:HRS.*"
+
+            - name: Upload test results
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: test-results
+                  path: ./coverage/
+                  retention-days: 1
+
+    code-quality:
+        name: Code Quality Analysis
+        runs-on: ubuntu-latest
+        needs: [build, test]
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  global-json-file: global.json
+
+            - name: Cache SonarCloud packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.sonar/cache
+                  key: ${{ runner.os }}-sonar
+                  restore-keys: ${{ runner.os }}-sonar
+
+            - name: Install SonarCloud scanner
+              run: |
+                  dotnet tool install --global dotnet-sonarscanner
+
+            - name: Cache NuGet packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-artifacts
+
+            - name: Download test results
+              uses: actions/download-artifact@v4
+              with:
+                  name: test-results
+                  path: ./coverage
+
+            - name: Begin SonarCloud analysis
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+              run: |
+                  dotnet-sonarscanner begin \
+                    /k:"hrs-org_hiking-rental-store-api" \
+                    /o:"hrs-org" \
+                    /d:sonar.token="${{ secrets.SONARQUBE_TOKEN }}" \
+                    /d:sonar.host.url="https://sonarcloud.io" \
+                    /d:sonar.cs.dotcover.reportsPaths="**/dotcover.xml"
+
+            - name: Restore dependencies (for SonarQube analysis)
+              run: dotnet restore HikingRentalStore.sln
+
+            - name: Build for SonarQube analysis
+              run: dotnet build HikingRentalStore.sln --configuration Release --no-restore
+
+            - name: End SonarCloud analysis
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+              run: dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONARQUBE_TOKEN }}"
+
+    security-scan:
+        name: Security Scan
+        runs-on: ubuntu-latest
+        needs: build
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  global-json-file: global.json
+
+            - name: Cache NuGet packages
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-artifacts
+
+            - name: Restore dependencies
+              run: dotnet restore HikingRentalStore.sln
+
+            - name: Run security audit
+              run: dotnet list package --vulnerable --include-transitive
+
+            - name: Run CodeQL Analysis
+              uses: github/codeql-action/init@v3
+              with:
+                  languages: csharp
+
+            - name: Build for CodeQL (reuse artifacts)
+              run: echo "Using pre-built artifacts for CodeQL analysis"
+
+            - name: Perform CodeQL Analysis
+              uses: github/codeql-action/analyze@v3
+
+    lint:
+        name: Code Formatting & Style
+        runs-on: ubuntu-latest
+        needs: build
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  global-json-file: global.json
+
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-artifacts
+
+            - name: Verify code formatting
+              run: dotnet format HikingRentalStore.sln --verify-no-changes --verbosity diagnostic
