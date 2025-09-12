@@ -87,35 +87,23 @@ jobs:
             - name: Run tests with coverage
               run: dotnet test HikingRentalStore.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage --logger "trx;LogFileName=TestResults.trx"
 
-            - name: List coverage files (debug)
-              run: find ./coverage -type f -name "*.xml" | head -10
-
-            - name: Convert coverage to proper format
+            - name: List and organize coverage files
               run: |
-                  # Install reportgenerator tool for coverage conversion
-                  dotnet tool install --global dotnet-reportgenerator-globaltool
+                  echo "=== All files in coverage directory ==="
+                  find ./coverage -type f | sort
 
-                  # Find the coverage.cobertura.xml file
-                  COVERAGE_FILE=$(find ./coverage -name "coverage.cobertura.xml" | head -1)
+                  echo "=== Looking for coverage files ==="
+                  # Find any coverage files and copy them to predictable locations
+                  find ./coverage -name "coverage.cobertura.xml" -exec cp {} ./coverage/ \;
+                  find ./coverage -name "*.xml" -path "*coverage*" -exec cp {} ./coverage/coverage.xml \;
 
-                  if [ -n "$COVERAGE_FILE" ]; then
-                    echo "Found coverage file: $COVERAGE_FILE"
-                    # Convert to SonarQube format
-                    reportgenerator -reports:"$COVERAGE_FILE" -targetdir:./coverage -reporttypes:"SonarQube"
-                    # Also copy cobertura file for SonarQube
-                    cp "$COVERAGE_FILE" ./coverage/coverage.xml
-                    echo "Files after conversion:"
-                    ls -la ./coverage/
-                  else
-                    echo "No coverage.cobertura.xml file found, trying alternative approach"
-                    # Look for any coverage file
-                    COVERAGE_FILE=$(find ./coverage -name "*.xml" -path "*coverage*" | head -1)
-                    if [ -n "$COVERAGE_FILE" ]; then
-                      echo "Found alternative coverage file: $COVERAGE_FILE"
-                      cp "$COVERAGE_FILE" ./coverage/coverage.xml
-                    fi
-                    echo "All XML files found:"
-                    find ./coverage -name "*.xml" -type f
+                  echo "=== Final coverage directory ==="
+                  ls -la ./coverage/
+
+                  echo "=== Contents of any found coverage XML ==="
+                  if [ -f "./coverage/coverage.cobertura.xml" ]; then
+                    echo "Found coverage.cobertura.xml"
+                    head -10 ./coverage/coverage.cobertura.xml
                   fi
 
             - name: Upload test results
@@ -177,7 +165,7 @@ jobs:
                   echo "Contents of coverage directory:"
                   find ./coverage -type f -name "*.xml" | head -20
                   echo "Looking for specific files:"
-                  find ./coverage -name "SonarQube.xml" -o -name "coverage.xml" -o -name "*.cobertura.xml"
+                  find ./coverage -name "*.cobertura.xml" -o -name "coverage.xml" -o -name "TestResults.trx"
 
             - name: Begin SonarCloud analysis
               env:
@@ -189,9 +177,8 @@ jobs:
                     /o:"hrs-org" \
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
-                    /d:sonar.cs.opencover.reportsPaths="coverage/SonarQube.xml" \
-                    /d:sonar.coverageReportPaths="coverage/SonarQube.xml,coverage/coverage.xml" \
-                    /d:sonar.cs.vstest.reportsPaths="coverage/**/TestResults.trx"
+                    /d:sonar.coverageReportPaths="coverage/coverage.cobertura.xml" \
+                    /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx"
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
