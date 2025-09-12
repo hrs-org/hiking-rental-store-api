@@ -84,29 +84,76 @@ jobs:
             - name: Create coverage directory
               run: mkdir -p ./coverage
 
-            - name: Run tests with coverage
-              run: dotnet test HikingRentalStore.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage --logger "trx;LogFileName=TestResults.trx"
-
-            - name: List and organize coverage files
+            - name: Create coverage settings
               run: |
-                  echo "=== All files in coverage directory ==="
-                  find ./coverage -type f | sort
+                  cat > coverage.runsettings << 'EOF'
+                  <?xml version="1.0" encoding="utf-8"?>
+                  <RunSettings>
+                    <DataCollectionRunSettings>
+                      <DataCollectors>
+                        <DataCollector friendlyName="XPlat code coverage">
+                          <Configuration>
+                            <Format>cobertura</Format>
+                            <Exclude>[*.Tests]*,[*]*Test*</Exclude>
+                            <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+                          </Configuration>
+                        </DataCollector>
+                      </DataCollectors>
+                    </DataCollectionRunSettings>
+                  </RunSettings>
+                  EOF
+                  echo "Created coverage.runsettings:"
+                  cat coverage.runsettings
 
-                  echo "=== Looking for coverage files ==="
-                  # Find any coverage files and copy them to predictable locations
-                  find ./coverage -name "coverage.cobertura.xml" -exec cp {} ./coverage/ \;
-                  find ./coverage -name "*.xml" -path "*coverage*" -exec cp {} ./coverage/coverage.xml \;
+            - name: Run tests with coverage
+              run: |
+                  echo "=== Running tests with coverage collection ==="
+                  dotnet test HikingRentalStore.sln --configuration Release --no-build \
+                    --collect:"XPlat Code Coverage" \
+                    --results-directory ./coverage \
+                    --logger "trx;LogFileName=TestResults.trx" \
+                    --verbosity normal
 
-                  echo "=== Final coverage directory ==="
-                  ls -la ./coverage/
+                  echo "=== Alternative coverage collection attempt ==="
+                  # Try with different coverage collection settings
+                  dotnet test HikingRentalStore.sln --configuration Release --no-build \
+                    --collect:"Code Coverage" \
+                    --results-directory ./coverage-alt \
+                    --verbosity normal || echo "Alternative coverage failed"
 
-                  echo "=== Contents of any found coverage XML ==="
-                  if [ -f "./coverage/coverage.cobertura.xml" ]; then
-                    echo "Found coverage.cobertura.xml"
-                    head -10 ./coverage/coverage.cobertura.xml
+            - name: COMPREHENSIVE COVERAGE DEBUG
+              run: |
+                  echo "=== STEP 1: Current working directory ==="
+                  pwd
+
+                  echo "=== STEP 2: Coverage directory structure ==="
+                  if [ -d "./coverage" ]; then
+                    echo "Coverage directory exists"
+                    find ./coverage -type f | sort
+                  else
+                    echo "ERROR: Coverage directory does not exist!"
+                    ls -la .
                   fi
 
-            - name: Upload test results
+                  echo "=== STEP 3: Alternative coverage directory ==="
+                  if [ -d "./coverage-alt" ]; then
+                    echo "Alternative coverage directory exists"
+                    find ./coverage-alt -type f | sort
+                  fi
+
+                  echo "=== STEP 4: Check if we have any test projects ==="
+                  find . -name "*.csproj" -exec grep -l "Microsoft.NET.Test" {} \; 2>/dev/null || echo "No test projects found with Microsoft.NET.Test"
+                  find . -name "*.csproj" -exec grep -l "xunit\|nunit\|mstest" {} \; 2>/dev/null || echo "No test frameworks found"
+
+                  echo "=== STEP 5: Look for ANY XML files recursively ==="
+                  find . -name "*.xml" -type f | grep -v obj | grep -v bin | head -20
+
+                  echo "=== STEP 6: Try manual coverage generation ==="
+                  mkdir -p ./manual-coverage
+                  dotnet test HikingRentalStore.sln --configuration Release --no-build \
+                    --collect:"XPlat Code Coverage" \
+                    --results-directory ./manual-coverage \
+                    --settings ./coverage.runsettings || echo "Manual coverage with runsettings failed"            - name: Upload test results
               uses: actions/upload-artifact@v4
               if: always()
               with:
@@ -160,12 +207,39 @@ jobs:
                   name: test-results
                   path: ./coverage
 
-            - name: Debug coverage files
+            - name: SONAR DEBUG - Check downloaded artifacts
               run: |
-                  echo "Contents of coverage directory:"
-                  find ./coverage -type f -name "*.xml" | head -20
-                  echo "Looking for specific files:"
-                  find ./coverage -name "*.cobertura.xml" -o -name "coverage.xml" -o -name "TestResults.trx"
+                  echo "=== SONAR DEBUG: Working directory ==="
+                  pwd
+
+                  echo "=== SONAR DEBUG: Coverage directory after download ==="
+                  if [ -d "./coverage" ]; then
+                    echo "Coverage directory exists, contents:"
+                    find ./coverage -type f | sort
+                    echo "Coverage directory size:"
+                    du -sh ./coverage
+                  else
+                    echo "ERROR: Coverage directory not found!"
+                    ls -la .
+                  fi
+
+                  echo "=== SONAR DEBUG: Look for specific files SonarCloud needs ==="
+                  find ./coverage -name "*.cobertura.xml" 2>/dev/null || echo "No cobertura.xml files found"
+                  find ./coverage -name "coverage.cobertura.xml" 2>/dev/null || echo "No coverage.cobertura.xml found"
+                  find ./coverage -name "TestResults.trx" 2>/dev/null || echo "No TestResults.trx found"
+
+                  echo "=== SONAR DEBUG: Try to create coverage file if missing ==="
+                  COVERAGE_FILE=$(find ./coverage -name "*.xml" -path "*coverage*" | head -1)
+                  if [ -n "$COVERAGE_FILE" ]; then
+                    echo "Found coverage file: $COVERAGE_FILE"
+                    cp "$COVERAGE_FILE" ./coverage/coverage.cobertura.xml
+                    echo "Copied to coverage.cobertura.xml"
+                  else
+                    echo "No coverage XML files found at all!"
+                  fi
+
+                  echo "=== SONAR DEBUG: Final file check ==="
+                  ls -la ./coverage/
 
             - name: Begin SonarCloud analysis
               env:
