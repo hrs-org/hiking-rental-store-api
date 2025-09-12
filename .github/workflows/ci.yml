@@ -104,8 +104,17 @@ jobs:
                     reportgenerator -reports:"$COVERAGE_FILE" -targetdir:./coverage -reporttypes:"SonarQube"
                     # Also copy cobertura file for SonarQube
                     cp "$COVERAGE_FILE" ./coverage/coverage.xml
+                    echo "Files after conversion:"
+                    ls -la ./coverage/
                   else
-                    echo "No coverage.cobertura.xml file found"
+                    echo "No coverage.cobertura.xml file found, trying alternative approach"
+                    # Look for any coverage file
+                    COVERAGE_FILE=$(find ./coverage -name "*.xml" -path "*coverage*" | head -1)
+                    if [ -n "$COVERAGE_FILE" ]; then
+                      echo "Found alternative coverage file: $COVERAGE_FILE"
+                      cp "$COVERAGE_FILE" ./coverage/coverage.xml
+                    fi
+                    echo "All XML files found:"
                     find ./coverage -name "*.xml" -type f
                   fi
 
@@ -163,6 +172,13 @@ jobs:
                   name: test-results
                   path: ./coverage
 
+            - name: Debug coverage files
+              run: |
+                  echo "Contents of coverage directory:"
+                  find ./coverage -type f -name "*.xml" | head -20
+                  echo "Looking for specific files:"
+                  find ./coverage -name "SonarQube.xml" -o -name "coverage.xml" -o -name "*.cobertura.xml"
+
             - name: Begin SonarCloud analysis
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -173,9 +189,9 @@ jobs:
                     /o:"hrs-org" \
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
-                    /d:sonar.cs.opencover.reportsPaths="**/SonarQube.xml" \
-                    /d:sonar.coverageReportPaths="**/SonarQube.xml" \
-                    /d:sonar.cs.vstest.reportsPaths="**/TestResults.trx"
+                    /d:sonar.cs.opencover.reportsPaths="coverage/SonarQube.xml" \
+                    /d:sonar.coverageReportPaths="coverage/SonarQube.xml,coverage/coverage.xml" \
+                    /d:sonar.cs.vstest.reportsPaths="coverage/**/TestResults.trx"
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
