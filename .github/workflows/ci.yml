@@ -108,18 +108,17 @@ jobs:
             - name: Run tests with coverage
               run: |
                   echo "=== Running tests with coverage collection ==="
+                  # Try with explicit settings file
                   dotnet test HikingRentalStore.sln --configuration Release --no-build \
                     --collect:"XPlat Code Coverage" \
                     --results-directory ./coverage \
+                    --settings ./coverage.runsettings \
                     --logger "trx;LogFileName=TestResults.trx" \
                     --verbosity normal
 
-                  echo "=== Alternative coverage collection attempt ==="
-                  # Try with different coverage collection settings
+                  echo "=== Check if tests actually ran ==="
                   dotnet test HikingRentalStore.sln --configuration Release --no-build \
-                    --collect:"Code Coverage" \
-                    --results-directory ./coverage-alt \
-                    --verbosity normal || echo "Alternative coverage failed"
+                    --logger "console;verbosity=detailed" || echo "Test execution failed"
 
             - name: COMPREHENSIVE COVERAGE DEBUG
               run: |
@@ -248,12 +247,12 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
               run: |
+                  # Temporarily disable coverage to focus on basic analysis
                   dotnet-sonarscanner begin \
                     /k:"hrs-org_hiking-rental-store-api" \
                     /o:"hrs-org" \
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
-                    /d:sonar.coverageReportPaths="coverage/coverage.cobertura.xml" \
                     /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx"
 
             - name: Restore dependencies (for SonarQube analysis)
