@@ -60,6 +60,13 @@ jobs:
         needs: build
 
         steps:
+            - name: DEBUG - Test job started
+              run: |
+                  echo "🔥 TEST JOB IS RUNNING! 🔥"
+                  echo "Current time: $(date)"
+                  echo "Working directory: $(pwd)"
+                  echo "User: $(whoami)"
+            
             - name: Checkout code
               uses: actions/checkout@v4
 
@@ -105,6 +112,18 @@ jobs:
                   echo "Created coverage.runsettings:"
                   cat coverage.runsettings
 
+            - name: DEBUG - Before running tests
+              run: |
+                  echo "🧪 ABOUT TO RUN TESTS! 🧪"
+                  echo "Current directory contents:"
+                  ls -la
+                  echo ""
+                  echo "Looking for test projects:"
+                  find . -name "*Test*.csproj" -type f
+                  echo ""
+                  echo "Checking solution file:"
+                  ls -la *.sln
+
             - name: Run tests with coverage
               run: |
                   echo "=== Running tests with coverage collection ==="
@@ -122,37 +141,40 @@ jobs:
 
             - name: COMPREHENSIVE COVERAGE DEBUG
               run: |
-                  echo "=== STEP 1: Current working directory ==="
+                  echo "=========================================="
+                  echo "COVERAGE DEBUG - CURRENT DIRECTORY"
+                  echo "=========================================="
                   pwd
-
-                  echo "=== STEP 2: Coverage directory structure ==="
+                  ls -la
+                  
+                  echo "=========================================="
+                  echo "COVERAGE DEBUG - COVERAGE DIRECTORY"
+                  echo "=========================================="
                   if [ -d "./coverage" ]; then
-                    echo "Coverage directory exists"
-                    find ./coverage -type f | sort
+                    echo "✅ Coverage directory exists"
+                    echo "Contents:"
+                    find ./coverage -type f -exec ls -la {} \;
                   else
-                    echo "ERROR: Coverage directory does not exist!"
-                    ls -la .
+                    echo "❌ Coverage directory missing!"
                   fi
-
-                  echo "=== STEP 3: Alternative coverage directory ==="
-                  if [ -d "./coverage-alt" ]; then
-                    echo "Alternative coverage directory exists"
-                    find ./coverage-alt -type f | sort
-                  fi
-
-                  echo "=== STEP 4: Check if we have any test projects ==="
-                  find . -name "*.csproj" -exec grep -l "Microsoft.NET.Test" {} \; 2>/dev/null || echo "No test projects found with Microsoft.NET.Test"
-                  find . -name "*.csproj" -exec grep -l "xunit\|nunit\|mstest" {} \; 2>/dev/null || echo "No test frameworks found"
-
-                  echo "=== STEP 5: Look for ANY XML files recursively ==="
-                  find . -name "*.xml" -type f | grep -v obj | grep -v bin | head -20
-
-                  echo "=== STEP 6: Try manual coverage generation ==="
-                  mkdir -p ./manual-coverage
-                  dotnet test HikingRentalStore.sln --configuration Release --no-build \
-                    --collect:"XPlat Code Coverage" \
-                    --results-directory ./manual-coverage \
-                    --settings ./coverage.runsettings || echo "Manual coverage with runsettings failed"
+                  
+                  echo "=========================================="
+                  echo "COVERAGE DEBUG - TEST PROJECTS CHECK"
+                  echo "=========================================="
+                  echo "Test projects with Microsoft.NET.Test.Sdk:"
+                  find . -name "*.csproj" -exec grep -l "Microsoft.NET.Test" {} \; 2>/dev/null | head -5
+                  echo ""
+                  echo "Test projects with test frameworks:"
+                  find . -name "*.csproj" -exec grep -l "xunit\|nunit\|mstest" {} \; 2>/dev/null | head -5
+                  
+                  echo "=========================================="
+                  echo "COVERAGE DEBUG - XML FILES SEARCH"
+                  echo "=========================================="
+                  echo "Looking for coverage XML files:"
+                  find . -name "*coverage*.xml" -type f 2>/dev/null | head -10
+                  echo ""
+                  echo "Looking for cobertura XML files:"
+                  find . -name "*cobertura*.xml" -type f 2>/dev/null | head -10
 
             - name: Upload test results
               uses: actions/upload-artifact@v4
@@ -210,37 +232,33 @@ jobs:
 
             - name: SONAR DEBUG - Check downloaded artifacts
               run: |
-                  echo "=== SONAR DEBUG: Working directory ==="
+                  echo "=========================================="
+                  echo "SONAR DEBUG - ARTIFACTS CHECK"
+                  echo "=========================================="
                   pwd
-
-                  echo "=== SONAR DEBUG: Coverage directory after download ==="
+                  
+                  echo "Coverage directory contents:"
                   if [ -d "./coverage" ]; then
-                    echo "Coverage directory exists, contents:"
-                    find ./coverage -type f | sort
-                    echo "Coverage directory size:"
-                    du -sh ./coverage
+                    ls -la ./coverage/
+                    echo ""
+                    echo "File details:"
+                    find ./coverage -type f -exec ls -la {} \;
                   else
-                    echo "ERROR: Coverage directory not found!"
+                    echo "❌ No coverage directory found!"
                     ls -la .
                   fi
-
-                  echo "=== SONAR DEBUG: Look for specific files SonarCloud needs ==="
-                  find ./coverage -name "*.cobertura.xml" 2>/dev/null || echo "No cobertura.xml files found"
-                  find ./coverage -name "coverage.cobertura.xml" 2>/dev/null || echo "No coverage.cobertura.xml found"
-                  find ./coverage -name "TestResults.trx" 2>/dev/null || echo "No TestResults.trx found"
-
-                  echo "=== SONAR DEBUG: Try to create coverage file if missing ==="
-                  COVERAGE_FILE=$(find ./coverage -name "*.xml" -path "*coverage*" | head -1)
-                  if [ -n "$COVERAGE_FILE" ]; then
-                    echo "Found coverage file: $COVERAGE_FILE"
-                    cp "$COVERAGE_FILE" ./coverage/coverage.cobertura.xml
-                    echo "Copied to coverage.cobertura.xml"
-                  else
-                    echo "No coverage XML files found at all!"
-                  fi
-
-                  echo "=== SONAR DEBUG: Final file check ==="
-                  ls -la ./coverage/
+                  
+                  echo "=========================================="
+                  echo "SONAR DEBUG - SPECIFIC FILE CHECK"
+                  echo "=========================================="
+                  echo "Looking for TestResults.trx:"
+                  find ./coverage -name "TestResults.trx" 2>/dev/null || echo "❌ No TestResults.trx found"
+                  
+                  echo "Looking for coverage files:"
+                  find ./coverage -name "*.xml" -path "*coverage*" 2>/dev/null || echo "❌ No coverage XML files found"
+                  
+                  echo "Looking for cobertura files:"
+                  find ./coverage -name "*cobertura*" 2>/dev/null || echo "❌ No cobertura files found"
 
             - name: Begin SonarCloud analysis
               env:
