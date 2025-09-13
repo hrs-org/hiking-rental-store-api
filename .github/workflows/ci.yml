@@ -96,11 +96,7 @@ jobs:
 
             - name: Run tests with coverage
               run: |
-                  # Generate code coverage using dotnet-coverage in OpenCover format
-                  dotnet-coverage collect "dotnet test HikingRentalStore.sln --configuration Release --no-build --verbosity normal" \
-                    -f opencover -o "./coverage/coverage.opencover.xml"
-                    
-                  # Also generate in standard XML format for comparison
+                  # Generate code coverage using dotnet-coverage (standard XML format)
                   dotnet-coverage collect "dotnet test HikingRentalStore.sln --configuration Release --no-build --verbosity normal" \
                     -f xml -o "./coverage/coverage.xml"
                     
@@ -109,10 +105,10 @@ jobs:
                     --logger "trx;LogFileName=TestResults.trx" \
                     --results-directory ./coverage
                     
-                  # Verify coverage files were created
+                  # Verify coverage file was created
                   ls -la ./coverage/
-                  echo "Coverage file sizes:"
-                  du -h ./coverage/coverage.*.xml || echo "Coverage files not found"
+                  echo "Coverage file size:"
+                  du -h ./coverage/coverage.xml || echo "Coverage file not found"
 
             - name: Upload test results
               uses: actions/upload-artifact@v4
@@ -149,7 +145,7 @@ jobs:
                   path: ./coverage
 
             - name: Install XML tools
-              run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+              run: sudo apt-get install -y libxml2-utils
 
             - name: Debug coverage files
               run: |
@@ -159,20 +155,17 @@ jobs:
                   echo "Coverage directory contents:"
                   ls -la ./coverage/
                   echo ""
-                  echo "Coverage file sizes:"
-                  du -h ./coverage/coverage.*.xml || echo "Coverage files not found"
+                  echo "Coverage file size:"
+                  du -h ./coverage/coverage.xml || echo "Coverage file not found"
                   echo ""
-                  echo "OpenCover file content (first 10 lines):"
-                  head -10 ./coverage/coverage.opencover.xml || echo "OpenCover file not readable"
+                  echo "Coverage file content (first 10 lines):"
+                  head -10 ./coverage/coverage.xml || echo "Coverage file not readable"
                   echo ""
-                  echo "Check if OpenCover XML is valid:"
-                  xmllint --noout ./coverage/coverage.opencover.xml && echo "OpenCover XML is valid" || echo "OpenCover XML is invalid"
+                  echo "Check if coverage.xml is valid XML:"
+                  xmllint --noout ./coverage/coverage.xml && echo "XML is valid" || echo "XML is invalid"
                   echo ""
-                  echo "Standard XML file content (first 10 lines):"
-                  head -10 ./coverage/coverage.xml || echo "Standard XML file not readable"
-                  echo ""
-                  echo "Check if standard XML is valid:"
-                  xmllint --noout ./coverage/coverage.xml && echo "Standard XML is valid" || echo "Standard XML is invalid"
+                  echo "Coverage summary from XML:"
+                  grep -E 'line_coverage=' ./coverage/coverage.xml | head -3 || echo "Could not extract coverage summary"
 
             - name: Begin SonarCloud analysis
               env:
@@ -184,7 +177,7 @@ jobs:
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
                     /d:sonar.cs.vstest.reportsPaths="./coverage/TestResults.trx" \
-                    /d:sonar.cs.opencover.reportsPaths="./coverage/coverage.opencover.xml" \
+                    /d:sonar.cs.dotcover.reportsPaths="./coverage/coverage.xml" \
                     /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**,**/Migrations/**" \
                     /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**" \
                     /d:sonar.test.exclusions="**/bin/**,**/obj/**" \
