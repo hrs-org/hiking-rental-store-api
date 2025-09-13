@@ -66,7 +66,7 @@ jobs:
                   echo "Current time: $(date)"
                   echo "Working directory: $(pwd)"
                   echo "User: $(whoami)"
-            
+
             - name: Checkout code
               uses: actions/checkout@v4
 
@@ -127,17 +127,26 @@ jobs:
             - name: Run tests with coverage
               run: |
                   echo "=== Running tests with coverage collection ==="
-                  # Try with explicit settings file
+
+                  # Try different approach - use environment variables for coverlet
+                  export COVERLET_COLLECT_PATH="./coverage/"
+                  export COVERLET_OUTPUT_FORMAT="cobertura"
+
                   dotnet test HikingRentalStore.sln --configuration Release --no-build \
                     --collect:"XPlat Code Coverage" \
                     --results-directory ./coverage \
                     --settings ./coverage.runsettings \
                     --logger "trx;LogFileName=TestResults.trx" \
                     --verbosity normal
-
-                  echo "=== Check if tests actually ran ==="
+                    
+                  echo "=== Try alternative coverage approach ==="
+                  # Alternative: Use coverlet directly as MSBuild property
                   dotnet test HikingRentalStore.sln --configuration Release --no-build \
-                    --logger "console;verbosity=detailed" || echo "Test execution failed"
+                    /p:CollectCoverage=true \
+                    /p:CoverletOutputFormat=cobertura \
+                    /p:CoverletOutput=./coverage/coverage.cobertura.xml \
+                    --logger "trx;LogFileName=TestResults-alt.trx" \
+                    --results-directory ./coverage || echo "Alternative approach failed"
 
             - name: COMPREHENSIVE COVERAGE DEBUG
               run: |
@@ -146,7 +155,7 @@ jobs:
                   echo "=========================================="
                   pwd
                   ls -la
-                  
+
                   echo "=========================================="
                   echo "COVERAGE DEBUG - COVERAGE DIRECTORY"
                   echo "=========================================="
@@ -157,7 +166,7 @@ jobs:
                   else
                     echo "❌ Coverage directory missing!"
                   fi
-                  
+
                   echo "=========================================="
                   echo "COVERAGE DEBUG - TEST PROJECTS CHECK"
                   echo "=========================================="
@@ -166,7 +175,7 @@ jobs:
                   echo ""
                   echo "Test projects with test frameworks:"
                   find . -name "*.csproj" -exec grep -l "xunit\|nunit\|mstest" {} \; 2>/dev/null | head -5
-                  
+
                   echo "=========================================="
                   echo "COVERAGE DEBUG - XML FILES SEARCH"
                   echo "=========================================="
@@ -236,7 +245,7 @@ jobs:
                   echo "SONAR DEBUG - ARTIFACTS CHECK"
                   echo "=========================================="
                   pwd
-                  
+
                   echo "Coverage directory contents:"
                   if [ -d "./coverage" ]; then
                     ls -la ./coverage/
@@ -247,16 +256,16 @@ jobs:
                     echo "❌ No coverage directory found!"
                     ls -la .
                   fi
-                  
+
                   echo "=========================================="
                   echo "SONAR DEBUG - SPECIFIC FILE CHECK"
                   echo "=========================================="
                   echo "Looking for TestResults.trx:"
                   find ./coverage -name "TestResults.trx" 2>/dev/null || echo "❌ No TestResults.trx found"
-                  
+
                   echo "Looking for coverage files:"
                   find ./coverage -name "*.xml" -path "*coverage*" 2>/dev/null || echo "❌ No coverage XML files found"
-                  
+
                   echo "Looking for cobertura files:"
                   find ./coverage -name "*cobertura*" 2>/dev/null || echo "❌ No cobertura files found"
 
