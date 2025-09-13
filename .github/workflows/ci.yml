@@ -74,10 +74,19 @@ jobs:
               with:
                   global-json-file: global.json
 
-            - name: Download build artifacts
-              uses: actions/download-artifact@v4
+            - name: Cache NuGet packages
+              uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
               with:
-                  name: build-artifacts
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
+
+            - name: Restore dependencies
+              run: dotnet restore HikingRentalStore.sln
+
+            - name: Build solution
+              run: dotnet build HikingRentalStore.sln --configuration Release --no-restore
 
             - name: Create coverage directory
               run: mkdir -p ./coverage
@@ -88,13 +97,18 @@ jobs:
             - name: Run tests with coverage
               run: |
                   # Generate code coverage using dotnet-coverage
-                  dotnet-coverage collect "dotnet test HikingRentalStore.sln --configuration Release --no-build" \
+                  dotnet-coverage collect "dotnet test HikingRentalStore.sln --configuration Release --no-build --verbosity normal" \
                     -f xml -o "./coverage/coverage.xml"
                     
                   # Generate test results for SonarCloud
                   dotnet test HikingRentalStore.sln --configuration Release --no-build \
                     --logger "trx;LogFileName=TestResults.trx" \
                     --results-directory ./coverage
+                    
+                  # Verify coverage file was created
+                  ls -la ./coverage/
+                  echo "Coverage file size:"
+                  du -h ./coverage/coverage.xml || echo "Coverage file not found"
 
             - name: Upload test results
               uses: actions/upload-artifact@v4
@@ -124,16 +138,20 @@ jobs:
             - name: Install SonarCloud scanner
               run: dotnet tool install --global dotnet-sonarscanner
 
-            - name: Download build artifacts
-              uses: actions/download-artifact@v4
-              with:
-                  name: build-artifacts
-
             - name: Download test results
               uses: actions/download-artifact@v4
               with:
                   name: test-results
                   path: ./coverage
+
+            - name: Debug coverage files
+              run: |
+                  echo "Coverage directory contents:"
+                  ls -la ./coverage/
+                  echo "Coverage file content (first 50 lines):"
+                  head -50 ./coverage/coverage.xml || echo "Coverage file not readable"
+                  echo "Coverage file size:"
+                  du -h ./coverage/coverage.xml || echo "Coverage file not found"
 
             - name: Begin SonarCloud analysis
               env:
