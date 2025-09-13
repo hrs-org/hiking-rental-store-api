@@ -88,11 +88,11 @@ jobs:
             - name: Run tests with coverage
               run: |
                   # Generate code coverage using dotnet-coverage
-                  dotnet-coverage collect "dotnet test HikingRentalStore.sln --configuration Release --no-build" \
+                  dotnet-coverage collect "dotnet test HRS.Test/HRS.Test.csproj --configuration Release --no-build" \
                     -f xml -o "./coverage/coverage.xml"
                     
                   # Generate test results for SonarCloud
-                  dotnet test HikingRentalStore.sln --configuration Release --no-build \
+                  dotnet test HRS.Test/HRS.Test.csproj --configuration Release --no-build \
                     --logger "trx;LogFileName=TestResults.trx" \
                     --results-directory ./coverage
 
@@ -147,7 +147,7 @@ jobs:
                     /d:sonar.scanner.scanAll=false \
                     /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx" \
                     /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml" \
-                    /d:sonar.coverage.exclusions="**/*.Tests/**,**/Tests/**,**/*Test*/**"
+                    /d:sonar.coverage.exclusions="**/HRS.Test/**,**/Test/**,**/*Test*.cs,**/bin/**,**/obj/**"
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
