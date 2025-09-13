@@ -16,15 +16,18 @@ COPY ["HRS.Infrastructure/HRS.Infrastructure.csproj", "HRS.Infrastructure/"]
 COPY ["HRS.Migrations/HRS.Migrations.csproj", "HRS.Migrations/"]
 RUN dotnet restore "HRS.API/HRS.API.csproj"
 
-# Copy the rest of the source code
-COPY . .
+# Copy the rest of the source code (selective copying for security)
+COPY ["HRS.API/", "HRS.API/"]
+COPY ["HRS.Domain/", "HRS.Domain/"]
+COPY ["HRS.Infrastructure/", "HRS.Infrastructure/"]
+COPY ["HRS.Migrations/", "HRS.Migrations/"]
 WORKDIR "/src/HRS.API"
-RUN dotnet build "HRS.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "HRS.API.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
 
 # Publish the app
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "HRS.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "HRS.API.csproj" -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false
 
 # Final stage - runtime image
 FROM base AS final
