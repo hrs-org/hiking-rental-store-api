@@ -96,15 +96,6 @@ jobs:
                     --logger "trx;LogFileName=TestResults.trx" \
                     --results-directory ./coverage
 
-            - name: Debug coverage files
-              run: |
-                  echo "Coverage directory contents:"
-                  ls -la ./coverage/
-                  echo "Coverage XML size:"
-                  wc -l ./coverage/coverage.xml || echo "coverage.xml not found"
-                  echo "Test results:"
-                  ls -la ./coverage/*.trx || echo "No TRX files found"
-
             - name: Upload test results
               uses: actions/upload-artifact@v4
               if: always()
@@ -153,12 +144,11 @@ jobs:
                     /o:"hrs-org" \
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
-                    /d:sonar.scanner.scanAll=false \
                     /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx" \
                     /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml" \
                     /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**" \
-                    /d:sonar.sources="HRS.API,HRS.Domain,HRS.Infrastructure" \
-                    /d:sonar.tests="HRS.Test"
+                    /d:sonar.sources="." \
+                    /d:sonar.exclusions="**/HRS.Test/**,**/bin/**,**/obj/**,**/*.Tests/**"
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
