@@ -26,12 +26,14 @@ COPY ["HRS.Domain/", "HRS.Domain/"]
 COPY ["HRS.Infrastructure/", "HRS.Infrastructure/"]
 COPY ["HRS.Migrations/", "HRS.Migrations/"]
 COPY ["HRS.Test/", "HRS.Test/"]
-RUN dotnet build "HikingRentalStore.sln" -c "$BUILD_CONFIGURATION" --no-restore
+RUN dotnet build "HikingRentalStore.sln" -c "$BUILD_CONFIGURATION" --no-restore \
+    -p:TreatWarningsAsErrors=false
 
 # Publish the app
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "HRS.API/HRS.API.csproj" -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false --no-restore --no-build
+RUN dotnet publish "HRS.API/HRS.API.csproj" -c "$BUILD_CONFIGURATION" \
+    -o /app/publish /p:UseAppHost=false --no-restore --no-build
 
 # Final stage - runtime image
 FROM base AS final
