@@ -88,13 +88,22 @@ jobs:
             - name: Run tests with coverage
               run: |
                   # Generate code coverage using dotnet-coverage
-                  dotnet-coverage collect "dotnet test HRS.Test/HRS.Test.csproj --configuration Release --no-build" \
+                  dotnet-coverage collect "dotnet test HikingRentalStore.sln --configuration Release --no-build" \
                     -f xml -o "./coverage/coverage.xml"
                     
                   # Generate test results for SonarCloud
-                  dotnet test HRS.Test/HRS.Test.csproj --configuration Release --no-build \
+                  dotnet test HikingRentalStore.sln --configuration Release --no-build \
                     --logger "trx;LogFileName=TestResults.trx" \
                     --results-directory ./coverage
+
+            - name: Debug coverage files
+              run: |
+                  echo "Coverage directory contents:"
+                  ls -la ./coverage/
+                  echo "Coverage XML size:"
+                  wc -l ./coverage/coverage.xml || echo "coverage.xml not found"
+                  echo "Test results:"
+                  ls -la ./coverage/*.trx || echo "No TRX files found"
 
             - name: Upload test results
               uses: actions/upload-artifact@v4
@@ -147,7 +156,9 @@ jobs:
                     /d:sonar.scanner.scanAll=false \
                     /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx" \
                     /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml" \
-                    /d:sonar.coverage.exclusions="**/HRS.Test/**,**/Test/**,**/*Test*.cs,**/bin/**,**/obj/**"
+                    /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**" \
+                    /d:sonar.sources="HRS.API,HRS.Domain,HRS.Infrastructure" \
+                    /d:sonar.tests="HRS.Test"
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
