@@ -60,13 +60,6 @@ jobs:
         needs: build
 
         steps:
-            - name: DEBUG - Test job started
-              run: |
-                  echo "🔥 TEST JOB IS RUNNING! 🔥"
-                  echo "Current time: $(date)"
-                  echo "Working directory: $(pwd)"
-                  echo "User: $(whoami)"
-
             - name: Checkout code
               uses: actions/checkout@v4
 
@@ -91,71 +84,19 @@ jobs:
             - name: Create coverage directory
               run: mkdir -p ./coverage
 
-            - name: DEBUG - Before running tests
-              run: |
-                  echo "🧪 ABOUT TO RUN TESTS! 🧪"
-                  echo "Current directory contents:"
-                  ls -la
-                  echo ""
-                  echo "Looking for test projects:"
-                  find . -name "*Test*.csproj" -type f
-                  echo ""
-                  echo "Checking solution file:"
-                  ls -la *.sln
-
             - name: Install dotnet-coverage tool
-              run: |
-                  echo "=== Installing dotnet-coverage tool ==="
-                  dotnet tool install --global dotnet-coverage
+              run: dotnet tool install --global dotnet-coverage
 
             - name: Run tests with coverage
               run: |
-                  echo "=== Running tests with dotnet-coverage ==="
-                  # Use dotnet-coverage (modern Microsoft tool)
+                  # Generate code coverage using dotnet-coverage
                   dotnet-coverage collect "dotnet test HikingRentalStore.sln --configuration Release --no-build" \
                     -f xml -o "./coverage/coverage.xml"
                     
-                  # Also generate test results for SonarCloud
+                  # Generate test results for SonarCloud
                   dotnet test HikingRentalStore.sln --configuration Release --no-build \
                     --logger "trx;LogFileName=TestResults.trx" \
                     --results-directory ./coverage
-
-            - name: COMPREHENSIVE COVERAGE DEBUG
-              run: |
-                  echo "=========================================="
-                  echo "COVERAGE DEBUG - CURRENT DIRECTORY"
-                  echo "=========================================="
-                  pwd
-                  ls -la
-
-                  echo "=========================================="
-                  echo "COVERAGE DEBUG - COVERAGE DIRECTORY"
-                  echo "=========================================="
-                  if [ -d "./coverage" ]; then
-                    echo "✅ Coverage directory exists"
-                    echo "Contents:"
-                    find ./coverage -type f -exec ls -la {} \;
-                  else
-                    echo "❌ Coverage directory missing!"
-                  fi
-
-                  echo "=========================================="
-                  echo "COVERAGE DEBUG - TEST PROJECTS CHECK"
-                  echo "=========================================="
-                  echo "Test projects with Microsoft.NET.Test.Sdk:"
-                  find . -name "*.csproj" -exec grep -l "Microsoft.NET.Test" {} \; 2>/dev/null | head -5
-                  echo ""
-                  echo "Test projects with test frameworks:"
-                  find . -name "*.csproj" -exec grep -l "xunit\|nunit\|mstest" {} \; 2>/dev/null | head -5
-
-                  echo "=========================================="
-                  echo "COVERAGE DEBUG - XML FILES SEARCH"
-                  echo "=========================================="
-                  echo "Looking for coverage XML files:"
-                  find . -name "*coverage*.xml" -type f 2>/dev/null | head -10
-                  echo ""
-                  echo "Looking for cobertura XML files:"
-                  find . -name "*cobertura*.xml" -type f 2>/dev/null | head -10
 
             - name: Upload test results
               uses: actions/upload-artifact@v4
@@ -211,36 +152,10 @@ jobs:
                   name: test-results
                   path: ./coverage
 
-            - name: SONAR DEBUG - Check downloaded artifacts
-              run: |
-                  echo "=========================================="
-                  echo "SONAR DEBUG - ARTIFACTS CHECK"
-                  echo "=========================================="
-                  pwd
-
-                  echo "Coverage directory contents:"
-                  if [ -d "./coverage" ]; then
-                    ls -la ./coverage/
-                    echo ""
-                    if [ -f "./coverage/coverage.xml" ]; then
-                      echo "✅ Coverage file found: coverage.xml"
-                      echo "File size: $(stat -c%s ./coverage/coverage.xml 2>/dev/null || stat -f%z ./coverage/coverage.xml) bytes"
-                      echo "First 10 lines:"
-                      head -10 ./coverage/coverage.xml
-                    else
-                      echo "❌ coverage.xml not found!"
-                    fi
-                  else
-                    echo "❌ No coverage directory found!"
-                    ls -la .
-                  fi
-
             - name: Begin SonarCloud analysis
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
               run: |
-                  # Configure SonarCloud with Visual Studio Code Coverage format (dotnet-coverage output)
                   dotnet-sonarscanner begin \
                     /k:"hrs-org_hiking-rental-store-api" \
                     /o:"hrs-org" \
@@ -248,8 +163,7 @@ jobs:
                     /d:sonar.host.url="https://sonarcloud.io" \
                     /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx" \
                     /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml" \
-                    /d:sonar.coverage.exclusions="**/*.Tests/**,**/Tests/**,**/*Test*/**" \
-                    /d:sonar.verbose=true
+                    /d:sonar.coverage.exclusions="**/*.Tests/**,**/Tests/**,**/*Test*/**"
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
@@ -259,7 +173,6 @@ jobs:
 
             - name: End SonarCloud analysis
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
               run: dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 
