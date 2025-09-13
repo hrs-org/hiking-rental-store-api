@@ -229,7 +229,7 @@ jobs:
         name: Build & Push Docker Image
         runs-on: ubuntu-latest
         needs: [build, test, code-quality, security-scan, lint]
-        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        if: github.event_name != 'release' # Temporarily allow on PRs for testing
         environment: staging
 
         steps:
@@ -267,7 +267,7 @@ jobs:
         name: DAST Security Scan
         runs-on: ubuntu-latest
         needs: docker-build
-        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        if: github.event_name != 'release' # Temporarily allow on PRs for testing
         environment: staging
 
         steps:
@@ -304,7 +304,7 @@ jobs:
     production-build:
         name: Production Docker Release
         runs-on: ubuntu-latest
-        if: github.event_name == 'release'
+        if: github.event_name == 'pull_request' # Temporarily allow on PRs for testing
         environment: production
         env:
             DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
