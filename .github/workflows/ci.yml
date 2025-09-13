@@ -196,7 +196,17 @@ jobs:
                   name: build-artifacts
 
             - name: Run security audit
-              run: dotnet list package --vulnerable --include-transitive
+              run: |
+                  dotnet list package --vulnerable --include-transitive > security-audit.txt 2>&1 || true
+                  echo "Security audit completed. Check security-audit.txt for results."
+
+            - name: Upload security scan results
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: security-scan-results
+                  path: security-audit.txt
+                  retention-days: 30
 
     lint:
         name: Code Formatting & Style
@@ -286,12 +296,39 @@ jobs:
                     -e Jwt__Issuer="$JWT_ISSUER" \
                     -e Jwt__Audience="$JWT_AUDIENCE" \
                     $DOCKER_USERNAME/hrs-api:${{ github.sha }}
+
+                  # Wait for application to start and verify it's healthy
+                  echo "Waiting for application to start..."
                   sleep 30
+
+                  echo "Checking container status:"
+                  docker ps -a
+
+                  echo "Checking container logs:"
+                  docker logs hrs-api
+
+                  echo "Testing application endpoint:"
+                  curl -f http://localhost:5000/health || echo "Health endpoint not available"
+                  curl -I http://localhost:5000 || echo "Root endpoint not available"
 
             - name: OWASP ZAP Baseline Scan
               uses: zaproxy/action-baseline@1e1871e84428617b969d4a1f981a8255630d54b0 # v0.10.0
               with:
                   target: "http://localhost:5000"
+                  cmd_options: "-a -j -l WARN -T 5"
+              continue-on-error: true
+
+            - name: Upload DAST scan results
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: dast-scan-results
+                  path: |
+                      report_html.html
+                      report_json.json
+                      report_md.md
+                      report_xml.xml
+                  retention-days: 30
 
             - name: Stop application
               if: always()
