@@ -161,6 +161,7 @@ jobs:
                     /o:"hrs-org" \
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
+                    /d:sonar.scanner.scanAll=false \
                     /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx" \
                     /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml" \
                     /d:sonar.coverage.exclusions="**/*.Tests/**,**/Tests/**,**/*Test*/**"
