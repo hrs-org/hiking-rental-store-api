@@ -235,51 +235,6 @@ jobs:
                     ls -la .
                   fi
 
-            - name: Prepare coverage for SonarCloud
-              run: |
-                  echo "=== Preparing coverage files for SonarCloud ==="
-
-                  # Find and copy coverage files to expected locations
-                  COVERAGE_FILE=$(find ./coverage -name "*coverage*.xml" | head -1)
-                  if [ -n "$COVERAGE_FILE" ]; then
-                    echo "Found coverage file: $COVERAGE_FILE"
-                    cp "$COVERAGE_FILE" ./coverage/coverage.xml
-                    echo "Copied to coverage.xml"
-                  fi
-
-                  # Also look for cobertura files from the MSBuild approach
-                  COBERTURA_FILE=$(find ./coverage -name "*cobertura*.xml" | head -1)
-                  if [ -n "$COBERTURA_FILE" ]; then
-                    echo "Found cobertura file: $COBERTURA_FILE"
-                    cp "$COBERTURA_FILE" ./coverage/cobertura.xml
-                    echo "Copied to cobertura.xml"
-                  fi
-
-                  echo "Final coverage directory:"
-                  ls -la ./coverage/
-
-            - name: Verify coverage for SonarCloud
-              run: |
-                  echo "=== Verifying coverage file for SonarCloud ==="
-
-                  if [ -f "./coverage/coverage-global.xml" ]; then
-                    echo "✅ Coverage file exists: coverage-global.xml"
-                    echo "File size: $(stat -c%s ./coverage/coverage-global.xml) bytes"
-                    echo "Absolute path: $(pwd)/coverage/coverage-global.xml"
-                    echo "First 20 lines of coverage file:"
-                    head -20 ./coverage/coverage-global.xml
-                    echo ""
-                    echo "Coverage summary from file:"
-                    grep -E "line-rate|branch-rate" ./coverage/coverage-global.xml | head -1
-                    
-                    # Create a copy with absolute path reference for SonarCloud
-                    cp ./coverage/coverage-global.xml ./coverage.xml
-                    echo "✅ Created copy at root: coverage.xml"
-                  else
-                    echo "❌ Coverage file missing!"
-                    exit 1
-                  fi
-
             - name: Begin SonarCloud analysis
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
