@@ -128,10 +128,7 @@ jobs:
               run: |
                   echo "=== Running tests with coverage collection ==="
 
-                  # Try different approach - use environment variables for coverlet
-                  export COVERLET_COLLECT_PATH="./coverage/"
-                  export COVERLET_OUTPUT_FORMAT="cobertura"
-
+                  # First try: XPlat Code Coverage with settings file
                   dotnet test HikingRentalStore.sln --configuration Release --no-build \
                     --collect:"XPlat Code Coverage" \
                     --results-directory ./coverage \
@@ -139,14 +136,28 @@ jobs:
                     --logger "trx;LogFileName=TestResults.trx" \
                     --verbosity normal
                     
-                  echo "=== Try alternative coverage approach ==="
-                  # Alternative: Use coverlet directly as MSBuild property
-                  dotnet test HikingRentalStore.sln --configuration Release --no-build \
+                  echo "=== Try MSBuild approach with fresh build ==="
+                  # Restore packages to ensure coverlet.msbuild is available
+                  dotnet restore HikingRentalStore.sln
+
+                  # Build and run tests with MSBuild coverage properties
+                  dotnet test HikingRentalStore.sln --configuration Release \
                     /p:CollectCoverage=true \
                     /p:CoverletOutputFormat=cobertura \
-                    /p:CoverletOutput=./coverage/coverage.cobertura.xml \
+                    /p:CoverletOutput=./coverage/ \
                     --logger "trx;LogFileName=TestResults-alt.trx" \
-                    --results-directory ./coverage || echo "Alternative approach failed"
+                    --results-directory ./coverage || echo "MSBuild approach failed"
+                    
+                  echo "=== Try coverlet global tool as fallback ==="
+                  # Install coverlet as global tool
+                  dotnet tool install --global coverlet.console || echo "Coverlet already installed"
+
+                  # Use coverlet global tool
+                  coverlet "HRS.Test/bin/Release/net8.0/HRS.Test.dll" \
+                    --target "dotnet" \
+                    --targetargs "test HRS.Test/HRS.Test.csproj --configuration Release --no-build" \
+                    --format cobertura \
+                    --output "./coverage/coverage-global.xml" || echo "Global tool approach failed"
 
             - name: COMPREHENSIVE COVERAGE DEBUG
               run: |
