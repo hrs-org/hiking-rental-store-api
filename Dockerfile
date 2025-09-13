@@ -9,8 +9,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /app
 
-# Copy solution and global configuration files first
-COPY ["global.json", "./"]
+# Copy solution file first
 COPY ["HikingRentalStore.sln", "./"]
 
 # Copy csproj files and restore dependencies

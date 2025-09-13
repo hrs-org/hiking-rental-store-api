@@ -164,20 +164,31 @@ jobs:
                   echo "Check if coverage.xml is valid XML:"
                   xmllint --noout ./coverage/coverage.xml && echo "XML is valid" || echo "XML is invalid"
                   echo ""
-                  echo "Coverage summary from XML:"
-                  grep -E 'line_coverage=' ./coverage/coverage.xml | head -3 || echo "Could not extract coverage summary"
+                  echo "Coverage summary from XML (line_coverage attributes):"
+                  grep -E 'line_coverage=' ./coverage/coverage.xml | head -5 || echo "Could not extract coverage summary"
+                  echo ""
+                  echo "Total covered lines:"
+                  grep -o 'lines_covered="[0-9]*"' ./coverage/coverage.xml | grep -o '[0-9]*' | awk '{sum+=$1} END {print "Total lines covered: " sum}'
+                  echo ""
+                  echo "Modules with coverage:"
+                  grep -E 'module.*line_coverage=' ./coverage/coverage.xml || echo "No modules found"
 
             - name: Begin SonarCloud analysis
               env:
                   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
               run: |
+                  # Get absolute path to coverage file
+                  COVERAGE_PATH=$(readlink -f ./coverage/coverage.xml)
+                  echo "Using coverage file: $COVERAGE_PATH"
+
                   dotnet-sonarscanner begin \
                     /k:"hrs-org_hiking-rental-store-api" \
                     /o:"hrs-org" \
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
                     /d:sonar.cs.vstest.reportsPaths="./coverage/TestResults.trx" \
-                    /d:sonar.cs.dotcover.reportsPaths="./coverage/coverage.xml" \
+                    /d:sonar.cs.vscoveragexml.reportsPaths="$COVERAGE_PATH" \
+                    /d:sonar.cs.dotcover.reportsPaths="$COVERAGE_PATH" \
                     /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**,**/Migrations/**" \
                     /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**" \
                     /d:sonar.test.exclusions="**/bin/**,**/obj/**" \
