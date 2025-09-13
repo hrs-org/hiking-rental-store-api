@@ -17,6 +17,7 @@ COPY ["HRS.API/HRS.API.csproj", "HRS.API/"]
 COPY ["HRS.Domain/HRS.Domain.csproj", "HRS.Domain/"]
 COPY ["HRS.Infrastructure/HRS.Infrastructure.csproj", "HRS.Infrastructure/"]
 COPY ["HRS.Migrations/HRS.Migrations.csproj", "HRS.Migrations/"]
+COPY ["HRS.Test/HRS.Test.csproj", "HRS.Test/"]
 RUN dotnet restore "HikingRentalStore.sln"
 
 # Copy the rest of the source code (selective copying for security)
@@ -24,6 +25,7 @@ COPY ["HRS.API/", "HRS.API/"]
 COPY ["HRS.Domain/", "HRS.Domain/"]
 COPY ["HRS.Infrastructure/", "HRS.Infrastructure/"]
 COPY ["HRS.Migrations/", "HRS.Migrations/"]
+COPY ["HRS.Test/", "HRS.Test/"]
 RUN dotnet build "HRS.API/HRS.API.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
 
 # Publish the app
