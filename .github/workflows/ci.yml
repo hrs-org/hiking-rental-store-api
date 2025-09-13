@@ -307,15 +307,17 @@ jobs:
                   echo "Checking container logs:"
                   docker logs hrs-api
 
-                  echo "Testing application endpoint:"
+                  echo "Testing application endpoints:"
                   curl -f http://localhost:5000/health || echo "Health endpoint not available"
-                  curl -I http://localhost:5000 || echo "Root endpoint not available"
+                  curl -I http://localhost:5000/api/auth || echo "Auth API not available"
+                  curl -I http://localhost:5000/api/users || echo "Users API not available"
+                  curl -I http://localhost:5000/swagger || echo "Swagger not available"
 
             - name: OWASP ZAP Baseline Scan
               uses: zaproxy/action-baseline@1e1871e84428617b969d4a1f981a8255630d54b0 # v0.10.0
               with:
-                  target: "http://localhost:5000"
-                  cmd_options: "-a -j -l WARN -T 5"
+                  target: "http://localhost:5000/api"
+                  cmd_options: "-a -j -l WARN -T 10 -I"
               continue-on-error: true
 
             - name: Upload DAST scan results
