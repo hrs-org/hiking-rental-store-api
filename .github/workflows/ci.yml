@@ -146,12 +146,23 @@ jobs:
 
             - name: Debug coverage files
               run: |
+                  echo "Current working directory:"
+                  pwd
+                  echo ""
                   echo "Coverage directory contents:"
                   ls -la ./coverage/
-                  echo "Coverage file content (first 50 lines):"
-                  head -50 ./coverage/coverage.xml || echo "Coverage file not readable"
+                  echo ""
+                  echo "Absolute path to coverage.xml:"
+                  readlink -f ./coverage/coverage.xml || echo "Cannot resolve absolute path"
+                  echo ""
                   echo "Coverage file size:"
                   du -h ./coverage/coverage.xml || echo "Coverage file not found"
+                  echo ""
+                  echo "Coverage file content (first 20 lines):"
+                  head -20 ./coverage/coverage.xml || echo "Coverage file not readable"
+                  echo ""
+                  echo "Check if coverage.xml is valid XML:"
+                  xmllint --noout ./coverage/coverage.xml && echo "XML is valid" || echo "XML is invalid"
 
             - name: Begin SonarCloud analysis
               env:
@@ -162,11 +173,12 @@ jobs:
                     /o:"hrs-org" \
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
-                    /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx" \
-                    /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml" \
-                    /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**" \
-                    /d:sonar.sources="." \
-                    /d:sonar.exclusions="**/HRS.Test/**,**/bin/**,**/obj/**,**/*.Tests/**"
+                    /d:sonar.cs.vstest.reportsPaths="./coverage/TestResults.trx" \
+                    /d:sonar.cs.vscoveragexml.reportsPaths="./coverage/coverage.xml" \
+                    /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**,**/Migrations/**" \
+                    /d:sonar.sources="HRS.API,HRS.Domain,HRS.Infrastructure" \
+                    /d:sonar.exclusions="**/HRS.Test/**,**/bin/**,**/obj/**,**/*.Tests/**,**/Migrations/**" \
+                    /d:sonar.verbose=true
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
@@ -304,7 +316,7 @@ jobs:
     production-build:
         name: Production Docker Release
         runs-on: ubuntu-latest
-        if: github.event_name == 'pull_request' # Temporarily allow on PRs for testing
+        if: github.event_name == 'release'
         environment: production
         env:
             DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
