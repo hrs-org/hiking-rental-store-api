@@ -159,7 +159,6 @@ jobs:
                     /d:sonar.host.url="https://sonarcloud.io" \
                     /d:sonar.cs.vstest.reportsPaths="./coverage/TestResults.trx" \
                     /d:sonar.cs.vscoveragexml.reportsPaths="$COVERAGE_PATH" \
-                    /d:sonar.cs.dotcover.reportsPaths="$COVERAGE_PATH" \
                     /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**,**/Migrations/**" \
                     /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**" \
                     /d:sonar.test.exclusions="**/bin/**,**/obj/**" \
