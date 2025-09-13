@@ -252,6 +252,9 @@ jobs:
                     echo ""
                     echo "File details:"
                     find ./coverage -type f -exec ls -la {} \;
+                    echo ""
+                    echo "Show first few lines of coverage files:"
+                    find ./coverage -name "*.xml" -exec head -10 {} \; 2>/dev/null || echo "No XML files to preview"
                   else
                     echo "❌ No coverage directory found!"
                     ls -la .
@@ -269,18 +272,44 @@ jobs:
                   echo "Looking for cobertura files:"
                   find ./coverage -name "*cobertura*" 2>/dev/null || echo "❌ No cobertura files found"
 
+            - name: Prepare coverage for SonarCloud
+              run: |
+                  echo "=== Preparing coverage files for SonarCloud ==="
+
+                  # Find and copy coverage files to expected locations
+                  COVERAGE_FILE=$(find ./coverage -name "*coverage*.xml" | head -1)
+                  if [ -n "$COVERAGE_FILE" ]; then
+                    echo "Found coverage file: $COVERAGE_FILE"
+                    cp "$COVERAGE_FILE" ./coverage/coverage.xml
+                    echo "Copied to coverage.xml"
+                  fi
+
+                  # Also look for cobertura files from the MSBuild approach
+                  COBERTURA_FILE=$(find ./coverage -name "*cobertura*.xml" | head -1)
+                  if [ -n "$COBERTURA_FILE" ]; then
+                    echo "Found cobertura file: $COBERTURA_FILE"
+                    cp "$COBERTURA_FILE" ./coverage/cobertura.xml
+                    echo "Copied to cobertura.xml"
+                  fi
+
+                  echo "Final coverage directory:"
+                  ls -la ./coverage/
+
             - name: Begin SonarCloud analysis
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
               run: |
-                  # Temporarily disable coverage to focus on basic analysis
+                  # Enable coverage with proper file paths
                   dotnet-sonarscanner begin \
                     /k:"hrs-org_hiking-rental-store-api" \
                     /o:"hrs-org" \
                     /d:sonar.token="$SONAR_TOKEN" \
                     /d:sonar.host.url="https://sonarcloud.io" \
-                    /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx"
+                    /d:sonar.cs.vstest.reportsPaths="coverage/TestResults.trx,coverage/TestResults-alt.trx" \
+                    /d:sonar.cs.opencover.reportsPaths="coverage/*.xml" \
+                    /d:sonar.coverage.exclusions="**/*.Tests/**,**/Tests/**,**/*Test*/**" \
+                    /d:sonar.verbose=true
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
