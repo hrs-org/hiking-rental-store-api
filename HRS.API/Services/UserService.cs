@@ -55,4 +55,9 @@ public class UserService : IUserService
         await _context.SaveChangesAsync();
         return true;
     }
+    public async Task<List<RegisterEmployeeDetailDto>> GetEmployees()
+    {
+        var employee = await _userRepository.GetAllEmployee();
+        return _mapper.Map<List<RegisterEmployeeDetailDto>>(employee);
+    }
 }

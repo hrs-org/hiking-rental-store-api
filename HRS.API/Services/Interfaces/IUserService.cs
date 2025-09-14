@@ -8,4 +8,5 @@ public interface IUserService
     Task<UserDto> GetUserById(int id);
     Task<UserDto> Register(RegisterDto dto);
     Task<bool> DeleteUser(int id);
+    Task<List<RegisterEmployeeDetailDto>> GetEmployees();
 }

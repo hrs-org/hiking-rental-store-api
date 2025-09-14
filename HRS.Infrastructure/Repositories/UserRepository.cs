@@ -26,4 +26,6 @@ public class UserRepository : CrudRepository<User>, IUserRepository
 
         await _db.SaveChangesAsync();
     }
+    public async Task<List<User>> GetAllEmployee()
+        => await _db.Users.Where(u => u.Role == Domain.Enums.UserRole.Employee).ToListAsync();
 }

@@ -36,8 +36,18 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetUserAsync), new { id = createdUser.Id }, createdUser);
     }
 
+    [Authorize(Roles = "Admin")]
+
+    public async Task<ActionResult<List<RegisterEmployeeDetailDto>>> GetEmployees()
+    {
+         var employeeList = await _userService.GetEmployees();
+        if (employeeList == null || employeeList.Count == 0 ) return NotFound();
+        return Ok(employeeList);
+    }
+
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
+
     public async Task<IActionResult> DeleteUser(int id)
     {
         var success = await _userService.DeleteUser(id);
