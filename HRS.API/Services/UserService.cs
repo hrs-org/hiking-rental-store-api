@@ -60,4 +60,14 @@ public class UserService : IUserService
         var employee = await _userRepository.GetAllEmployee();
         return _mapper.Map<List<RegisterEmployeeDetailDto>>(employee);
     }
+
+    public async Task<RegisterEmployeeDetailDto?> UpdateEmployee(RegisterEmployeeDetailDto dto)
+    {
+
+        var employee = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
+        if (employee == null) return null;
+        _mapper.Map(dto, employee);
+        await _context.SaveChangesAsync();
+        return _mapper.Map<RegisterEmployeeDetailDto>(employee);
+    }
 }
