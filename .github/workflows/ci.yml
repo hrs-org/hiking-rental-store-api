@@ -177,6 +177,16 @@ jobs:
                   COVERAGE_PATH=$(readlink -f ./coverage/coverage.xml)
                   echo "Using coverage file: $COVERAGE_PATH"
 
+                  # Set up SonarCloud parameters based on event type
+                  SONAR_PARAMS=""
+                  if [ "${{ github.event_name }}" = "pull_request" ]; then
+                    echo "Running SonarCloud analysis for pull request"
+                    SONAR_PARAMS="/d:sonar.pullrequest.key=${{ github.event.number }} /d:sonar.pullrequest.branch=${{ github.head_ref }} /d:sonar.pullrequest.base=${{ github.base_ref }}"
+                  else
+                    echo "Running SonarCloud analysis for branch: ${{ github.ref_name }}"
+                    SONAR_PARAMS="/d:sonar.branch.name=${{ github.ref_name }}"
+                  fi
+
                   dotnet-sonarscanner begin \
                     /k:"hrs-org_hiking-rental-store-api" \
                     /o:"hrs-org" \
@@ -188,9 +198,9 @@ jobs:
                     /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,**/HRS.Migrations/**" \
                     /d:sonar.test.exclusions="**/bin/**,**/obj/**,**/HRS.Migrations/**" \
                     /d:sonar.scm.disabled=true \
-                    /d:sonar.newCode.referenceBranch="" \
                     /d:sonar.qualitygate.wait=true \
-                    /d:sonar.verbose=true
+                    /d:sonar.verbose=true \
+                    $SONAR_PARAMS
 
             - name: Restore dependencies (for SonarQube analysis)
               run: dotnet restore HikingRentalStore.sln
