@@ -34,7 +34,7 @@ public class HealthControllerTests
         // Assert
         result.Should().NotBeNull();
         result!.Value.Should().BeOfType<ApiResponse<HealthCheckDto>>();
-        
+
         var apiResponse = result.Value as ApiResponse<HealthCheckDto>;
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
@@ -59,7 +59,7 @@ public class HealthControllerTests
     {
         // Arrange
         var beforeCall = DateTime.UtcNow;
-        
+
         // Act
         var result = _controller.GetHealth() as OkObjectResult;
         var apiResponse = result!.Value as ApiResponse<HealthCheckDto>;
@@ -77,7 +77,7 @@ public class HealthControllerTests
         // Arrange
         var originalEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         var testEnvironment = "TestEnvironment";
-        
+
         try
         {
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", testEnvironment);
@@ -101,7 +101,7 @@ public class HealthControllerTests
     {
         // Arrange
         var originalEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-        
+
         try
         {
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", null);
@@ -125,7 +125,7 @@ public class HealthControllerTests
     {
         // Arrange
         var originalEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-        
+
         try
         {
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", string.Empty);
@@ -153,7 +153,7 @@ public class HealthControllerTests
     {
         // Arrange
         var originalEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-        
+
         try
         {
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", environment);
@@ -196,7 +196,7 @@ public class HealthControllerTests
 
         var routeAttribute = controllerType.GetCustomAttributes(typeof(RouteAttribute), false);
         routeAttribute.Should().HaveCount(1);
-        
+
         var route = routeAttribute.First() as RouteAttribute;
         route!.Template.Should().Be("api/health");
     }
