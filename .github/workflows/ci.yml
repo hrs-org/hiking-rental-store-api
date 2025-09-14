@@ -91,14 +91,39 @@ jobs:
             - name: Create coverage directory
               run: mkdir -p ./coverage
 
+            - name: Create coverage settings
+              run: |
+                  cat > ./coverage.runsettings << 'EOF'
+                  <?xml version="1.0" encoding="utf-8"?>
+                  <RunSettings>
+                    <DataCollectionRunSettings>
+                      <DataCollectors>
+                        <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+                          <Configuration>
+                            <CodeCoverage>
+                              <ModulePaths>
+                                <Exclude>
+                                  <ModulePath>.*HRS\.Migrations.*</ModulePath>
+                                </Exclude>
+                              </ModulePaths>
+                            </CodeCoverage>
+                          </Configuration>
+                        </DataCollector>
+                      </DataCollectors>
+                    </DataCollectionRunSettings>
+                  </RunSettings>
+                  EOF
+
             - name: Install dotnet-coverage tool
               run: dotnet tool install --global dotnet-coverage
 
             - name: Run tests with coverage
               run: |
                   # Generate code coverage using dotnet-coverage (standard XML format)
+                  # Exclude HRS.Migrations project from testing and coverage
                   dotnet-coverage collect "dotnet test HikingRentalStore.sln --configuration Release --no-build --verbosity normal" \
-                    -f xml -o "./coverage/coverage.xml"
+                    -f xml -o "./coverage/coverage.xml" \
+                    --settings ./coverage.runsettings
                     
                   # Generate test results for SonarCloud
                   dotnet test HikingRentalStore.sln --configuration Release --no-build \
@@ -159,9 +184,12 @@ jobs:
                     /d:sonar.host.url="https://sonarcloud.io" \
                     /d:sonar.cs.vstest.reportsPaths="./coverage/TestResults.trx" \
                     /d:sonar.cs.vscoveragexml.reportsPaths="$COVERAGE_PATH" \
-                    /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**,**/Migrations/**" \
-                    /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**" \
-                    /d:sonar.test.exclusions="**/bin/**,**/obj/**" \
+                    /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**,**/Migrations/**,**/HRS.Migrations/**" \
+                    /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,**/HRS.Migrations/**" \
+                    /d:sonar.test.exclusions="**/bin/**,**/obj/**,**/HRS.Migrations/**" \
+                    /d:sonar.scm.disabled=true \
+                    /d:sonar.newCode.referenceBranch="" \
+                    /d:sonar.qualitygate.wait=true \
                     /d:sonar.verbose=true
 
             - name: Restore dependencies (for SonarQube analysis)
