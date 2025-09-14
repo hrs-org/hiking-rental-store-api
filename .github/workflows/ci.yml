@@ -172,6 +172,11 @@ jobs:
             - name: Begin SonarCloud analysis
               env:
                   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+                  GITHUB_EVENT_NAME: ${{ github.event_name }}
+                  PR_NUMBER: ${{ github.event.number }}
+                  PR_HEAD_REF: ${{ github.head_ref }}
+                  PR_BASE_REF: ${{ github.base_ref }}
+                  BRANCH_NAME: ${{ github.ref_name }}
               run: |
                   # Get absolute path to coverage file
                   COVERAGE_PATH=$(readlink -f ./coverage/coverage.xml)
@@ -179,12 +184,12 @@ jobs:
 
                   # Set up SonarCloud parameters based on event type
                   SONAR_PARAMS=""
-                  if [ "${{ github.event_name }}" = "pull_request" ]; then
+                  if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
                     echo "Running SonarCloud analysis for pull request"
-                    SONAR_PARAMS="/d:sonar.pullrequest.key=${{ github.event.number }} /d:sonar.pullrequest.branch=${{ github.head_ref }} /d:sonar.pullrequest.base=${{ github.base_ref }}"
+                    SONAR_PARAMS="/d:sonar.pullrequest.key=$PR_NUMBER /d:sonar.pullrequest.branch=$PR_HEAD_REF /d:sonar.pullrequest.base=$PR_BASE_REF"
                   else
-                    echo "Running SonarCloud analysis for branch: ${{ github.ref_name }}"
-                    SONAR_PARAMS="/d:sonar.branch.name=${{ github.ref_name }}"
+                    echo "Running SonarCloud analysis for branch: $BRANCH_NAME"
+                    SONAR_PARAMS="/d:sonar.branch.name=$BRANCH_NAME"
                   fi
 
                   dotnet-sonarscanner begin \
