@@ -2,7 +2,11 @@ using FluentValidation;
 using HRS.API.Contracts.DTOs;
 using HRS.API.Contracts.DTOs.Auth;
 using HRS.API.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace HRS.API.Controllers;
 
@@ -29,5 +33,13 @@ public class AuthController : ControllerBase
     {
         var res = await _authService.RefreshTokenAsync(requestDto);
         return Ok(ApiResponse<LoginResponseDto>.OkResponse(res, "Refresh token successful"));
+    }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> LogoutAsync()
+    {
+        await _authService.LogoutAsync();
+        return Ok(new { success = true, message = "Logout successful" });
     }
 }

@@ -5,6 +5,7 @@ using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
@@ -15,6 +16,7 @@ public class AuthServiceTests
     private readonly IAuthService _mockService;
     private readonly ITokenService _tokenService;
     private readonly IUserRepository _userRepository;
+    private readonly IHttpContextAccessor _httpcontextaccessor;
 
     public AuthServiceTests()
     {
@@ -30,7 +32,8 @@ public class AuthServiceTests
             .Build();
         _userRepository = Substitute.For<IUserRepository>();
         _tokenService = Substitute.For<ITokenService>();
-        _mockService = new AuthService(mockConfig, _userRepository, _tokenService);
+        _httpcontextaccessor = Substitute.For<IHttpContextAccessor>();
+        _mockService = new AuthService(mockConfig, _userRepository, _tokenService,_httpcontextaccessor);
     }
 
     [Fact]
@@ -206,7 +209,7 @@ public class AuthServiceTests
             Id = 1,
             Email = "admin@hrs.com",
             RefreshToken = "oldRefresh",
-            RefreshTokenExpiry = DateTime.UtcNow.AddHours(-1)
+            RefreshTokenExpiry = DateTime.UtcNow.AddHours(-1) 
         };
 
         var requestDto = new RefreshTokenRequestDto
@@ -220,5 +223,50 @@ public class AuthServiceTests
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             _mockService.RefreshTokenAsync(requestDto));
+    }
+
+
+    [Fact]
+    public async Task LogoutAsync_WhenUserFound_ClearsRefreshTokenAndUpdatesUser()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Email = "admin@hrs.com",
+            RefreshToken = "oldRefresh",
+            RefreshTokenExpiry = DateTime.UtcNow.AddDays(1)
+        };
+
+        var claims = new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id.ToString()) };
+        var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
+        var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+        var context = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = principal };
+        _httpcontextaccessor.HttpContext.Returns(context);
+
+        _userRepository.GetByIdAsync(Arg.Any<int>()).Returns(user);
+
+        // Act
+        await _mockService.LogoutAsync();
+
+        // Assert
+        await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u =>
+            u.Id == user.Id &&
+            string.IsNullOrEmpty(u.RefreshToken) &&
+            u.RefreshTokenExpiry == null));
+    }
+
+    [Fact]
+    public async Task LogoutAsync_WhenUserNotFound_DoesNotThrowOrUpdate()
+    {
+        // Arrange
+        _userRepository.GetByIdAsync(Arg.Any<int>()).Returns((User?)null);
+
+        // Act
+        Func<Task> act = async () => await _mockService.LogoutAsync();
+
+        
+        await act.Should().NotThrowAsync();
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 }
