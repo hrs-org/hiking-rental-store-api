@@ -62,6 +62,13 @@ public class UsersController : ControllerBase
         if (!success) return NotFound();
         return NoContent();
     }
+    [HttpPost("new-employee")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<UserDto>> CreateNewEmployee([FromBody] RegisterEmployeeDetailDto dto)
+    {
+        var createdUser = await _userService.CreateNewEmployee(dto);
+        return CreatedAtAction(nameof(GetUserAsync), new { id = createdUser.Id }, createdUser);
+    }
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
 

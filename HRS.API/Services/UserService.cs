@@ -79,4 +79,25 @@ public class UserService : IUserService
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<UserDto> CreateNewEmployee(RegisterEmployeeDetailDto dto)
+    {
+        var user = _mapper.Map<User>(dto);
+
+        // TODO: hash password
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456");
+        user.Role = Domain.Enums.UserRole.Employee;
+
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        //Send email to user with password setup link
+        return _mapper.Map<UserDto>(user);
+        // var user = await _userRepository.GetByIdAsync(id);
+        // if (user == null) return false;
+        // user.Role = Domain.Enums.UserRole.Employee;
+        // await _context.SaveChangesAsync();
+        // return true;
+
+    }
 }

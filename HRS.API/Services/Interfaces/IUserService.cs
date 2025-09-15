@@ -11,4 +11,9 @@ public interface IUserService
     Task<List<RegisterEmployeeDetailDto>> GetEmployees();
     Task<RegisterEmployeeDetailDto?> UpdateEmployee(RegisterEmployeeDetailDto dto);
     Task<bool> DeleteEmployee(RegisterEmployeeDetailDto dto);
+
+    Task<UserDto> CreateNewEmployee(RegisterEmployeeDetailDto dto);
+    
+
+
 }
