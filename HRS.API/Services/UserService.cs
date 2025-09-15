@@ -33,17 +33,26 @@ public class UserService : IUserService
         return _mapper.Map<UserDto>(user);
     }
 
-    public async Task<UserDto> Register(RegisterDto dto)
+    public async Task<bool> Register(RegisterDto dto)
     {
         var user = _mapper.Map<User>(dto);
-
-        // TODO: hash password
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        return _mapper.Map<UserDto>(user);
+        try
+        {
+            var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("User with this email already exists.");
+            }
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Error checking for existing user: " + ex.Message, ex);
+        }
     }
 
     public async Task<bool> DeleteUser(int id)

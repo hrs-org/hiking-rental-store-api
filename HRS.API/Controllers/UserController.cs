@@ -1,3 +1,4 @@
+using HRS.API.Contracts.DTOs;
 using HRS.API.Contracts.DTOs.User;
 using HRS.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -32,8 +33,8 @@ public class UsersController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<UserDto>> Register([FromBody] RegisterDto dto)
     {
-        var createdUser = await _userService.Register(dto);
-        return CreatedAtAction(nameof(GetUserAsync), new { id = createdUser.Id }, createdUser);
+        var res = await _userService.Register(dto);
+        return Ok(ApiResponse<bool>.OkResponse(res, "Registration successful"));
     }
 
     [HttpDelete("{id:int}")]
