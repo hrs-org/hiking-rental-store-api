@@ -35,7 +35,7 @@ public class UsersController : ControllerBase
         var createdUser = await _userService.Register(dto);
         return CreatedAtAction(nameof(GetUserAsync), new { id = createdUser.Id }, createdUser);
     }
-
+    [HttpGet("employee")]
     [Authorize(Roles = "Admin")]
 
     public async Task<ActionResult<List<RegisterEmployeeDetailDto>>> GetEmployees()
