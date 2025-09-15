@@ -70,4 +70,13 @@ public class UserService : IUserService
         await _context.SaveChangesAsync();
         return _mapper.Map<RegisterEmployeeDetailDto>(employee);
     }
+    public async Task<bool> DeleteEmployee(RegisterEmployeeDetailDto dto)
+    {
+
+        var employee = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
+        if (employee == null) return false;
+        _context.Users.Remove(employee);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

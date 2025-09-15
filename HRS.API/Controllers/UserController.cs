@@ -54,6 +54,14 @@ public class UsersController : ControllerBase
         return Ok(updatedEmployee);
     }
 
+    [HttpDelete("employee")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteEmployee([FromBody] RegisterEmployeeDetailDto dto)
+    {
+        var success = await _userService.DeleteEmployee(dto);
+        if (!success) return NotFound();
+        return NoContent();
+    }
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
 
