@@ -280,9 +280,9 @@ public class AuthServiceTests
         _httpcontextaccessor.HttpContext.Returns((HttpContext?)null);
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => 
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             _mockService.LogoutAsync());
-        
+
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 
@@ -296,9 +296,9 @@ public class AuthServiceTests
         _httpcontextaccessor.HttpContext.Returns(context);
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => 
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             _mockService.LogoutAsync());
-        
+
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 
@@ -307,7 +307,7 @@ public class AuthServiceTests
     {
         // Arrange
         var claims = new[] { new System.Security.Claims.Claim(
-            System.Security.Claims.ClaimTypes.NameIdentifier, 
+            System.Security.Claims.ClaimTypes.NameIdentifier,
             "invalid-id") };
         var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
         var principal = new System.Security.Claims.ClaimsPrincipal(identity);
@@ -315,9 +315,9 @@ public class AuthServiceTests
         _httpcontextaccessor.HttpContext.Returns(context);
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => 
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             _mockService.LogoutAsync());
-        
+
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 }
