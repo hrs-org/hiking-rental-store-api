@@ -69,7 +69,8 @@ public class AuthService : IAuthService
     public async Task LogoutAsync()
     {
         var principal = _httpContextAccessor.HttpContext?.User;
-        if (principal?.Identity?.IsAuthenticated != true) return;
+        if (principal?.Identity?.IsAuthenticated != true)
+            throw new UnauthorizedAccessException("User is not authenticated");
         var keys = new[] { ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub, "nameid", "uid", "userId", "id" };
         int? userId = null;
         foreach (var k in keys)
@@ -77,10 +78,13 @@ public class AuthService : IAuthService
             var v = principal.FindFirstValue(k) ?? principal.Claims.FirstOrDefault(c => c.Type == k)?.Value;
             if (!string.IsNullOrWhiteSpace(v) && int.TryParse(v, out var id)) { userId = id; break; }
         }
-        if (userId is null) return;
+        if (userId is null)
+            throw new UnauthorizedAccessException("User ID claim not found");
 
         var user = await _userRepository.GetByIdAsync(userId.Value);
-        if (user is null) return;
+        
+        if (user is null)
+            throw new UnauthorizedAccessException("User not found");
 
         user.RefreshToken = null;
         user.RefreshTokenExpiry = null;

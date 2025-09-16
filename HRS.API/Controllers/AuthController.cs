@@ -2,11 +2,8 @@ using FluentValidation;
 using HRS.API.Contracts.DTOs;
 using HRS.API.Contracts.DTOs.Auth;
 using HRS.API.Services.Interfaces;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace HRS.API.Controllers;
 
