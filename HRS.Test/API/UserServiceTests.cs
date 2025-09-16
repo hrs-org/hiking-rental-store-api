@@ -47,7 +47,7 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task CreateEmployee_True()
+    public async Task CreateEmployee_True()//Normal
     {
         // Arrange
         var dto = new RegisterEmployeeDetailDto
@@ -97,7 +97,7 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task CreateEmployee_Flase()
+    public async Task CreateEmployee_Flase() // Detail not go wrong
     {
         // Arrange
         var dto = new RegisterEmployeeDetailDto { Id = 4, FirstName = "Alice", LastName = "Wonder", Email = "alice@wonder.com", Role = "Employee" };
@@ -137,10 +137,8 @@ public class UserServiceTests
         // _mockContext.Verify(m => m.SaveChangesAsync(default), Times.Once);
     }
 
-
-
     [Fact]
-    public async Task GetAllEmployees_True()
+    public async Task GetAllEmployees_True() //Normal
     {
         // Arrange
         var users = new List<User>
@@ -174,7 +172,7 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task GetAllEmployees_False()
+    public async Task GetAllEmployees_False() // No Employee
     {
         // Arrange
         var users = new List<User>
@@ -210,7 +208,7 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task DeleteEmployee_True()
+    public async Task DeleteEmployee_True() // Role is Employee
     {
 
         // Arrange
@@ -351,6 +349,320 @@ public class UserServiceTests
         Assert.False(result);
         Assert.NotEmpty(context.Users);
         context.Dispose();
+    }
+
+    [Fact]
+    public async Task UpdateEmployee_True() // Update Role
+    {
+
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "UpdateEmployeeDb")
+            .Options;
+
+        await using var context = new AppDbContext(options);
+
+        // Seed the in-memory database with a user
+        var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        // Mock IUserRepository (เรียก GetByIdAsync)
+        var userRepository = Substitute.For<IUserRepository>();
+        userRepository.GetByIdAsync(2).Returns(user);
+        userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
+
+        // Mock IMapper
+        var mapper = Substitute.For<IMapper>();
+        mapper.Map<RegisterEmployeeDetailDto>(Arg.Any<User>()).Returns(ci => new RegisterEmployeeDetailDto
+        {
+            Id = ((User)ci[0]).Id,
+            FirstName = ((User)ci[0]).FirstName,
+            LastName = ((User)ci[0]).LastName,
+            Email = ((User)ci[0]).Email,
+            Role = ((User)ci[0]).Role.ToString()
+        });
+
+        var service = new UserService(context, mapper, userRepository);
+
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 2,
+            FirstName = "Evan",
+            LastName = "Jasper",
+            Email = " ",
+            Role = "Manager",
+        };
+
+        // Act
+        var result = await service.UpdateEmployee(dto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(dto.FirstName, result.FirstName);
+        Assert.Equal(dto.LastName, result.LastName);
+        Assert.Equal(dto.Email, result.Email);
+        Assert.Equal(dto.Role, result.Role);
+        Assert.NotEmpty(context.Users);
+
+
+        var updatedUser = await context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
+        Assert.NotNull(updatedUser);
+        Assert.Equal(dto.FirstName, updatedUser.FirstName);
+        Assert.Equal(dto.LastName, updatedUser.LastName);
+        Assert.Equal(dto.Email, updatedUser.Email);
+        Assert.Equal(UserRole.Manager, updatedUser.Role);
+        // await userRepository.Received(1).GetByIdAsync(dto.Id);
+        // await userRepository.Received(1).SaveChangesAsync();
+        context.Dispose();
+    }
+
+    [Fact]
+    public async Task UpdateEmployee_True2()// Update Employee Detail
+    {
+
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "UpdateEmployeeDb2")
+            .Options;
+
+        await using var context = new AppDbContext(options);
+
+        // Seed the in-memory database with a user
+        var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = "III", Role = UserRole.Employee, PasswordHash = "123456" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        // Mock IUserRepository (เรียก GetByIdAsync)
+        var userRepository = Substitute.For<IUserRepository>();
+        userRepository.GetByIdAsync(2).Returns(user);
+        userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
+
+
+        // Mock IMapper
+        var mapper = Substitute.For<IMapper>();
+        mapper.Map<RegisterEmployeeDetailDto>(Arg.Any<User>()).Returns(ci => new RegisterEmployeeDetailDto
+        {
+            Id = ((User)ci[0]).Id,
+            FirstName = ((User)ci[0]).FirstName,
+            LastName = ((User)ci[0]).LastName,
+            Email = ((User)ci[0]).Email,
+            Role = ((User)ci[0]).Role.ToString()
+        });
+
+        var service = new UserService(context, mapper, userRepository);
+
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 2,
+            FirstName = "Shen",
+            LastName = "Feri",
+            Email = "XXX",
+            Role = "Manager",
+        };
+
+        // Act
+        var result = await service.UpdateEmployee(dto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Shen", result.FirstName);
+        Assert.Equal("Feri", result.LastName);
+        Assert.Equal(dto.Email, result.Email);
+        Assert.Equal(result.Role, dto.Role);
+        Assert.NotEmpty(context.Users);
+
+
+        var updatedUser = await context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
+        Assert.NotNull(updatedUser);
+        Assert.Equal(dto.FirstName, updatedUser.FirstName);
+        Assert.Equal(dto.LastName, updatedUser.LastName);
+        Assert.Equal(dto.Email, updatedUser.Email);
+        Assert.Equal(UserRole.Manager, updatedUser.Role);
+        // await userRepository.Received(1).GetByIdAsync(dto.Id);
+        // await userRepository.Received(1).SaveChangesAsync();
+        context.Dispose();
+
+    }
+
+    [Fact]
+    public async Task UpdateEmployee_False()// Customer cannot be update
+    {
+
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "UpdateEmployeeDb3")
+            .Options;
+
+        await using var context = new AppDbContext(options);
+
+        // Seed the in-memory database with a user
+        var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = "III", Role = UserRole.Customer, PasswordHash = "123456" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        // Mock IUserRepository (เรียก GetByIdAsync)
+        var userRepository = Substitute.For<IUserRepository>();
+        userRepository.GetByIdAsync(2).Returns(user);
+        userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
+
+
+        // Mock IMapper
+        var mapper = Substitute.For<IMapper>();
+        mapper.Map<RegisterEmployeeDetailDto>(Arg.Any<User>()).Returns(ci => new RegisterEmployeeDetailDto
+        {
+            Id = ((User)ci[0]).Id,
+            FirstName = ((User)ci[0]).FirstName,
+            LastName = ((User)ci[0]).LastName,
+            Email = ((User)ci[0]).Email,
+            Role = ((User)ci[0]).Role.ToString()
+        });
+
+        var service = new UserService(context, mapper, userRepository);
+
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 3,
+            FirstName = "Shen",
+            LastName = "Feri",
+            Email = "XXX",
+            Role = "Manager",
+        };
+
+        // Act
+        var result = await service.UpdateEmployee(dto);
+
+        // Assert
+        Assert.Null(result);
+        Assert.NotEmpty(context.Users);
+        var updatedUser = await context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
+        Assert.NotNull(updatedUser);
+        Assert.NotEqual(dto.FirstName, updatedUser.FirstName);
+        Assert.NotEqual(dto.LastName, updatedUser.LastName);
+        Assert.NotEqual(dto.Email, updatedUser.Email);
+        Assert.NotEqual(UserRole.Manager, updatedUser.Role);
+        context.Dispose();
+
+    }
+
+    [Fact]
+    public async Task UpdateEmployee_False2()// Don't have in database
+    {
+
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "UpdateEmployeeDb4")
+            .Options;
+
+        await using var context = new AppDbContext(options);
+
+        // Seed the in-memory database with a user
+        var user = new User { Id = 2, FirstName = "Evan", LastName = "Feri", Email = "XXX", Role = UserRole.Manager, PasswordHash = "123456" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        // Mock IUserRepository (เรียก GetByIdAsync)
+        var userRepository = Substitute.For<IUserRepository>();
+        userRepository.GetByIdAsync(2).Returns(user);
+        userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
+
+
+        // Mock IMapper
+        var mapper = Substitute.For<IMapper>();
+        mapper.Map<RegisterEmployeeDetailDto>(Arg.Any<User>()).Returns(ci => new RegisterEmployeeDetailDto
+        {
+            Id = ((User)ci[0]).Id,
+            FirstName = ((User)ci[0]).FirstName,
+            LastName = ((User)ci[0]).LastName,
+            Email = ((User)ci[0]).Email,
+            Role = ((User)ci[0]).Role.ToString()
+        });
+
+        var service = new UserService(context, mapper, userRepository);
+
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 3,
+            FirstName = "Evan",
+            LastName = "Feri",
+            Email = "XXX",
+            Role = "Manager",
+        };
+
+        // Act
+        var result = await service.UpdateEmployee(dto);
+
+        // Assert
+        Assert.Null(result);
+        var updatedUser = await context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
+        Assert.Null(updatedUser);
+        context.Dispose();
+
+    }
+    [Fact]
+    public async Task UpdateEmployee_True3()// No Update
+    {
+
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "UpdateEmployeeDb5")
+            .Options;
+
+        await using var context = new AppDbContext(options);
+
+        // Seed the in-memory database with a user
+        var user = new User { Id = 2, FirstName = "Evan", LastName = "Feri", Email = "XXX", Role = UserRole.Manager, PasswordHash = "123456" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        // Mock IUserRepository (เรียก GetByIdAsync)
+        var userRepository = Substitute.For<IUserRepository>();
+        userRepository.GetByIdAsync(2).Returns(user);
+        userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
+
+
+        // Mock IMapper
+        var mapper = Substitute.For<IMapper>();
+        mapper.Map<RegisterEmployeeDetailDto>(Arg.Any<User>()).Returns(ci => new RegisterEmployeeDetailDto
+        {
+            Id = ((User)ci[0]).Id,
+            FirstName = ((User)ci[0]).FirstName,
+            LastName = ((User)ci[0]).LastName,
+            Email = ((User)ci[0]).Email,
+            Role = ((User)ci[0]).Role.ToString()
+        });
+
+        var service = new UserService(context, mapper, userRepository);
+
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 2,
+            FirstName = "Evan",
+            LastName = "Feri",
+            Email = "XXX",
+            Role = "Manager",
+        };
+
+        // Act
+        var result = await service.UpdateEmployee(dto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(dto.FirstName, result.FirstName);
+        Assert.Equal(dto.LastName, result.LastName);
+        Assert.Equal(dto.Email, result.Email);
+        Assert.Equal(dto.Role, result.Role);
+        Assert.NotEmpty(context.Users);
+
+
+        var updatedUser = await context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
+        Assert.NotNull(updatedUser);
+        Assert.Equal(dto.FirstName, updatedUser.FirstName);
+        Assert.Equal(dto.LastName, updatedUser.LastName);
+        Assert.Equal(dto.Email, updatedUser.Email);
+        Assert.Equal(UserRole.Manager, updatedUser.Role);
+        context.Dispose();
+
     }
 }
 
