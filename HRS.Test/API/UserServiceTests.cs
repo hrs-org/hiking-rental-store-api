@@ -145,27 +145,50 @@ public class UserServiceTests
     public async Task CreateEmployee_True()
     {
         // Arrange
-        var dto = new RegisterEmployeeDetailDto { Id = 4, FirstName = "Alice", LastName = "Wonder", Email = "alice@wonder.com", Role = "Employee" };
-        _mapper.Map<User>(dto).Returns(new User
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 4,
+            FirstName = "Alice",
+            LastName = "Wonder",
+            Email = "alice@wonder.com",
+            Role = "Employee"
+        };
+
+        var user = new User
         {
             Id = dto.Id,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
             Role = Domain.Enums.UserRole.Employee
-        });
+        };
+
+        var userDto = new UserDto
+        {
+            Id = dto.Id,
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Email = dto.Email,
+            Role = dto.Role
+        };
+
+        _mapper.Map<User>(dto).Returns(user);
+        _mapper.Map<UserDto>(user).Returns(userDto);
+        _userRepository.AddAsync(user).Returns(Task.CompletedTask);
+        _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
+
         // Act
         var result = await _service.CreateNewEmployee(dto);
 
         // Assert
-
         Assert.NotNull(result);
         Assert.Equal(dto.FirstName, result.FirstName);
         Assert.Equal(dto.LastName, result.LastName);
         Assert.Equal(dto.Email, result.Email);
         Assert.Equal("Employee", result.Role);
-        // _mockUserSet.Verify(m => m.Add(It.IsAny<User>()), Times.Once);
-        // _mockContext.Verify(m => m.SaveChangesAsync(default), Times.Once);
+
+        await _userRepository.Received(1).AddAsync(Arg.Any<User>());
+        await _userRepository.Received(1).SaveChangesAsync();
     }
 
     [Fact]
@@ -173,20 +196,34 @@ public class UserServiceTests
     {
         // Arrange
         var dto = new RegisterEmployeeDetailDto { Id = 4, FirstName = "Alice", LastName = "Wonder", Email = "alice@wonder.com", Role = "Employee" };
-        _mapper.Map<User>(dto).Returns(new User
+        var user = new User
         {
             Id = dto.Id,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
             Role = Domain.Enums.UserRole.Employee
-        });
+        };
+
+        var userDto = new UserDto
+        {
+            Id = dto.Id,
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Email = dto.Email,
+            Role = dto.Role
+        };
+
+        _mapper.Map<User>(dto).Returns(user);
+        _mapper.Map<UserDto>(user).Returns(userDto);
+        _userRepository.AddAsync(user).Returns(Task.CompletedTask);
+        _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
         // Act
         var result = await _service.CreateNewEmployee(dto);
 
         // Assert
 
-        Assert.NotNull(result);
+        Assert.NotNull(result); //not sure how to assert false here
         Assert.NotEqual("KRit", result.FirstName);
         Assert.NotEqual("Feri", result.LastName);
         Assert.NotEqual("Evan", result.Email);
@@ -194,5 +231,43 @@ public class UserServiceTests
         // _mockUserSet.Verify(m => m.Add(It.IsAny<User>()), Times.Once);
         // _mockContext.Verify(m => m.SaveChangesAsync(default), Times.Once);
     }
- }
+
+
+
+    // [Fact]
+    // public async Task GetAllEmployees_True()
+    // {
+    //     // Arrange
+    //     var users = new List<User>
+    //     {
+    //         new User { Id = 1, FirstName = "John", LastName = "Doe", Email = " ", Role = UserRole.Employee },
+    //         new User { Id = 2, FirstName = "Jane", LastName = "Smith", Email = " ", Role = UserRole.Employee },
+    //         new User { Id = 3, FirstName = "Bob", LastName = "Brown", Email = " ", Role = UserRole.Customer } // Not an employee
+    //     }.AsQueryable();
+    //     var mockSet = Substitute.For<DbSet<User>, IQueryable<User>>();
+    //     ((IQueryable<User>)mockSet).Provider.Returns(users.Provider);
+    //     ((IQueryable<User>)mockSet).Expression.Returns(users.Expression);
+    //     ((IQueryable<User>)mockSet).ElementType.Returns(users.ElementType);
+    //     ((IQueryable<User>)mockSet).GetEnumerator().Returns(users.GetEnumerator());
+    //     _userRepository.GetAll().Returns(mockSet);
+    //     var userDtos = users
+    //         .Where(u => u.Role == UserRole.Employee)
+    //         .Select(u => new UserDto
+    //         {
+    //             Id = u.Id,
+    //             FirstName = u.FirstName,
+    //             LastName = u.LastName,
+    //             Email = u.Email,
+    //             Role = u.Role.ToString()
+    //         }).ToList();
+    //     _mapper.Map<List<UserDto>>(Arg.Any<List<User>>()).Returns(userDtos);
+    //     // Act
+    //     var result = await _service.GetAllEmployees();
+    //     // Assert
+    //     Assert.NotNull(result);
+    //     Assert.Equal(2, result.Count); // Only 2 employees
+    //     Assert.All(result, r => Assert.Equal("Employee", r.Role));
+    //     await _userRepository.Received(1).GetAll();
+    // }
+
 
