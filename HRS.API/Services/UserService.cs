@@ -5,6 +5,7 @@ using HRS.Domain.Entities;
 using HRS.Domain.Interfaces;
 using HRS.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using HRS.Domain.Enums;
 
 namespace HRS.API.Services;
 
@@ -63,10 +64,24 @@ public class UserService : IUserService
 
     public async Task<RegisterEmployeeDetailDto?> UpdateEmployee(RegisterEmployeeDetailDto dto)
     {
-
+        // if (dto.Role == "Customer" ) return null;
         var employee = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
         if (employee == null) return null;
-        _mapper.Map(dto, employee);
+        if (employee.Role == Domain.Enums.UserRole.Customer) return null;
+        employee.FirstName = dto.FirstName;
+        employee.LastName = dto.LastName;
+        employee.Email = dto.Email;
+        if (Enum.TryParse<UserRole>(dto.Role, out var role))
+        {
+            employee.Role = role;
+        }
+        else
+        {
+            Console.WriteLine($"Warning: Invalid role '{dto.Role}' for user {dto.Id}");
+            // handle invalid role, เช่น log หรือ throw exception
+        }
+        // employee.Role = Enum.Parse<UserRole>(dto.Role);
+        // _context.Users.Update(employee);
         await _context.SaveChangesAsync();
         return _mapper.Map<RegisterEmployeeDetailDto>(employee);
     }
