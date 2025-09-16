@@ -208,6 +208,150 @@ public class UserServiceTests
         Assert.DoesNotContain(result, r => r.Role == "Employee");
         await _userRepository.Received(1).GetAllEmployee();
     }
+
+    [Fact]
+    public async Task DeleteEmployee_True()
+    {
+
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "DeleteEmployeeDb")
+            .Options;
+
+        await using var context = new AppDbContext(options);
+
+        // Seed the in-memory database with a user
+        var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var service = new UserService(context, _mapper, _userRepository);
+
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 2,
+            FirstName = "Evan",
+            LastName = "Jasper",
+            Email = " ",
+            Role = "Employee",
+        };
+
+        // Act
+        var result = await service.DeleteEmployee(dto);
+
+        // Assert
+        Assert.True(result);
+        Assert.Empty(context.Users);
+        context.Dispose();
+    }
+
+    [Fact]
+    public async Task DeleteEmployee_True2() // Role is Admin
+    {
+
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "DeleteEmployeeDb2")
+            .Options;
+
+        await using var context = new AppDbContext(options);
+
+        // Seed the in-memory database with a user
+        var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Admin, PasswordHash = "123456" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var service = new UserService(context, _mapper, _userRepository);
+
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 2,
+            FirstName = "Evan",
+            LastName = "Jasper",
+            Email = " ",
+            Role = "Admin",
+        };
+
+        // Act
+        var result = await service.DeleteEmployee(dto);
+
+        // Assert
+        Assert.True(result);
+        Assert.Empty(context.Users);
+        context.Dispose();
+    }
+
+    [Fact]
+    public async Task DeleteEmployee_False() //Wrong role
+    {
+
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "DeleteEmployeeDb3")
+            .Options;
+
+        await using var context = new AppDbContext(options);
+
+        // Seed the in-memory database with a user
+        var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Customer, PasswordHash = "123456" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var service = new UserService(context, _mapper, _userRepository);
+
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 3,
+            FirstName = "Evan",
+            LastName = "Jasper",
+            Email = " ",
+            Role = "Customer",
+        };
+
+        // Act
+        var result = await service.DeleteEmployee(dto);
+
+        // Assert
+        Assert.False(result);
+        Assert.NotEmpty(context.Users);
+        context.Dispose();
+    }
+
+    [Fact]
+    public async Task DeleteEmployee_False2() //Wrong detail
+    {
+
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: "DeleteEmployeeDb4")
+            .Options;
+
+        await using var context = new AppDbContext(options);
+
+        // Seed the in-memory database with a user
+        var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var service = new UserService(context, _mapper, _userRepository);
+
+        var dto = new RegisterEmployeeDetailDto
+        {
+            Id = 3,
+            FirstName = "Hey",
+            LastName = "Girl",
+            Email = " ",
+            Role = "Employee",
+        };
+
+        // Act
+        var result = await service.DeleteEmployee(dto);
+
+        // Assert
+        Assert.False(result);
+        Assert.NotEmpty(context.Users);
+        context.Dispose();
+    }
 }
 
 
