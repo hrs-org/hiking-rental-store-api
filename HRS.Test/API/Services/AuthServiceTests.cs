@@ -260,13 +260,16 @@ public class AuthServiceTests
     public async Task LogoutAsync_WhenUserNotFound_DoesNotThrowOrUpdate()
     {
         // Arrange
+        var claims = new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "999") };
+        var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
+        var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+        var context = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = principal };
+        _httpcontextaccessor.HttpContext.Returns(context);
+
         _userRepository.GetByIdAsync(Arg.Any<int>()).Returns((User?)null);
 
-        // Act
-        Func<Task> act = async () => await _mockService.LogoutAsync();
-
-
-        await act.Should().NotThrowAsync();
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockService.LogoutAsync());
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 }
