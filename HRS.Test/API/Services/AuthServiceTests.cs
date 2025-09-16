@@ -272,4 +272,52 @@ public class AuthServiceTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockService.LogoutAsync());
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
+
+    [Fact]
+    public async Task LogoutAsync_WhenHttpContextIsNull_ThrowsUnauthorized()
+    {
+        // Arrange
+        _httpcontextaccessor.HttpContext.Returns((HttpContext?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => 
+            _mockService.LogoutAsync());
+        
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
+
+    [Fact]
+    public async Task LogoutAsync_WhenUserClaimsAreEmpty_ThrowsUnauthorized()
+    {
+        // Arrange
+        var principal = new System.Security.Claims.ClaimsPrincipal(
+            new System.Security.Claims.ClaimsIdentity());
+        var context = new DefaultHttpContext { User = principal };
+        _httpcontextaccessor.HttpContext.Returns(context);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => 
+            _mockService.LogoutAsync());
+        
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
+
+    [Fact]
+    public async Task LogoutAsync_WhenUserIdIsInvalidFormat_ThrowsUnauthorized()
+    {
+        // Arrange
+        var claims = new[] { new System.Security.Claims.Claim(
+            System.Security.Claims.ClaimTypes.NameIdentifier, 
+            "invalid-id") };
+        var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
+        var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+        var context = new DefaultHttpContext { User = principal };
+        _httpcontextaccessor.HttpContext.Returns(context);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => 
+            _mockService.LogoutAsync());
+        
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
 }
