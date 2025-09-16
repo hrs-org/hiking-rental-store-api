@@ -77,10 +77,10 @@ public class AuthService : IAuthService
             var v = principal.FindFirstValue(k) ?? principal.Claims.FirstOrDefault(c => c.Type == k)?.Value;
             if (!string.IsNullOrWhiteSpace(v) && int.TryParse(v, out var id)) { userId = id; break; }
         }
-        if (userId is null) return; 
+        if (userId is null) return;
 
         var user = await _userRepository.GetByIdAsync(userId.Value);
-        if (user is null) return;  
+        if (user is null) return;
 
         user.RefreshToken = null;
         user.RefreshTokenExpiry = null;

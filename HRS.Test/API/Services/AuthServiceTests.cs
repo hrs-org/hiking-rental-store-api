@@ -33,7 +33,7 @@ public class AuthServiceTests
         _userRepository = Substitute.For<IUserRepository>();
         _tokenService = Substitute.For<ITokenService>();
         _httpcontextaccessor = Substitute.For<IHttpContextAccessor>();
-        _mockService = new AuthService(mockConfig, _userRepository, _tokenService,_httpcontextaccessor);
+        _mockService = new AuthService(mockConfig, _userRepository, _tokenService, _httpcontextaccessor);
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public class AuthServiceTests
             Id = 1,
             Email = "admin@hrs.com",
             RefreshToken = "oldRefresh",
-            RefreshTokenExpiry = DateTime.UtcNow.AddHours(-1) 
+            RefreshTokenExpiry = DateTime.UtcNow.AddHours(-1)
         };
 
         var requestDto = new RefreshTokenRequestDto
@@ -265,7 +265,7 @@ public class AuthServiceTests
         // Act
         Func<Task> act = async () => await _mockService.LogoutAsync();
 
-        
+
         await act.Should().NotThrowAsync();
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
