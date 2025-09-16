@@ -28,4 +28,14 @@ public class UserRepository : CrudRepository<User>, IUserRepository
     }
     public async Task<List<User>> GetAllEmployee()
         => await _db.Users.Where(u => u.Role == Domain.Enums.UserRole.Employee).ToListAsync();
+
+
+    public async Task<bool> IsEmailUniqueAsync(string email)
+    {
+        return !await _db.Users.AnyAsync(u => u.Email == email);
+    }
+    public async Task<bool> IsIdUniqueAsync(int id)
+    {
+        return !await _db.Users.AnyAsync(u => u.Id == id);
+    }
 }

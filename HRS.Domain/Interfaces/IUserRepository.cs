@@ -8,4 +8,6 @@ public interface IUserRepository : ICrudRepository<User>
     Task UpdateUserAsync(User user);
 
     Task<List<User>> GetAllEmployee();
+    Task<bool> IsEmailUniqueAsync(string email);
+    Task<bool> IsIdUniqueAsync(int id); 
 }
