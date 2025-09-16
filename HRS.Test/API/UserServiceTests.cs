@@ -30,7 +30,7 @@ public class UserServiceTests
     private readonly IMapper _mapper;
     private readonly IUserService _service;
 
-    private readonly ICrudRepository<User> _crudRepository;
+    // private readonly ICrudRepository<User> _crudRepository;
     public UserServiceTests()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -90,7 +90,7 @@ public class UserServiceTests
         Assert.Equal(dto.FirstName, result.FirstName);
         Assert.Equal(dto.LastName, result.LastName);
         Assert.Equal(dto.Email, result.Email);
-        Assert.Equal("Employee", result.Role);
+        Assert.Equal(dto.Role, result.Role);
 
         await _userRepository.Received(1).AddAsync(Arg.Any<User>());
         await _userRepository.Received(1).SaveChangesAsync();
@@ -128,7 +128,7 @@ public class UserServiceTests
 
         // Assert
 
-        Assert.NotNull(result); //not sure how to assert false here
+        Assert.NotNull(result);
         Assert.NotEqual("KRit", result.FirstName);
         Assert.NotEqual("Feri", result.LastName);
         Assert.NotEqual("Evan", result.Email);
