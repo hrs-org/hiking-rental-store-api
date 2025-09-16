@@ -82,7 +82,7 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("User ID claim not found");
 
         var user = await _userRepository.GetByIdAsync(userId.Value);
-        
+
         if (user is null)
             throw new UnauthorizedAccessException("User not found");
 
