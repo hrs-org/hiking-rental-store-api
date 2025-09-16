@@ -88,9 +88,10 @@ public class UserService : IUserService
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456");
         user.Role = Domain.Enums.UserRole.Employee;
 
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        await _userRepository.AddAsync(user);
+        // _context.Users.Add(user);
+        await _userRepository.SaveChangesAsync();
+        // await _context.SaveChangesAsync();
         //Send email to user with password setup link
         return _mapper.Map<UserDto>(user);
         // var user = await _userRepository.GetByIdAsync(id);
