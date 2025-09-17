@@ -65,7 +65,7 @@ public class UserService : IUserService
     public async Task<RegisterEmployeeDetailDto?> UpdateEmployee(RegisterEmployeeDetailDto dto)
     {
         // if (dto.Role == "Customer" ) return null;
-        var employee = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
+        var employee = await _userRepository.GetByIdAsync(dto.Id);
         if (employee == null) return null;
         if (employee.Role == Domain.Enums.UserRole.Customer) return null;
         employee.FirstName = dto.FirstName;
@@ -82,18 +82,18 @@ public class UserService : IUserService
         }
         // employee.Role = Enum.Parse<UserRole>(dto.Role);
         // _context.Users.Update(employee);
-        await _context.SaveChangesAsync();
+        await _userRepository.SaveChangesAsync();
         return _mapper.Map<RegisterEmployeeDetailDto>(employee);
     }
     public async Task<bool> DeleteEmployee(RegisterEmployeeDetailDto dto)
     {
         if (dto.Role == "Customer") return false;
-        var employee = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
+        var employee = await _userRepository.GetByIdAsync(dto.Id);
         if (employee == null) return false;
         if (employee.Role == Domain.Enums.UserRole.Customer) return false;
         if (employee.FirstName != dto.FirstName || employee.LastName != dto.LastName || employee.Email != dto.Email) return false;
-        _context.Users.Remove(employee);
-        await _context.SaveChangesAsync();
+       _userRepository.Remove(employee);
+        await _userRepository.SaveChangesAsync();
         return true;
     }
 
