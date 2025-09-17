@@ -3,20 +3,18 @@ using HRS.API.Contracts.DTOs.User;
 using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Interfaces;
-using HRS.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
 namespace HRS.API.Services;
 
 public class UserService : IUserService
 {
-    private readonly AppDbContext _context;
+    // private readonly AppDbContext _context;
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
 
-    public UserService(AppDbContext context, IMapper mapper, IUserRepository userRepository)
+    public UserService(IMapper mapper, IUserRepository userRepository)
     {
-        _context = context;
+        // _context = context;
         _mapper = mapper;
         _userRepository = userRepository;
     }
@@ -35,9 +33,6 @@ public class UserService : IUserService
 
     public async Task<bool> Register(RegisterDto dto)
     {
-        var user = _mapper.Map<User>(dto);
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-
         try
         {
             var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
@@ -45,23 +40,33 @@ public class UserService : IUserService
             {
                 throw new InvalidOperationException("User with this email already exists.");
             }
+            if (dto.Password.Length < 8)
+            {
+                throw new ArgumentException("Password must be at least 8 characters long.");
+            }
+            var user = _mapper.Map<User>(dto);
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
             return true;
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             throw new InvalidOperationException("Error checking for existing user: " + ex.Message, ex);
         }
+        catch (ArgumentException ex)
+        {
+            throw new ArgumentException("Error with provided data: " + ex.Message, ex);
+        }
     }
 
-    public async Task<bool> DeleteUser(int id)
+    public Task<bool> DeleteUser(int id)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
-        if (user == null) return false;
+    //     var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+    //     if (user == null) return false;
 
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync();
-        return true;
+    //     _context.Users.Remove(user);
+    //     await _context.SaveChangesAsync();
+        return Task.FromResult(true);
     }
 }
