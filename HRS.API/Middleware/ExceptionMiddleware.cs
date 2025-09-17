@@ -44,6 +44,21 @@ public class ExceptionMiddleware
 
             await context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonDefaults.Options));
         }
+        catch (InvalidOperationException ex)
+        {
+            // print ex to console
+            Console.WriteLine("InvalidOperationException: " + ex.Message);
+
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+            var response = ApiResponse<string>.FailResponse(
+                ex.Message,
+                new List<string> { ex.Message }
+            );
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonDefaults.Options));
+        }
         catch (Exception ex)
         {
             context.Response.ContentType = "application/json";
