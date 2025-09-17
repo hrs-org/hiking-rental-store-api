@@ -23,6 +23,7 @@ using HRS.API.Services;
 using HRS.API.Contracts.DTOs.User;
 using HRS.Domain.Entities;
 using HRS.Infrastructure;
+using HRS.Infrastructure.Repositories;
 
 public class UserServiceTests
 {
@@ -220,8 +221,7 @@ public class UserServiceTests
 
         // Seed the in-memory database with a user
         var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
+        _userRepository.GetByIdAsync(2).Returns(user);
 
         var service = new UserService(context, _mapper, _userRepository);
 
@@ -239,8 +239,10 @@ public class UserServiceTests
 
         // Assert
         Assert.True(result);
-        Assert.Empty(context.Users);
         context.Dispose();
+        await _userRepository.Received(1).GetByIdAsync(dto.Id);
+         _userRepository.Received(1).Remove(user);
+        await _userRepository.Received(1).SaveChangesAsync();
     }
 
     [Fact]
@@ -256,8 +258,7 @@ public class UserServiceTests
 
         // Seed the in-memory database with a user
         var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Admin, PasswordHash = "123456" };
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
+        _userRepository.GetByIdAsync(2).Returns(user);
 
         var service = new UserService(context, _mapper, _userRepository);
 
@@ -275,8 +276,10 @@ public class UserServiceTests
 
         // Assert
         Assert.True(result);
-        Assert.Empty(context.Users);
         context.Dispose();
+        await _userRepository.Received(1).GetByIdAsync(dto.Id);
+         _userRepository.Received(1).Remove(user);
+        await _userRepository.Received(1).SaveChangesAsync();
     }
 
     [Fact]
@@ -292,8 +295,7 @@ public class UserServiceTests
 
         // Seed the in-memory database with a user
         var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Customer, PasswordHash = "123456" };
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
+        _userRepository.GetByIdAsync(3).Returns(user);
 
         var service = new UserService(context, _mapper, _userRepository);
 
@@ -311,8 +313,10 @@ public class UserServiceTests
 
         // Assert
         Assert.False(result);
-        Assert.NotEmpty(context.Users);
         context.Dispose();
+        await _userRepository.Received(0).GetByIdAsync(dto.Id);
+        _userRepository.DidNotReceive().Remove(Arg.Any<User>());
+        await _userRepository.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
@@ -328,8 +332,7 @@ public class UserServiceTests
 
         // Seed the in-memory database with a user
         var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
+        _userRepository.GetByIdAsync(3).Returns(user);
 
         var service = new UserService(context, _mapper, _userRepository);
 
@@ -347,8 +350,10 @@ public class UserServiceTests
 
         // Assert
         Assert.False(result);
-        Assert.NotEmpty(context.Users);
         context.Dispose();
+        await _userRepository.Received(1).GetByIdAsync(dto.Id);
+         _userRepository.DidNotReceive().Remove(user);
+        await _userRepository.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
