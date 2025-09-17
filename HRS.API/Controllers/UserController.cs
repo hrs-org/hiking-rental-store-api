@@ -40,8 +40,8 @@ public class UsersController : ControllerBase
 
     public async Task<ActionResult<List<RegisterEmployeeDetailDto>>> GetEmployees()
     {
-         var employeeList = await _userService.GetEmployees();
-        if (employeeList == null || employeeList.Count == 0 ) return NotFound();
+        var employeeList = await _userService.GetEmployees();
+        if (employeeList == null || employeeList.Count == 0) return NotFound();
         return Ok(employeeList);
     }
 

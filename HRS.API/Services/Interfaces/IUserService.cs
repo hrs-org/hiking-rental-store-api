@@ -13,7 +13,7 @@ public interface IUserService
     Task<bool> DeleteEmployee(RegisterEmployeeDetailDto dto);
 
     Task<UserDto> CreateNewEmployee(RegisterEmployeeDetailDto dto);
-    
+
 
 
 }

@@ -87,7 +87,7 @@ public class UserService : IUserService
     }
     public async Task<bool> DeleteEmployee(RegisterEmployeeDetailDto dto)
     {
-        if (dto.Role == "Customer" ) return false;
+        if (dto.Role == "Customer") return false;
         var employee = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.Id);
         if (employee == null) return false;
         if (employee.Role == Domain.Enums.UserRole.Customer) return false;

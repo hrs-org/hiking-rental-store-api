@@ -9,5 +9,5 @@ public interface IUserRepository : ICrudRepository<User>
 
     Task<List<User>> GetAllEmployee();
     Task<bool> IsEmailUniqueAsync(string email);
-    Task<bool> IsIdUniqueAsync(int id); 
+    Task<bool> IsIdUniqueAsync(int id);
 }

@@ -22,7 +22,7 @@ public class RegisterEmployeeDetailDtoValidators : AbstractValidator<RegisterEmp
         RuleFor(x => x.Role).NotEmpty()
             .Must(r => r == "Employee" || r == "Admin" || r == "Manager")
             .WithMessage("Role must be Employee or Admin or Manager");
-;
+        ;
         RuleFor(x => x.Id).NotEmpty().GreaterThan(0)
             .MustAsync(async (id, cancellation) =>
                 await userRepository.IsIdUniqueAsync(id))
