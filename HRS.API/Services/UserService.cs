@@ -60,13 +60,14 @@ public class UserService : IUserService
         }
     }
 
-    public Task<bool> DeleteUser(int id)
+    public async Task<bool> DeleteUser(int id)
     {
-    //     var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
-    //     if (user == null) return false;
-
-    //     _context.Users.Remove(user);
-    //     await _context.SaveChangesAsync();
-        return Task.FromResult(true);
+        var user = await _userRepository.GetByIdAsync(id);
+        if (user == null)
+        {
+            throw new KeyNotFoundException("User not found.");
+        }
+        _userRepository.Remove(user);
+        return true;
     }
 }
