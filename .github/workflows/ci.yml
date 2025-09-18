@@ -247,6 +247,7 @@ jobs:
               uses: actions/upload-artifact@v4
               if: always()
               with:
+                  continue-on-error: true
                   name: security-scan-results
                   path: security-audit.txt
                   retention-days: 30
@@ -307,7 +308,7 @@ jobs:
                   context: .
                   push: true
                   tags: |
-                      ${{ env.DOCKER_USERNAME }}/hrs-api:develop
+                      ${{ env.DOCKER_USERNAME }}/hrs-api:uat-latest
                       ${{ env.DOCKER_USERNAME }}/hrs-api:${{ github.sha }}
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
