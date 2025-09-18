@@ -1,0 +1,32 @@
+deploy-azure:
+    name: Deploy to Azure Web App
+    runs-on: ubuntu-latest
+    needs: [docker-build, dast]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: staging
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Azure Login
+          uses: azure/login@v1
+          with:
+              creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v4
+          with:
+              global-json-file: global.json
+
+        - name: Run EF Core migrations
+          env:
+              MYSQL_CONN: ${{ secrets.TF_MYSQL_CONNECTION_STRING }}
+          run: |
+              dotnet tool install --global dotnet-ef
+              dotnet ef database update --connection "$MYSQL_CONN" --project HRS.API
+
+        - name: Deploy container
+          uses: azure/webapps-deploy@v2
+          with:
+              app-name: web-hrs-api-uat
+              images: ${{ secrets.DOCKER_USERNAME }}/hrs-api:uat-latest
