@@ -86,7 +86,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
             )
         };
-        options.TokenValidationParameters.NameClaimType = ClaimTypes.NameIdentifier;
     });
 
 builder.Services.AddCors(options =>
