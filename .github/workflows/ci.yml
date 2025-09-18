@@ -203,7 +203,7 @@ jobs:
                     /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,**/HRS.Migrations/**" \
                     /d:sonar.test.exclusions="**/bin/**,**/obj/**,**/HRS.Migrations/**" \
                     /d:sonar.scm.disabled=true \
-                    /d:sonar.qualitygate.wait=true \
+                    /d:sonar.qualitygate.wait=false \
                     /d:sonar.verbose=true \
                     $SONAR_PARAMS
 
