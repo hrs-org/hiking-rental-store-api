@@ -36,9 +36,43 @@ public class UsersController : ControllerBase
         var res = await _userService.Register(dto);
         return Ok(ApiResponse<bool>.OkResponse(res, "Registration successful"));
     }
+    [HttpGet("employee")]
+    [Authorize(Roles = "Admin")]
 
+    public async Task<ActionResult<List<RegisterEmployeeDetailDto>>> GetEmployees()
+    {
+        var employeeList = await _userService.GetEmployees();
+        if (employeeList == null || employeeList.Count == 0) return NotFound();
+        return Ok(employeeList);
+    }
+
+    [HttpPut("employee")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<RegisterEmployeeDetailDto>> UpdateEmployee([FromBody] RegisterEmployeeDetailDto dto)
+    {
+        var updatedEmployee = await _userService.UpdateEmployee(dto);
+        if (updatedEmployee == null) return NotFound();
+        return Ok(updatedEmployee);
+    }
+
+    [HttpDelete("employee")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteEmployee([FromBody] RegisterEmployeeDetailDto dto)
+    {
+        var success = await _userService.DeleteEmployee(dto);
+        if (!success) return NotFound();
+        return NoContent();
+    }
+    [HttpPost("new-employee")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<UserDto>> CreateNewEmployee([FromBody] RegisterEmployeeDetailDto dto)
+    {
+        var createdUser = await _userService.CreateNewEmployee(dto);
+        return CreatedAtAction(nameof(GetUserAsync), new { id = createdUser.Id }, createdUser);
+    }
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
+
     public async Task<IActionResult> DeleteUser(int id)
     {
         var success = await _userService.DeleteUser(id);
