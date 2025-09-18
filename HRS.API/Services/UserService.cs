@@ -64,21 +64,26 @@ public class UserService : IUserService
 
     public async Task<RegisterEmployeeDetailDto?> UpdateEmployee(RegisterEmployeeDetailDto dto)
     {
+
         // if (dto.Role == "Customer" ) return null;
         var employee = await _userRepository.GetByIdAsync(dto.Id);
         if (employee == null) return null;
         if (employee.Role == Domain.Enums.UserRole.Customer) return null;
-        employee.FirstName = dto.FirstName;
-        employee.LastName = dto.LastName;
-        employee.Email = dto.Email;
-        if (Enum.TryParse<UserRole>(dto.Role, out var role))
+        // if (Enum.TryParse<UserRole>(dto.Role, out var role))
+        if (dto.Role == "Employee" || dto.Role == "Manager" || dto.Role == "Admin")
         {
+            var role = Enum.Parse<UserRole>(dto.Role);
+            employee.FirstName = dto.FirstName;
+            employee.LastName = dto.LastName;
+            employee.Email = dto.Email;
             employee.Role = role;
+
         }
         else
         {
-            Console.WriteLine($"Warning: Invalid role '{dto.Role}' for user {dto.Id}");
-            // handle invalid role, เช่น log หรือ throw exception
+            Console.WriteLine($"Warning: Invalid role '{dto.Role}' for user(employee) {dto.Id}");
+            return null;
+            // handle invalid role
         }
         // employee.Role = Enum.Parse<UserRole>(dto.Role);
         // _context.Users.Update(employee);
