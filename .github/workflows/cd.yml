@@ -7,7 +7,6 @@ jobs:
     deploy-azure:
         name: Deploy to Azure Web App
         runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
         environment: staging
         steps:
             - name: Log in to Docker Hub
