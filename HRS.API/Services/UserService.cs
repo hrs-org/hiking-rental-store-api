@@ -108,9 +108,9 @@ public class UserService : IUserService
     {
         var employee = await _userRepository.GetByIdAsync(dto.Id);
         if (employee == null) throw new KeyNotFoundException("User not found.");
-        if (employee.Role == Domain.Enums.UserRole.Customer)   throw new InvalidOperationException("Cannot delete a customer as an employee.");
+        if (employee.Role == Domain.Enums.UserRole.Customer) throw new InvalidOperationException("Cannot delete a customer as an employee.");
         if (employee.FirstName != dto.FirstName || employee.LastName != dto.LastName || employee.Email != dto.Email) throw new InvalidOperationException("Employee details do not match.");
-       _userRepository.Remove(employee);
+        _userRepository.Remove(employee);
         await _userRepository.SaveChangesAsync();
         return true;
     }

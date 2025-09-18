@@ -230,7 +230,7 @@ public class UserServiceTests
         };
 
         // Act
-         var result = await _service.DeleteEmployee(dto);
+        var result = await _service.DeleteEmployee(dto);
 
         // Assert
         Assert.True(result);
@@ -290,7 +290,7 @@ public class UserServiceTests
         };
 
         // Act
-         var result = async () => await _service.DeleteEmployee(dto);
+        var result = async () => await _service.DeleteEmployee(dto);
 
 
         // Assert
@@ -320,7 +320,7 @@ public class UserServiceTests
         };
 
         // Act
-         var result = async () => await _service.DeleteEmployee(dto);
+        var result = async () => await _service.DeleteEmployee(dto);
 
         // Assert
         await result.Should().ThrowAsync<InvalidOperationException>()
@@ -351,7 +351,7 @@ public class UserServiceTests
         };
 
         // Act
-         var result = async () => await _service.DeleteEmployee(dto);
+        var result = async () => await _service.DeleteEmployee(dto);
 
         // Assert
         await result.Should().ThrowAsync<KeyNotFoundException>()
@@ -518,7 +518,7 @@ public class UserServiceTests
         // Assert
         await result.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("User not found.");
-       var updatedUser = await _userRepository.GetByIdAsync(dto.Id);
+        var updatedUser = await _userRepository.GetByIdAsync(dto.Id);
         Assert.Null(updatedUser);
 
 
@@ -565,7 +565,7 @@ public class UserServiceTests
 
     }
 
-        [Fact]
+    [Fact]
     public async Task UpdateEmployee_False3()// "update worng role"
     {
 

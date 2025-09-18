@@ -16,7 +16,7 @@ public class MappingProfile : Profile
         CreateMap<RegisterEmployeeDetailDto, User>()
             .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => Enum.Parse<Domain.Enums.UserRole>(src.Role)));
-         CreateMap<User, RegisterEmployeeDetailDto>()
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
+        CreateMap<User, RegisterEmployeeDetailDto>()
+               .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
     }
 }
