@@ -36,10 +36,10 @@ jobs:
 
             - name: Run EF Core migrations
               env:
-                  MYSQL_CONN: ${{ secrets.TF_MYSQL_CONNECTION_STRING }}
+                  ConnectionStrings__DefaultConnection: ${{ secrets.TF_MYSQL_CONNECTION_STRING }}
               run: |
                   dotnet tool install --global dotnet-ef --version 8.0.7
-                  dotnet ef database update --connection "$MYSQL_CONN" --project HRS.Migrations --startup-project HRS.API
+                  dotnet ef database update --project HRS.Migrations --startup-project HRS.API
 
             - name: Deploy container
               uses: azure/webapps-deploy@122b7ec46017e53a3f71e3a027d67550a1641f5e # v2.2.17
