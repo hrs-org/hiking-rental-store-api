@@ -19,15 +19,18 @@ public class UsersController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsersAsync() => Ok(await _userService.GetUsers());
+    public async Task<ActionResult<List<UserDto>>> GetUsersAsync()
+    {
+        var users = await _userService.GetUsers();
+        return Ok(ApiResponse<List<UserDto>>.OkResponse(users.ToList()));
+    }
 
     [HttpGet("{id:int}")]
     [Authorize]
     public async Task<ActionResult<UserDto>> GetUserAsync(int id)
     {
         var user = await _userService.GetUserById(id);
-        if (user == null) return NotFound();
-        return Ok(user);
+        return Ok(ApiResponse<UserDto>.OkResponse(user));
     }
 
     [HttpPost("register")]
@@ -36,9 +39,9 @@ public class UsersController : ControllerBase
         var res = await _userService.Register(dto);
         return Ok(ApiResponse<bool>.OkResponse(res, "Registration successful"));
     }
+
     [HttpGet("employee")]
     [Authorize(Roles = "Admin")]
-
     public async Task<ActionResult<List<RegisterEmployeeDetailDto>>> GetEmployees()
     {
         var employeeList = await _userService.GetEmployees();
@@ -63,6 +66,7 @@ public class UsersController : ControllerBase
         if (!success) return NotFound();
         return NoContent();
     }
+
     [HttpPost("new-employee")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<UserDto>> CreateNewEmployee([FromBody] RegisterEmployeeDetailDto dto)
@@ -70,9 +74,9 @@ public class UsersController : ControllerBase
         var createdUser = await _userService.CreateNewEmployee(dto);
         return CreatedAtAction(nameof(GetUserAsync), new { id = createdUser.Id }, createdUser);
     }
+
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
-
     public async Task<IActionResult> DeleteUser(int id)
     {
         var success = await _userService.DeleteUser(id);
