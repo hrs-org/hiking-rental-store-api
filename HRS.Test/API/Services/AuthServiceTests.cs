@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FluentAssertions;
 using HRS.API.Contracts.DTOs.Auth;
 using HRS.API.Services;
@@ -9,14 +10,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
-namespace HRS.Test.API;
+namespace HRS.Test.API.Services;
 
 public class AuthServiceTests
 {
+    private readonly IHttpContextAccessor _httpcontextaccessor;
     private readonly IAuthService _mockService;
     private readonly ITokenService _tokenService;
     private readonly IUserRepository _userRepository;
-    private readonly IHttpContextAccessor _httpcontextaccessor;
 
     public AuthServiceTests()
     {
@@ -238,10 +239,10 @@ public class AuthServiceTests
             RefreshTokenExpiry = DateTime.UtcNow.AddDays(1)
         };
 
-        var claims = new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id.ToString()) };
-        var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
-        var principal = new System.Security.Claims.ClaimsPrincipal(identity);
-        var context = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = principal };
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        var context = new DefaultHttpContext { User = principal };
         _httpcontextaccessor.HttpContext.Returns(context);
 
         _userRepository.GetByIdAsync(Arg.Any<int>()).Returns(user);
@@ -260,10 +261,10 @@ public class AuthServiceTests
     public async Task LogoutAsync_WhenUserNotFound_DoesNotThrowOrUpdate()
     {
         // Arrange
-        var claims = new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "999") };
-        var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
-        var principal = new System.Security.Claims.ClaimsPrincipal(identity);
-        var context = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = principal };
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, "999") };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
+        var context = new DefaultHttpContext { User = principal };
         _httpcontextaccessor.HttpContext.Returns(context);
 
         _userRepository.GetByIdAsync(Arg.Any<int>()).Returns((User?)null);
@@ -290,8 +291,8 @@ public class AuthServiceTests
     public async Task LogoutAsync_WhenUserClaimsAreEmpty_ThrowsUnauthorized()
     {
         // Arrange
-        var principal = new System.Security.Claims.ClaimsPrincipal(
-            new System.Security.Claims.ClaimsIdentity());
+        var principal = new ClaimsPrincipal(
+            new ClaimsIdentity());
         var context = new DefaultHttpContext { User = principal };
         _httpcontextaccessor.HttpContext.Returns(context);
 
@@ -306,11 +307,14 @@ public class AuthServiceTests
     public async Task LogoutAsync_WhenUserIdIsInvalidFormat_ThrowsUnauthorized()
     {
         // Arrange
-        var claims = new[] { new System.Security.Claims.Claim(
-            System.Security.Claims.ClaimTypes.NameIdentifier,
-            "invalid-id") };
-        var identity = new System.Security.Claims.ClaimsIdentity(claims, "TestAuth");
-        var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+        var claims = new[]
+        {
+            new Claim(
+                ClaimTypes.NameIdentifier,
+                "invalid-id")
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var principal = new ClaimsPrincipal(identity);
         var context = new DefaultHttpContext { User = principal };
         _httpcontextaccessor.HttpContext.Returns(context);
 
