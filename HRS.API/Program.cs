@@ -1,3 +1,4 @@
+using System.Text;
 using FluentValidation;
 using HRS.API.Filters;
 using HRS.API.Mappings;
@@ -12,8 +13,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Security.Claims;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -90,14 +89,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("hrs-web",
-        policy => policy.WithOrigins("http://localhost:4200")
+    options.AddPolicy("AllowWebClient", policy =>
+        policy.WithOrigins(
+                builder.Configuration["AllowedOrigins"]?.Split(',') ?? Array.Empty<string>()
+            )
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+    );
 });
 
 var app = builder.Build();
-app.UseCors("hrs-web");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -109,6 +110,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseCors("AllowWebClient");
 app.UseAuthentication();
 app.UseAuthorization();
 
