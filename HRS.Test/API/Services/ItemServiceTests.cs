@@ -112,7 +112,11 @@ public class ItemServiceTests
         // Arrange
         var addDto = new AddItemRequestDto
         {
-            Name = "Shoes", Description = "This is shoes", Quantity = 5, Price = 10, Children = new List<AddItemRequestDto>
+            Name = "Shoes",
+            Description = "This is shoes",
+            Quantity = 5,
+            Price = 10,
+            Children = new List<AddItemRequestDto>
             {
                 new() { Name = "Size 8", Quantity = 2 },
                 new() { Name = "Size 10", Quantity = 3 }
@@ -120,7 +124,11 @@ public class ItemServiceTests
         };
         var entity = new Item
         {
-            Name = "Shoes", Description = "This is shoes", Quantity = 5, Price = 10, Children = new List<Item>
+            Name = "Shoes",
+            Description = "This is shoes",
+            Quantity = 5,
+            Price = 10,
+            Children = new List<Item>
             {
                 new() { Name = "Size 8", Quantity = 2 },
                 new() { Name = "Size 10", Quantity = 3 }
@@ -128,7 +136,11 @@ public class ItemServiceTests
         };
         var responseDto = new ItemResponseDto
         {
-            Name = "Shoes", Description = "This is shoes", Quantity = 5, Price = 10, Children = new List<ItemResponseDto>
+            Name = "Shoes",
+            Description = "This is shoes",
+            Quantity = 5,
+            Price = 10,
+            Children = new List<ItemResponseDto>
             {
                 new() { Name = "Size 8", Quantity = 2 },
                 new() { Name = "Size 10", Quantity = 3 }
