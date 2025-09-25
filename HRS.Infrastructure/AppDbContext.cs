@@ -11,11 +11,13 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users { get; set; } = default!;
+    public DbSet<Item> Items { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new ItemConfiguration());
     }
 }

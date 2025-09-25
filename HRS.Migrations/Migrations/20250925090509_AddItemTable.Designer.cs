@@ -4,6 +4,7 @@ using HRS.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRS.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250925090509_AddItemTable")]
+    partial class AddItemTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,7 +55,7 @@ namespace HRS.Migrations.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("Items");
+                    b.ToTable("Item");
                 });
 
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>
@@ -114,14 +117,14 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 9, 25, 10, 2, 25, 512, DateTimeKind.Utc).AddTicks(7750),
+                            CreatedAt = new DateTime(2025, 9, 25, 9, 5, 9, 661, DateTimeKind.Utc).AddTicks(1860),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$Gdm5YMKkKju/ftUFXxlZAOmHoK.UMNEBJQGgANtwOq5lFURKXdqeG",
+                            PasswordHash = "$2a$11$bqqk7jXdVsyjm/waBMb1hOu9.HaA1jRAM76BW2efKVMVRLjTFfce6",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 9, 25, 10, 2, 25, 512, DateTimeKind.Utc).AddTicks(7750),
+                            UpdatedAt = new DateTime(2025, 9, 25, 9, 5, 9, 661, DateTimeKind.Utc).AddTicks(1860),
                             UpdatedBy = 0
                         });
                 });
