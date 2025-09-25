@@ -61,13 +61,13 @@ public class UserService : IUserService
         return true;
     }
 
-    public async Task<List<RegisterEmployeeDetailDto>> GetEmployees()
+    public async Task<List<UserDto>> GetEmployees()
     {
         var employee = await _userRepository.GetAllEmployee();
-        return _mapper.Map<List<RegisterEmployeeDetailDto>>(employee);
+        return _mapper.Map<List<UserDto>>(employee);
     }
 
-    public async Task<RegisterEmployeeDetailDto?> UpdateEmployee(RegisterEmployeeDetailDto dto)
+    public async Task<UserDto?> UpdateEmployee(UserDto dto)
     {
         var employee = await _userRepository.GetByIdAsync(dto.Id);
         if (employee == null) throw new KeyNotFoundException("User not found.");
@@ -87,15 +87,15 @@ public class UserService : IUserService
         }
 
         await _userRepository.SaveChangesAsync();
-        return _mapper.Map<RegisterEmployeeDetailDto>(employee);
+        return _mapper.Map<UserDto>(employee);
     }
 
-    public async Task<bool> DeleteEmployee(RegisterEmployeeDetailDto dto)
+    public async Task<bool> DeleteEmployee(int id)
     {
-        var employee = await _userRepository.GetByIdAsync(dto.Id) ?? throw new KeyNotFoundException("User not found.");
+        var employee = await _userRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException("User not found.");
         if (employee.Role == UserRole.Customer) throw new InvalidOperationException("Cannot delete a customer as an employee.");
-        if (employee.FirstName != dto.FirstName || employee.LastName != dto.LastName || employee.Email != dto.Email)
-            throw new InvalidOperationException("Employee details do not match.");
+        // if (employee.FirstName != dto.FirstName || employee.LastName != dto.LastName || employee.Email != dto.Email)
+        //     throw new InvalidOperationException("Employee details do not match.");
         _userRepository.Remove(employee);
         await _userRepository.SaveChangesAsync();
         return true;
