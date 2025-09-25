@@ -22,21 +22,26 @@ public class AddItemRequestDtoValidator : AbstractValidator<AddItemRequestDto>
             .GreaterThanOrEqualTo(0).WithMessage("Item Price cannot be negative");
 
         RuleForEach(x => x.Children)
-            .ChildRules(child =>
-            {
-                child.RuleFor(c => c.Name)
-                    .NotEmpty().WithMessage("Child name is required");
+            .SetValidator(new ItemChildRequestDtoValidator());
+    }
 
-                child.RuleFor(c => c.Description)
-                    .NotEmpty().WithMessage("Child description is required");
+    private sealed class ItemChildRequestDtoValidator : AbstractValidator<AddItemRequestDto>
+    {
+        public ItemChildRequestDtoValidator()
+        {
+            RuleFor(c => c.Name)
+                .NotEmpty().WithMessage("Child name is required");
 
-                child.RuleFor(c => c.Quantity)
-                    .NotNull().WithMessage("Child quantity is required")
-                    .GreaterThanOrEqualTo(0).WithMessage("Child quantity cannot be negative");
+            RuleFor(c => c.Description)
+                .NotEmpty().WithMessage("Child description is required");
 
-                child.RuleFor(c => c.Price)
-                    .NotNull().WithMessage("Child price is required")
-                    .GreaterThanOrEqualTo(0).WithMessage("Child price cannot be negative");
-            });
+            RuleFor(c => c.Quantity)
+                .NotNull().WithMessage("Child quantity is required")
+                .GreaterThanOrEqualTo(0).WithMessage("Child quantity cannot be negative");
+
+            RuleFor(c => c.Price)
+                .NotNull().WithMessage("Child price is required")
+                .GreaterThanOrEqualTo(0).WithMessage("Child price cannot be negative");
+        }
     }
 }
