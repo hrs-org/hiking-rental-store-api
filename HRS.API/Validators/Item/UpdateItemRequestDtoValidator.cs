@@ -9,36 +9,36 @@ public class UpdateItemRequestDtoValidator : AbstractValidator<UpdateItemRequest
     {
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("Item Id is required");
-        RuleFor(x => x.Name)
+
+        AddCommonRules(this);
+
+        RuleForEach(x => x.Children)
+            .SetValidator(new ItemChildRequestDtoValidator());
+    }
+
+
+    private sealed class ItemChildRequestDtoValidator : AbstractValidator<UpdateItemChildDto>
+    {
+        public ItemChildRequestDtoValidator()
+        {
+            AddCommonRules(this);
+        }
+    }
+
+    private static void AddCommonRules<T>(AbstractValidator<T> validator) where T : class
+    {
+        validator.RuleFor(x => (string)x.GetType().GetProperty("Name")!.GetValue(x)!)
             .NotEmpty().WithMessage("Item name is required");
 
-        RuleFor(x => x.Description)
+        validator.RuleFor(x => (string)x.GetType().GetProperty("Description")!.GetValue(x)!)
             .NotEmpty().WithMessage("Item Description is required");
 
-        RuleFor(x => x.Quantity)
+        validator.RuleFor(x => (int?)x.GetType().GetProperty("Quantity")!.GetValue(x) ?? 0)
             .NotNull().WithMessage("Item Quantity is required")
             .GreaterThanOrEqualTo(0).WithMessage("Item Quantity cannot be negative");
 
-        RuleFor(x => x.Price)
+        validator.RuleFor(x => (int?)x.GetType().GetProperty("Price")!.GetValue(x) ?? 0)
             .NotNull().WithMessage("Item Price is required")
             .GreaterThanOrEqualTo(0).WithMessage("Item Price cannot be negative");
-
-        RuleForEach(x => x.Children)
-            .ChildRules(child =>
-            {
-                child.RuleFor(c => c.Name)
-                    .NotEmpty().WithMessage("Child name is required");
-
-                child.RuleFor(c => c.Description)
-                    .NotEmpty().WithMessage("Child description is required");
-
-                child.RuleFor(c => c.Quantity)
-                    .NotNull().WithMessage("Child quantity is required")
-                    .GreaterThanOrEqualTo(0).WithMessage("Child quantity cannot be negative");
-
-                child.RuleFor(c => c.Price)
-                    .NotNull().WithMessage("Child price is required")
-                    .GreaterThanOrEqualTo(0).WithMessage("Child price cannot be negative");
-            });
     }
 }

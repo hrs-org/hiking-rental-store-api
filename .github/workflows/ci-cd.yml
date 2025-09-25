@@ -104,7 +104,6 @@ jobs:
                               <ModulePaths>
                                 <Exclude>
                                   <ModulePath>.*HRS\.Migrations.*</ModulePath>
-                                  <ModulePath>.*HRS\.Test.*</ModulePath>
                                 </Exclude>
                               </ModulePaths>
                               <Source>
