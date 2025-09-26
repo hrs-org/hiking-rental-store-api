@@ -15,12 +15,15 @@ public class UserServiceTests
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
     private readonly IUserService _userService;
+    private readonly IUserContextService _userContextService;
+
 
     public UserServiceTests()
     {
         _mapper = Substitute.For<IMapper>();
         _userRepository = Substitute.For<IUserRepository>();
-        _userService = new UserService(_mapper, _userRepository);
+        _userContextService = Substitute.For<IUserContextService>();
+        _userService = new UserService(_mapper, _userRepository, _userContextService);
     }
 
     [Fact]
@@ -190,7 +193,9 @@ public class UserServiceTests
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
-            Role = UserRole.Employee
+            Role = UserRole.Employee,
+
+
         };
 
         var userDto = new UserDto
@@ -198,7 +203,8 @@ public class UserServiceTests
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
-            Role = dto.Role
+            Role = dto.Role,
+
         };
 
         _mapper.Map<User>(dto).Returns(user);
@@ -426,6 +432,8 @@ public class UserServiceTests
             Role = "Manager"
         };
         _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
 
         // Act
         var result = await _userService.UpdateEmployee(dto);
@@ -462,6 +470,9 @@ public class UserServiceTests
             Role = "Manager"
         };
         _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
+
         // Act
         var result = await _userService.UpdateEmployee(dto);
 
@@ -497,6 +508,8 @@ public class UserServiceTests
             Role = "Manager"
         };
         _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
 
         // Act
         var result = async () => await _userService.UpdateEmployee(dto);
@@ -530,6 +543,8 @@ public class UserServiceTests
             Role = "Manager"
         };
         _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
 
         // Act
         var result = async () => await _userService.UpdateEmployee(dto);
@@ -558,6 +573,8 @@ public class UserServiceTests
             Role = "Manager"
         };
         _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
 
         // Act
         var result = await _userService.UpdateEmployee(dto);
@@ -594,11 +611,45 @@ public class UserServiceTests
             Role = "Teacher"
         };
         _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
+
         // Act
         var result = async () => await _userService.UpdateEmployee(dto);
 
         // Assert
         await result.Should().ThrowAsync<ArgumentException>()
             .WithMessage("Invalid role specified.");
+    }
+
+    [Fact]
+    public async Task DeleteUser_ShouldReturnTrue_WhenUserExists()
+    {
+        // Arrange
+        var user = new User { Id = 1, FirstName = "Evan", LastName = "Jasper", Email = "III", Role = UserRole.Employee, PasswordHash = "123456" };
+        _userRepository.GetByIdAsync(1).Returns(user);
+
+        // Act
+        var result = await _userService.DeleteUser(1);
+
+        // Assert
+        result.Should().BeTrue();
+        _userRepository.Received(1).Remove(user);
+    }
+
+    [Fact]
+    public async Task DeleteUser_ShouldThrow_WhenUserNotFound()
+    {
+        // Arrange
+        _userRepository.GetByIdAsync(1).Returns((User?)null);
+
+        // Act
+        var act = async () => await _userService.DeleteUser(1);
+
+        // Assert
+        await act.Should()
+                 .ThrowAsync<KeyNotFoundException>()
+                 .WithMessage("User not found.");
+        _userRepository.DidNotReceive().Remove(Arg.Any<User>());
     }
 }
