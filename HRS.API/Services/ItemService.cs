@@ -8,12 +8,14 @@ namespace HRS.API.Services;
 
 public class ItemService : IItemService
 {
+    private readonly IActiveUserService _activeUserService;
     private readonly IItemRepository _itemRepository;
     private readonly IMapper _mapper;
 
-    public ItemService(IMapper mapper, IItemRepository itemRepository)
+    public ItemService(IMapper mapper, IActiveUserService activeUserService, IItemRepository itemRepository)
     {
         _mapper = mapper;
+        _activeUserService = activeUserService;
         _itemRepository = itemRepository;
     }
 
@@ -32,7 +34,20 @@ public class ItemService : IItemService
     public async Task<ItemResponseDto> CreateItemAsync(AddItemRequestDto dto)
     {
         var entity = _mapper.Map<Item>(dto);
-        if (entity.Children.Count > 0) entity.Quantity = entity.Children.Sum(c => c.Quantity);
+
+        var user = _activeUserService.GetActiveUserAsync();
+
+        entity.CreatedById = user.Id;
+        entity.CreatedAt = DateTime.UtcNow;
+        if (entity.Children.Count > 0)
+        {
+            entity.Quantity = entity.Children.Sum(c => c.Quantity);
+            foreach (var child in entity.Children)
+            {
+                child.CreatedAt = DateTime.UtcNow;
+                child.CreatedById = user.Id;
+            }
+        }
 
         await _itemRepository.AddAsync(entity);
         await _itemRepository.SaveChangesAsync();
@@ -46,11 +61,14 @@ public class ItemService : IItemService
         if (!dto.Id.HasValue) throw new KeyNotFoundException("Item not found");
 
         var existingItem = await _itemRepository.GetByIdWithChildrenAsync(dto.Id.Value) ?? throw new KeyNotFoundException("Item not found");
+        var user = await _activeUserService.GetActiveUserAsync();
 
         existingItem.Name = dto.Name;
         existingItem.Description = dto.Description;
         existingItem.Quantity = dto.Quantity;
         existingItem.Price = dto.Price;
+        existingItem.UpdatedBy = user;
+        existingItem.UpdatedAt = DateTime.UtcNow;
 
         var children = dto.Children?
             .ToDictionary(c => c.Id ?? 0) ?? [];
@@ -62,6 +80,8 @@ public class ItemService : IItemService
                 child.Description = dtoChild.Description;
                 child.Quantity = dtoChild.Quantity;
                 child.Price = dtoChild.Price;
+                child.UpdatedBy = user;
+                child.UpdatedAt = DateTime.UtcNow;
 
                 children.Remove(child.Id);
             }
@@ -76,7 +96,9 @@ public class ItemService : IItemService
             Description = dtoChild.Description,
             Quantity = dtoChild.Quantity,
             Price = dtoChild.Price,
-            ParentId = existingItem.Id
+            ParentId = existingItem.Id,
+            CreatedBy = user,
+            CreatedAt = DateTime.UtcNow
         });
 
         foreach (var newChild in newChilds) existingItem.Children.Add(newChild);

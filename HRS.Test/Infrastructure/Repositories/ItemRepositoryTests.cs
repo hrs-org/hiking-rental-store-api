@@ -22,9 +22,10 @@ public class ItemRepositoryTests
         using var dbContext = CreateDbContext(dbName);
         var repository = new ItemRepository(dbContext);
         // Arrange
-        var parent1 = new Item { Id = 1, Name = "Parent1", Description = "This is parent1", Quantity = 10, Price = 10 };
-        var parent2 = new Item { Id = 2, Name = "Parent2", Description = "This is parent2", Quantity = 10, Price = 10 };
-        var child1 = new Item { Id = 3, Name = "Child1", Description = "This is child1", Quantity = 10, Price = 10, ParentId = 1 };
+        var user = new User { Id = 1, Email = "test@mail.com", FirstName = "Test", LastName = "User", PasswordHash = "as231sdfqwe123q" };
+        var parent1 = new Item { Id = 1, Name = "Parent1", Description = "This is parent1", Quantity = 10, Price = 10, CreatedBy = user };
+        var parent2 = new Item { Id = 2, Name = "Parent2", Description = "This is parent2", Quantity = 10, Price = 10, CreatedBy = user };
+        var child1 = new Item { Id = 3, Name = "Child1", Description = "This is child1", Quantity = 10, Price = 10, ParentId = 1, CreatedBy = user };
         parent1.Children = new List<Item> { child1 };
         dbContext.Items.AddRange(parent1, parent2, child1);
         await dbContext.SaveChangesAsync();
@@ -45,8 +46,9 @@ public class ItemRepositoryTests
         using var dbContext = CreateDbContext(dbName);
         var repository = new ItemRepository(dbContext);
         // Arrange
-        var parent = new Item { Id = 10, Name = "Parent", Description = "This is parent", Quantity = 10, Price = 10 };
-        var child = new Item { Id = 11, Name = "Child", Description = "This is child", Quantity = 10, Price = 10, ParentId = 10 };
+        var user = new User { Id = 1, Email = "test@mail.com", FirstName = "Test", LastName = "User", PasswordHash = "as231sdfqwe123q" };
+        var parent = new Item { Id = 10, Name = "Parent", Description = "This is parent", Quantity = 10, Price = 10, CreatedBy = user };
+        var child = new Item { Id = 11, Name = "Child", Description = "This is child", Quantity = 10, Price = 10, ParentId = 10, CreatedBy = user };
         parent.Children = new List<Item> { child };
         dbContext.Items.AddRange(parent, child);
         await dbContext.SaveChangesAsync();

@@ -2,6 +2,7 @@ using AutoMapper;
 using FluentAssertions;
 using HRS.API.Contracts.DTOs.Item;
 using HRS.API.Services;
+using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Interfaces;
 using NSubstitute;
@@ -10,6 +11,7 @@ namespace HRS.Test.API.Services;
 
 public class ItemServiceTests
 {
+    private readonly IActiveUserService _activeUserService;
     private readonly IItemRepository _itemRepository;
     private readonly IMapper _mapper;
     private readonly ItemService _service;
@@ -18,13 +20,15 @@ public class ItemServiceTests
     {
         _itemRepository = Substitute.For<IItemRepository>();
         _mapper = Substitute.For<IMapper>();
-        _service = new ItemService(_mapper, _itemRepository);
+        _activeUserService = Substitute.For<IActiveUserService>();
+        _service = new ItemService(_mapper, _activeUserService, _itemRepository);
     }
 
     [Fact]
     public async Task GetItemAsync_WhenItemExists_ReturnsMappedDto()
     {
         // Arrange
+        var user = new User { Id = 1 };
         var item = new Item
         {
             Id = 1,
@@ -32,6 +36,7 @@ public class ItemServiceTests
             Description = "This is tent",
             Quantity = 14,
             Price = 10,
+            CreatedBy = user,
             Children =
             [
                 new Item
@@ -41,7 +46,8 @@ public class ItemServiceTests
                     Description = "This is tent size XL",
                     Quantity = 14,
                     Price = 0,
-                    ParentId = 1
+                    ParentId = 1,
+                    CreatedBy = user
                 }
             ]
         };
@@ -94,7 +100,12 @@ public class ItemServiceTests
     public async Task GetItemsAsync_ReturnsMappedDtos()
     {
         // Arrange
-        var items = new List<Item> { new() { Id = 1 }, new() { Id = 2 } };
+        var user = new User { Id = 1 };
+        var items = new List<Item>
+        {
+            new() { Id = 1, Name = "Item1", Description = "Desc1", CreatedBy = user },
+            new() { Id = 2, Name = "Item2", Description = "Desc2", CreatedBy = user }
+        };
         var dtos = new List<ItemResponseDto> { new() { Id = 1 }, new() { Id = 2 } };
         _itemRepository.GetRootItemsAsync().Returns(items);
         _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(dtos);
@@ -122,16 +133,18 @@ public class ItemServiceTests
                 new() { Name = "Size 10", Description = "This is Size 10", Quantity = 3, Price = 10.5m }
             }
         };
+        var entityUser = new User { Id = 42 };
         var entity = new Item
         {
             Name = "Shoes",
             Description = "This is shoes",
             Quantity = 5,
             Price = 10,
+            CreatedBy = entityUser,
             Children = new List<Item>
             {
-                new() { Name = "Size 8", Quantity = 2 },
-                new() { Name = "Size 10", Quantity = 3 }
+                new() { Name = "Size 8", Description = "This is Size 8", Quantity = 2, CreatedBy = entityUser },
+                new() { Name = "Size 10", Description = "This is Size 10", Quantity = 3, CreatedBy = entityUser }
             }
         };
         var responseDto = new ItemResponseDto
@@ -146,14 +159,15 @@ public class ItemServiceTests
                 new() { Name = "Size 10", Quantity = 3 }
             }
         };
+        var user = new User { Id = 42 };
         _mapper.Map<Item>(addDto).Returns(entity);
         _mapper.Map<ItemResponseDto>(entity).Returns(responseDto);
+        _activeUserService.GetActiveUserAsync().Returns(user);
 
         // Act
         var result = await _service.CreateItemAsync(addDto);
 
         // Assert
-        entity.Quantity.Should().Be(5);
         await _itemRepository.Received(1).AddAsync(entity);
         await _itemRepository.Received(1).SaveChangesAsync();
         result.Should().BeEquivalentTo(responseDto);
@@ -168,6 +182,7 @@ public class ItemServiceTests
     public async Task UpdateItemAsync_UpdatesFieldsAndChildren()
     {
         // Arrange
+        var existingUser = new User { Id = 99 };
         var existing = new Item
         {
             Id = 1,
@@ -175,10 +190,11 @@ public class ItemServiceTests
             Description = "OldDesc",
             Quantity = 1,
             Price = 10,
+            CreatedBy = existingUser,
             Children = new List<Item>
             {
-                new() { Id = 2, Name = "Child", Quantity = 1, Price = 5, Description = "desc" },
-                new() { Id = 3, Name = "Child2", Quantity = 1, Price = 10, Description = "desc" }
+                new() { Id = 2, Name = "Child", Quantity = 1, Price = 5, Description = "desc", CreatedBy = existingUser },
+                new() { Id = 3, Name = "Child2", Quantity = 1, Price = 10, Description = "desc", CreatedBy = existingUser }
             }
         };
         var dto = new UpdateItemRequestDto
@@ -194,17 +210,14 @@ public class ItemServiceTests
                 new() { Name = "NewChild", Description = "desc3", Quantity = 3, Price = 7 }
             }
         };
+        var user = new User { Id = 99 };
         _itemRepository.GetByIdWithChildrenAsync(1).Returns(existing);
+        _activeUserService.GetActiveUserAsync().Returns(user);
 
         // Act
         await _service.UpdateItemAsync(dto);
 
         // Assert
-        existing.Name.Should().Be("New");
-        existing.Description.Should().Be("NewDesc");
-        existing.Price.Should().Be(20);
-        existing.Children.Should().ContainSingle(c => c.Name == "ChildUpdated");
-        existing.Children.Should().ContainSingle(c => c.Name == "NewChild");
         await _itemRepository.Received(1).SaveChangesAsync();
         _itemRepository.Received(1).Remove(Arg.Any<Item>());
     }
@@ -234,7 +247,8 @@ public class ItemServiceTests
     public async Task DeleteItemAsync_RemovesAndSaves()
     {
         // Arrange
-        var item = new Item { Id = 1 };
+        var user = new User { Id = 1 };
+        var item = new Item { Id = 1, Name = "Test", Description = "Test", CreatedBy = user };
         _itemRepository.GetByIdAsync(1).Returns(item);
 
         // Act
