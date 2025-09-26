@@ -9,14 +9,14 @@ namespace HRS.API.Services;
 public class ItemService : IItemService
 {
     private const string ItemNotFound = "Item not found";
-    private readonly IActiveUserService _activeUserService;
     private readonly IItemRepository _itemRepository;
     private readonly IMapper _mapper;
+    private readonly IUserContextService _userContextService;
 
-    public ItemService(IMapper mapper, IActiveUserService activeUserService, IItemRepository itemRepository)
+    public ItemService(IMapper mapper, IUserContextService userContextService, IItemRepository itemRepository)
     {
         _mapper = mapper;
-        _activeUserService = activeUserService;
+        _userContextService = userContextService;
         _itemRepository = itemRepository;
     }
 
@@ -36,7 +36,7 @@ public class ItemService : IItemService
     {
         var entity = _mapper.Map<Item>(dto);
 
-        var user = _activeUserService.GetActiveUserAsync();
+        var user = _userContextService.GetUserAsync();
 
         entity.CreatedById = user.Id;
         entity.CreatedAt = DateTime.UtcNow;
@@ -62,7 +62,7 @@ public class ItemService : IItemService
         if (!dto.Id.HasValue) throw new KeyNotFoundException(ItemNotFound);
 
         var existingItem = await _itemRepository.GetByIdWithChildrenAsync(dto.Id.Value) ?? throw new KeyNotFoundException(ItemNotFound);
-        var user = await _activeUserService.GetActiveUserAsync();
+        var user = await _userContextService.GetUserAsync();
 
         existingItem.Name = dto.Name;
         existingItem.Description = dto.Description;

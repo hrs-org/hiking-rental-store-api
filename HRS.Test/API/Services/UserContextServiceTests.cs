@@ -7,21 +7,21 @@ using NSubstitute;
 
 namespace HRS.Test.API.Services;
 
-public class ActiveUserServiceTests
+public class UserContextServiceTests
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ActiveUserService _mockService;
+    private readonly UserContextService _mockContextService;
     private readonly IUserRepository _userRepository;
 
-    public ActiveUserServiceTests()
+    public UserContextServiceTests()
     {
         _httpContextAccessor = Substitute.For<IHttpContextAccessor>();
         _userRepository = Substitute.For<IUserRepository>();
-        _mockService = new ActiveUserService(_httpContextAccessor, _userRepository);
+        _mockContextService = new UserContextService(_httpContextAccessor, _userRepository);
     }
 
     [Fact]
-    public async Task GetActiveUserAsync_ReturnsUser_WhenAuthenticated()
+    public async Task GetUserAsync_ReturnsUser_WhenAuthenticated()
     {
         // Arrange
         var userId = 1;
@@ -48,7 +48,7 @@ public class ActiveUserServiceTests
         _userRepository.GetByIdAsync(userId).Returns(user);
 
         // Act
-        var result = await _mockService.GetActiveUserAsync();
+        var result = await _mockContextService.GetUserAsync();
 
         // Assert
         Assert.NotNull(result);
@@ -57,8 +57,43 @@ public class ActiveUserServiceTests
         Assert.Equal("User", result.LastName);
     }
 
+
     [Fact]
-    public async Task GetActiveUserAsync_Throws_WhenNotAuthenticated()
+    public async Task GetUserIdAsync_ReturnsUserId_WhenAuthenticated()
+    {
+        // Arrange
+        var userId = 1;
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) };
+        var identity = Substitute.For<ClaimsIdentity>();
+        identity.IsAuthenticated.Returns(true);
+        identity.FindFirst(ClaimTypes.NameIdentifier).Returns(claims[0]);
+        var principal = new ClaimsPrincipal(identity);
+        var context = Substitute.For<HttpContext>();
+        context.User.Returns(principal);
+        _httpContextAccessor.HttpContext.Returns(context);
+
+        var user = new User
+        {
+            Id = userId,
+            FirstName = "Test",
+            LastName = "User",
+            Email = "test@hrs.com",
+            PasswordHash = "hash",
+            IsVerified = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _userRepository.GetByIdAsync(userId).Returns(user);
+
+        // Act
+        var result = await _mockContextService.GetUserIdAsync();
+
+        // Assert
+        Assert.Equal(userId, result);
+    }
+
+    [Fact]
+    public async Task GetUserAsync_Throws_WhenNotAuthenticated()
     {
         // Arrange
         var identity = Substitute.For<ClaimsIdentity>();
@@ -69,11 +104,11 @@ public class ActiveUserServiceTests
         _httpContextAccessor.HttpContext.Returns(context);
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockService.GetActiveUserAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockContextService.GetUserAsync());
     }
 
     [Fact]
-    public async Task GetActiveUserAsync_Throws_WhenUserIdClaimMissing()
+    public async Task GetUserAsync_Throws_WhenUserIdClaimMissing()
     {
         // Arrange
         var identity = Substitute.For<ClaimsIdentity>();
@@ -85,11 +120,11 @@ public class ActiveUserServiceTests
         _httpContextAccessor.HttpContext.Returns(context);
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockService.GetActiveUserAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockContextService.GetUserAsync());
     }
 
     [Fact]
-    public async Task GetActiveUserAsync_Throws_WhenUserNotFound()
+    public async Task GetUserAsync_Throws_WhenUserNotFound()
     {
         // Arrange
         var userId = 2;
@@ -105,6 +140,6 @@ public class ActiveUserServiceTests
         _userRepository.GetByIdAsync(userId).Returns((User?)null!);
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockService.GetActiveUserAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockContextService.GetUserAsync());
     }
 }

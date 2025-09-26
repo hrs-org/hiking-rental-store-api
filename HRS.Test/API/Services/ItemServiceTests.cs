@@ -11,17 +11,17 @@ namespace HRS.Test.API.Services;
 
 public class ItemServiceTests
 {
-    private readonly IActiveUserService _activeUserService;
     private readonly IItemRepository _itemRepository;
     private readonly IMapper _mapper;
     private readonly ItemService _service;
+    private readonly IUserContextService _userContextService;
 
     public ItemServiceTests()
     {
         _itemRepository = Substitute.For<IItemRepository>();
         _mapper = Substitute.For<IMapper>();
-        _activeUserService = Substitute.For<IActiveUserService>();
-        _service = new ItemService(_mapper, _activeUserService, _itemRepository);
+        _userContextService = Substitute.For<IUserContextService>();
+        _service = new ItemService(_mapper, _userContextService, _itemRepository);
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public class ItemServiceTests
         var user = new User { Id = 42 };
         _mapper.Map<Item>(addDto).Returns(entity);
         _mapper.Map<ItemResponseDto>(entity).Returns(responseDto);
-        _activeUserService.GetActiveUserAsync().Returns(user);
+        _userContextService.GetUserAsync().Returns(user);
 
         // Act
         var result = await _service.CreateItemAsync(addDto);
@@ -212,7 +212,7 @@ public class ItemServiceTests
         };
         var user = new User { Id = 99 };
         _itemRepository.GetByIdWithChildrenAsync(1).Returns(existing);
-        _activeUserService.GetActiveUserAsync().Returns(user);
+        _userContextService.GetUserAsync().Returns(user);
 
         // Act
         await _service.UpdateItemAsync(dto);

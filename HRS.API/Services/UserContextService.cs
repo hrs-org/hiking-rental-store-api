@@ -5,18 +5,18 @@ using HRS.Domain.Interfaces;
 
 namespace HRS.API.Services;
 
-public class ActiveUserService : IActiveUserService
+public class UserContextService : IUserContextService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserRepository _userRepository;
 
-    public ActiveUserService(IHttpContextAccessor httpContextAccessor, IUserRepository userRepository)
+    public UserContextService(IHttpContextAccessor httpContextAccessor, IUserRepository userRepository)
     {
         _httpContextAccessor = httpContextAccessor;
         _userRepository = userRepository;
     }
 
-    public async Task<User> GetActiveUserAsync()
+    public async Task<User> GetUserAsync()
     {
         var principal = _httpContextAccessor.HttpContext?.User;
         if (principal?.Identity?.IsAuthenticated != true) throw new UnauthorizedAccessException("User is not authenticated");
@@ -30,4 +30,6 @@ public class ActiveUserService : IActiveUserService
 
         return user ?? throw new UnauthorizedAccessException("User not found");
     }
+
+    public async Task<int> GetUserIdAsync() => (await GetUserAsync()).Id;
 }

@@ -6,14 +6,14 @@ namespace HRS.API.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IActiveUserService _activeUserService;
     private readonly ITokenService _tokenService;
+    private readonly IUserContextService _userContextService;
     private readonly IUserRepository _userRepository;
 
-    public AuthService(IUserRepository userRepository, IActiveUserService activeUserService, ITokenService tokenService)
+    public AuthService(IUserRepository userRepository, IUserContextService userContextService, ITokenService tokenService)
     {
         _userRepository = userRepository;
-        _activeUserService = activeUserService;
+        _userContextService = userContextService;
         _tokenService = tokenService;
     }
 
@@ -40,7 +40,7 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto requestDto)
     {
-        var user = await _activeUserService.GetActiveUserAsync();
+        var user = await _userContextService.GetUserAsync();
 
         if (user.RefreshToken != requestDto.RefreshToken || user.RefreshTokenExpiry < DateTime.UtcNow)
             throw new UnauthorizedAccessException("invalid request token");
@@ -64,7 +64,7 @@ public class AuthService : IAuthService
 
     public async Task<LogoutResponseDto> LogoutAsync()
     {
-        var user = await _activeUserService.GetActiveUserAsync();
+        var user = await _userContextService.GetUserAsync();
 
         user.RefreshToken = null;
         user.RefreshTokenExpiry = null;

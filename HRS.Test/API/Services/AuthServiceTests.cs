@@ -11,17 +11,17 @@ namespace HRS.Test.API.Services;
 
 public class AuthServiceTests
 {
-    private readonly IActiveUserService _mockActiveUserService;
     private readonly IAuthService _mockService;
+    private readonly IUserContextService _mockUserContextService;
     private readonly ITokenService _tokenService;
     private readonly IUserRepository _userRepository;
 
     public AuthServiceTests()
     {
         _userRepository = Substitute.For<IUserRepository>();
-        _mockActiveUserService = Substitute.For<IActiveUserService>();
+        _mockUserContextService = Substitute.For<IUserContextService>();
         _tokenService = Substitute.For<ITokenService>();
-        _mockService = new AuthService(_userRepository, _mockActiveUserService, _tokenService);
+        _mockService = new AuthService(_userRepository, _mockUserContextService, _tokenService);
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public class AuthServiceTests
             RefreshToken = user.RefreshToken
         };
 
-        _mockActiveUserService.GetActiveUserAsync().Returns(user);
+        _mockUserContextService.GetUserAsync().Returns(user);
 
         _tokenService.GenerateAccessToken(user).Returns("newAccessToken");
         _tokenService.GenerateRefreshToken().Returns("newRefreshToken");
@@ -163,7 +163,7 @@ public class AuthServiceTests
             RefreshToken = "wrongToken"
         };
 
-        _mockActiveUserService.GetActiveUserAsync().Returns(user);
+        _mockUserContextService.GetUserAsync().Returns(user);
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
@@ -187,7 +187,7 @@ public class AuthServiceTests
             RefreshToken = "oldRefresh"
         };
 
-        _mockActiveUserService.GetActiveUserAsync().Returns(user);
+        _mockUserContextService.GetUserAsync().Returns(user);
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
@@ -205,7 +205,7 @@ public class AuthServiceTests
             RefreshToken = "oldRefresh",
             RefreshTokenExpiry = DateTime.UtcNow.AddDays(1)
         };
-        _mockActiveUserService.GetActiveUserAsync().Returns(user);
+        _mockUserContextService.GetUserAsync().Returns(user);
 
         // Act
         await _mockService.LogoutAsync();

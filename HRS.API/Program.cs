@@ -18,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IActiveUserService, ActiveUserService>();
+builder.Services.AddScoped<IUserContextService, UserContextService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
