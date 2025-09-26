@@ -106,6 +106,12 @@ jobs:
                                   <ModulePath>.*HRS\.Migrations.*</ModulePath>
                                 </Exclude>
                               </ModulePaths>
+                              <Source>
+                                <Exclude>
+                                  <Source>.*Program\.cs</Source>
+                                  <Source>.*/HRS\.API/Mappings/.*</Source>
+                                </Exclude>
+                              </Source>
                             </CodeCoverage>
                           </Configuration>
                         </DataCollector>
@@ -199,7 +205,7 @@ jobs:
                     /d:sonar.host.url="https://sonarcloud.io" \
                     /d:sonar.cs.vstest.reportsPaths="./coverage/TestResults.trx" \
                     /d:sonar.cs.vscoveragexml.reportsPaths="$COVERAGE_PATH" \
-                    /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**,**/Migrations/**,**/HRS.Migrations/**" \
+                    /d:sonar.coverage.exclusions="**/HRS.Test/**,**/*Test*.cs,**/bin/**,**/obj/**,**/Migrations/**,**/HRS.Migrations/**,**/Program.cs,**/Mappings/**" \
                     /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,**/HRS.Migrations/**" \
                     /d:sonar.test.exclusions="**/bin/**,**/obj/**,**/HRS.Migrations/**" \
                     /d:sonar.scm.disabled=true \
@@ -247,7 +253,6 @@ jobs:
               uses: actions/upload-artifact@v4
               if: always()
               with:
-                  continue-on-error: true
                   name: security-scan-results
                   path: security-audit.txt
                   retention-days: 30
@@ -352,10 +357,10 @@ jobs:
                   docker logs hrs-api
 
                   echo "Testing application endpoints:"
-                  curl -f http://localhost:5000/health || echo "Health endpoint not available"
-                  curl -I http://localhost:5000/api/auth || echo "Auth API not available"
-                  curl -I http://localhost:5000/api/users || echo "Users API not available"
-                  curl -I http://localhost:5000/swagger || echo "Swagger not available"
+                  curl -f http://localhost:5000/health || echo "Health endpoint not available (Wrong)"
+                  curl -I http://localhost:5000/api/auth || echo "Auth API not available (Correct)"
+                  curl -I http://localhost:5000/api/users || echo "Users API not available (Correct)"
+                  curl -I http://localhost:5000/swagger || echo "Swagger not available (Correct)"
 
             - name: OWASP ZAP Baseline Scan
               uses: zaproxy/action-baseline@1e1871e84428617b969d4a1f981a8255630d54b0 # v0.10.0

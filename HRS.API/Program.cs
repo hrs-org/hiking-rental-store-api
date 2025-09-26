@@ -1,11 +1,11 @@
 using System.Text;
 using FluentValidation;
 using HRS.API.Filters;
-using HRS.API.Mappings;
 using HRS.API.Middleware;
 using HRS.API.Services;
 using HRS.API.Services.Interfaces;
 using HRS.API.Validators.Auth;
+using HRS.API.Validators.Item;
 using HRS.Domain.Interfaces;
 using HRS.Infrastructure;
 using HRS.Infrastructure.Repositories;
@@ -18,9 +18,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserContextService, UserContextService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddHttpContextAccessor();
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -28,6 +31,8 @@ builder.Services.AddControllers(options => { options.Filters.Add<ValidationFilte
 
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<RefreshTokenRequestDtoValidators>();
+builder.Services.AddValidatorsFromAssemblyContaining<AddItemRequestDtoValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateItemRequestDtoValidator>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -68,7 +73,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         ServerVersion.AutoDetect(connectionString),
         b => b.MigrationsAssembly("HRS.Migrations")));
 
-builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
+builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

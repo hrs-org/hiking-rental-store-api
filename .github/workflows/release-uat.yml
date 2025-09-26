@@ -1,4 +1,4 @@
-name: UAT Realease Pipeline
+name: UAT Release Pipeline
 
 on:
     workflow_dispatch:

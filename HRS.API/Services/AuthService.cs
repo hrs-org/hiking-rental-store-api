@@ -1,25 +1,20 @@
 using HRS.API.Contracts.DTOs.Auth;
 using HRS.API.Services.Interfaces;
 using HRS.Domain.Interfaces;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace HRS.API.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IConfiguration _config;
     private readonly ITokenService _tokenService;
+    private readonly IUserContextService _userContextService;
     private readonly IUserRepository _userRepository;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public AuthService(IConfiguration config, IUserRepository userRepository, ITokenService tokenService, IHttpContextAccessor httpContextAccessor)
+    public AuthService(IUserRepository userRepository, IUserContextService userContextService, ITokenService tokenService)
     {
-        _config = config;
         _userRepository = userRepository;
+        _userContextService = userContextService;
         _tokenService = tokenService;
-        _httpContextAccessor = httpContextAccessor;
-
     }
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto requestDto)
@@ -45,9 +40,9 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto requestDto)
     {
-        var user = await _userRepository.GetByIdAsync(requestDto.UserId);
+        var user = await _userContextService.GetUserAsync();
 
-        if (user == null || user.RefreshToken != requestDto.RefreshToken || user.RefreshTokenExpiry < DateTime.UtcNow)
+        if (user.RefreshToken != requestDto.RefreshToken || user.RefreshTokenExpiry < DateTime.UtcNow)
             throw new UnauthorizedAccessException("invalid request token");
 
         // Generate new access token
@@ -66,29 +61,15 @@ public class AuthService : IAuthService
             RefreshToken = newRefreshToken
         };
     }
+
     public async Task<LogoutResponseDto> LogoutAsync()
     {
-        var principal = _httpContextAccessor.HttpContext?.User;
-        if (principal?.Identity?.IsAuthenticated != true)
-            throw new UnauthorizedAccessException("User is not authenticated");
-        var keys = new[] { ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub, "nameid", "uid", "userId", "id" };
-        int? userId = null;
-        foreach (var k in keys)
-        {
-            var v = principal.FindFirstValue(k) ?? principal.Claims.FirstOrDefault(c => c.Type == k)?.Value;
-            if (!string.IsNullOrWhiteSpace(v) && int.TryParse(v, out var id)) { userId = id; break; }
-        }
-        if (userId is null)
-            throw new UnauthorizedAccessException("User ID claim not found");
-
-        var user = await _userRepository.GetByIdAsync(userId.Value);
-
-        if (user is null)
-            throw new UnauthorizedAccessException("User not found");
+        var user = await _userContextService.GetUserAsync();
 
         user.RefreshToken = null;
         user.RefreshTokenExpiry = null;
         await _userRepository.UpdateUserAsync(user);
+
         return new LogoutResponseDto { Message = "Logout successful" };
     }
 }

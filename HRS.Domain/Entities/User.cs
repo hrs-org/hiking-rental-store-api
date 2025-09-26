@@ -1,12 +1,13 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using HRS.Domain.Enums;
 
 namespace HRS.Domain.Entities;
 
+[Table("Users")]
 public class User
 {
     public int Id { get; set; }
 
-    // New fields
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
     public string Email { get; set; } = null!;
