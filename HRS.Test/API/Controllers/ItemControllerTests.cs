@@ -56,7 +56,7 @@ public class ItemControllerTests
     public async Task AddNewItem_ReturnsCreatedAtAction()
     {
         // Arrange
-        var addDto = new AddItemRequestDto { Name = "Test" };
+        var addDto = new AddItemRequestDto { Name = "Test", Description = "This is Test", Quantity = 10, Price = 10.5m };
         var created = new ItemResponseDto { Id = 1, Name = "Test" };
         _itemService.CreateItemAsync(addDto).Returns(created);
 
@@ -75,7 +75,7 @@ public class ItemControllerTests
     public async Task UpdateItemAsync_ReturnsNoContent()
     {
         // Arrange
-        var updateDto = new UpdateItemRequestDto { Id = 1, Name = "Updated" };
+        var updateDto = new UpdateItemRequestDto { Id = 1, Name = "Updated", Description = "This is Updated", Quantity = 10, Price = 10.5m };
         _itemService.UpdateItemAsync(updateDto).Returns(Task.CompletedTask);
 
         // Act

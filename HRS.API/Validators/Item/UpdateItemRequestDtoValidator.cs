@@ -8,37 +8,37 @@ public class UpdateItemRequestDtoValidator : AbstractValidator<UpdateItemRequest
     public UpdateItemRequestDtoValidator()
     {
         RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("Item Id is required");
+            .NotNull().WithMessage("Item Id is required")
+            .GreaterThan(0).WithMessage("Item Id must be greater than 0");
 
         AddCommonRules(this);
 
         RuleForEach(x => x.Children)
-            .SetValidator(new ItemChildRequestDtoValidator());
+            .SetValidator(new UpdateItemChildRequestDtoValidator());
     }
 
-
-    private sealed class ItemChildRequestDtoValidator : AbstractValidator<UpdateItemChildDto>
+    private static void AddCommonRules(AbstractValidator<UpdateItemRequestDto> validator)
     {
-        public ItemChildRequestDtoValidator()
-        {
-            AddCommonRules(this);
-        }
-    }
-
-    private static void AddCommonRules<T>(AbstractValidator<T> validator) where T : class
-    {
-        validator.RuleFor(x => (string)x.GetType().GetProperty("Name")!.GetValue(x)!)
+        validator.RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Item name is required");
 
-        validator.RuleFor(x => (string)x.GetType().GetProperty("Description")!.GetValue(x)!)
+        validator.RuleFor(x => x.Description)
             .NotEmpty().WithMessage("Item Description is required");
 
-        validator.RuleFor(x => (int?)x.GetType().GetProperty("Quantity")!.GetValue(x) ?? 0)
+        validator.RuleFor(x => x.Quantity)
             .NotNull().WithMessage("Item Quantity is required")
             .GreaterThanOrEqualTo(0).WithMessage("Item Quantity cannot be negative");
 
-        validator.RuleFor(x => (int?)x.GetType().GetProperty("Price")!.GetValue(x) ?? 0)
+        validator.RuleFor(x => x.Price)
             .NotNull().WithMessage("Item Price is required")
             .GreaterThanOrEqualTo(0).WithMessage("Item Price cannot be negative");
+    }
+
+    private sealed class UpdateItemChildRequestDtoValidator : AbstractValidator<UpdateItemRequestDto>
+    {
+        public UpdateItemChildRequestDtoValidator()
+        {
+            AddCommonRules(this);
+        }
     }
 }

@@ -118,8 +118,8 @@ public class ItemServiceTests
             Price = 10,
             Children = new List<AddItemRequestDto>
             {
-                new() { Name = "Size 8", Quantity = 2 },
-                new() { Name = "Size 10", Quantity = 3 }
+                new() { Name = "Size 8", Description = "This is Size 8", Quantity = 2, Price = 10.5m },
+                new() { Name = "Size 10", Description = "This is Size 10", Quantity = 3, Price = 10.5m }
             }
         };
         var entity = new Item
@@ -188,7 +188,7 @@ public class ItemServiceTests
             Description = "NewDesc",
             Quantity = 2,
             Price = 20,
-            Children = new List<UpdateItemChildDto>
+            Children = new List<UpdateItemRequestDto>
             {
                 new() { Id = 2, Name = "ChildUpdated", Description = "desc2", Quantity = 2, Price = 6 },
                 new() { Name = "NewChild", Description = "desc3", Quantity = 3, Price = 7 }
@@ -214,7 +214,17 @@ public class ItemServiceTests
     {
         // Arrange
         _itemRepository.GetByIdWithChildrenAsync(1).Returns((Item)null!);
-        var dto = new UpdateItemRequestDto { Id = 1 };
+        var dto = new UpdateItemRequestDto { Id = 1, Name = "Test", Description = "This is Test", Quantity = 2, Price = 10.5m };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateItemAsync(dto));
+    }
+
+    [Fact]
+    public async Task UpdateItemAsync_WhenDtoDoesntHaveId_ThrowsKeyNotFoundException()
+    {
+        // Arrange
+        var dto = new UpdateItemRequestDto { Id = 0, Name = "Test", Description = "This is Test", Quantity = 2, Price = 10.5m };
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateItemAsync(dto));

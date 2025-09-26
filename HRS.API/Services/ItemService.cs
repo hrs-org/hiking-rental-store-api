@@ -20,8 +20,7 @@ public class ItemService : IItemService
     public async Task<ItemResponseDto> GetItemAsync(int id)
     {
         var res = await _itemRepository.GetByIdWithChildrenAsync(id);
-        if (res == null) throw new KeyNotFoundException("Item not found");
-        return _mapper.Map<ItemResponseDto>(res);
+        return res == null ? throw new KeyNotFoundException("Item not found") : _mapper.Map<ItemResponseDto>(res);
     }
 
     public async Task<IEnumerable<ItemResponseDto>> GetItemsAsync()
@@ -44,7 +43,9 @@ public class ItemService : IItemService
 
     public async Task UpdateItemAsync(UpdateItemRequestDto dto)
     {
-        var existingItem = await _itemRepository.GetByIdWithChildrenAsync(dto.Id) ?? throw new KeyNotFoundException("Item not found");
+        if (!dto.Id.HasValue) throw new KeyNotFoundException("Item not found");
+
+        var existingItem = await _itemRepository.GetByIdWithChildrenAsync(dto.Id.Value) ?? throw new KeyNotFoundException("Item not found");
 
         existingItem.Name = dto.Name;
         existingItem.Description = dto.Description;
@@ -52,7 +53,7 @@ public class ItemService : IItemService
         existingItem.Price = dto.Price;
 
         var children = dto.Children?
-            .ToDictionary(c => c.Id ?? 0) ?? new Dictionary<int, UpdateItemChildDto>();
+            .ToDictionary(c => c.Id ?? 0) ?? [];
 
         foreach (var child in existingItem.Children.ToList())
             if (children.TryGetValue(child.Id, out var dtoChild))

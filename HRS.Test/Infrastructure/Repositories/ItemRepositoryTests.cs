@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRS.Test.Infrastructure.Repositories;
 
-
 public class ItemRepositoryTests
 {
     private static AppDbContext CreateDbContext(string dbName)
@@ -36,7 +35,7 @@ public class ItemRepositoryTests
         // Assert
         Assert.Equal(2, result.Count);
         Assert.Contains(result, i => i.Id == 1 && i.Children.Any(c => c.Id == 3));
-        Assert.Contains(result, i => i.Id == 2 && (i.Children == null || !i.Children.Any()));
+        Assert.Contains(result, i => i.Id == 2 && (i.Children == null || i.Children.Count == 0));
     }
 
     [Fact]

@@ -9,8 +9,8 @@ public class Item
     public string Name { get; set; } = null!;
     public string Description { get; set; } = null!;
     public int Quantity { get; set; }
-    public int Price { get; set; }
+    public decimal Price { get; set; }
     public int? ParentId { get; set; }
     public Item? Parent { get; set; }
-    public ICollection<Item> Children { get; set; } = new List<Item>();
+    public ICollection<Item> Children { get; set; } = [];
 }
