@@ -36,7 +36,13 @@ public class ActiveUserServiceTests
 
         var user = new User
         {
-            Id = userId, FirstName = "Test", LastName = "User", Email = "test@hrs.com", PasswordHash = "hash", IsVerified = true, CreatedAt = DateTime.UtcNow,
+            Id = userId,
+            FirstName = "Test",
+            LastName = "User",
+            Email = "test@hrs.com",
+            PasswordHash = "hash",
+            IsVerified = true,
+            CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
         _userRepository.GetByIdAsync(userId).Returns(user);
