@@ -11,11 +11,12 @@ public class UserService : IUserService
 {
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
-
-    public UserService(IMapper mapper, IUserRepository userRepository)
+    private readonly IUserContextService _userContextService;
+    public UserService(IMapper mapper, IUserRepository userRepository, IUserContextService userContextService)
     {
         _mapper = mapper;
         _userRepository = userRepository;
+        _userContextService = userContextService;
     }
 
     public async Task<IEnumerable<UserDto>> GetUsers()
@@ -69,6 +70,7 @@ public class UserService : IUserService
 
     public async Task<UserDto?> UpdateEmployee(UserDto dto)
     {
+        var editor = await _userContextService.GetUserAsync();
         var employee = await _userRepository.GetByIdAsync(dto.Id);
         if (employee == null) throw new KeyNotFoundException("User not found.");
         if (employee.Role == UserRole.Customer) throw new InvalidOperationException("Cannot update a customer to an employee.");
@@ -80,6 +82,9 @@ public class UserService : IUserService
             employee.LastName = dto.LastName;
             employee.Email = dto.Email;
             employee.Role = role;
+            employee.UpdatedAt = DateTime.UtcNow;
+            employee.UpdatedBy = editor.Id;
+
         }
         else
         {
@@ -102,7 +107,10 @@ public class UserService : IUserService
     public async Task<UserDto> CreateNewEmployee(RegisterEmployeeDetailDto dto)
     {
         var user = _mapper.Map<User>(dto);
-
+        var editor = _userContextService.GetUserAsync();
+        user.CreatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedBy = editor.Id;
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456");
         user.Role = UserRole.Employee;
 
