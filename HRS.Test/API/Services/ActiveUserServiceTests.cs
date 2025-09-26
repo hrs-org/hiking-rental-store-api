@@ -1,27 +1,23 @@
-using System;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using HRS.API.Services;
-using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using NSubstitute;
-using Xunit;
 
 namespace HRS.Test.API.Services;
 
 public class ActiveUserServiceTests
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ActiveUserService _mockService;
     private readonly IUserRepository _userRepository;
-    private readonly IActiveUserService _activeUserService;
 
     public ActiveUserServiceTests()
     {
         _httpContextAccessor = Substitute.For<IHttpContextAccessor>();
         _userRepository = Substitute.For<IUserRepository>();
-        _activeUserService = new ActiveUserService(_httpContextAccessor, _userRepository);
+        _mockService = new ActiveUserService(_httpContextAccessor, _userRepository);
     }
 
     [Fact]
@@ -38,11 +34,15 @@ public class ActiveUserServiceTests
         context.User.Returns(principal);
         _httpContextAccessor.HttpContext.Returns(context);
 
-        var user = new User { Id = userId, FirstName = "Test", LastName = "User", Email = "test@hrs.com", PasswordHash = "hash", IsVerified = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var user = new User
+        {
+            Id = userId, FirstName = "Test", LastName = "User", Email = "test@hrs.com", PasswordHash = "hash", IsVerified = true, CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
         _userRepository.GetByIdAsync(userId).Returns(user);
 
         // Act
-        var result = await _activeUserService.GetActiveUserAsync();
+        var result = await _mockService.GetActiveUserAsync();
 
         // Assert
         Assert.NotNull(result);
@@ -63,7 +63,7 @@ public class ActiveUserServiceTests
         _httpContextAccessor.HttpContext.Returns(context);
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _activeUserService.GetActiveUserAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockService.GetActiveUserAsync());
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class ActiveUserServiceTests
         _httpContextAccessor.HttpContext.Returns(context);
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _activeUserService.GetActiveUserAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockService.GetActiveUserAsync());
     }
 
     [Fact]
@@ -99,6 +99,6 @@ public class ActiveUserServiceTests
         _userRepository.GetByIdAsync(userId).Returns((User?)null!);
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _activeUserService.GetActiveUserAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockService.GetActiveUserAsync());
     }
 }

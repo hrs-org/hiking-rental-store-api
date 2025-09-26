@@ -7,17 +7,14 @@ namespace HRS.API.Services;
 public class AuthService : IAuthService
 {
     private readonly IActiveUserService _activeUserService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ITokenService _tokenService;
     private readonly IUserRepository _userRepository;
 
-    public AuthService(IUserRepository userRepository, IActiveUserService activeUserService, ITokenService tokenService,
-        IHttpContextAccessor httpContextAccessor)
+    public AuthService(IUserRepository userRepository, IActiveUserService activeUserService, ITokenService tokenService)
     {
         _userRepository = userRepository;
         _activeUserService = activeUserService;
         _tokenService = tokenService;
-        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto requestDto)

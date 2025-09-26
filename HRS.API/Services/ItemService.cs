@@ -8,6 +8,7 @@ namespace HRS.API.Services;
 
 public class ItemService : IItemService
 {
+    private const string ItemNotFound = "Item not found";
     private readonly IActiveUserService _activeUserService;
     private readonly IItemRepository _itemRepository;
     private readonly IMapper _mapper;
@@ -22,7 +23,7 @@ public class ItemService : IItemService
     public async Task<ItemResponseDto> GetItemAsync(int id)
     {
         var res = await _itemRepository.GetByIdWithChildrenAsync(id);
-        return res == null ? throw new KeyNotFoundException("Item not found") : _mapper.Map<ItemResponseDto>(res);
+        return res == null ? throw new KeyNotFoundException(ItemNotFound) : _mapper.Map<ItemResponseDto>(res);
     }
 
     public async Task<IEnumerable<ItemResponseDto>> GetItemsAsync()
@@ -58,9 +59,9 @@ public class ItemService : IItemService
 
     public async Task UpdateItemAsync(UpdateItemRequestDto dto)
     {
-        if (!dto.Id.HasValue) throw new KeyNotFoundException("Item not found");
+        if (!dto.Id.HasValue) throw new KeyNotFoundException(ItemNotFound);
 
-        var existingItem = await _itemRepository.GetByIdWithChildrenAsync(dto.Id.Value) ?? throw new KeyNotFoundException("Item not found");
+        var existingItem = await _itemRepository.GetByIdWithChildrenAsync(dto.Id.Value) ?? throw new KeyNotFoundException(ItemNotFound);
         var user = await _activeUserService.GetActiveUserAsync();
 
         existingItem.Name = dto.Name;
@@ -110,7 +111,7 @@ public class ItemService : IItemService
 
     public async Task DeleteItemAsync(int id)
     {
-        var item = await _itemRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException("Item not found");
+        var item = await _itemRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException(ItemNotFound);
         _itemRepository.Remove(item);
         await _itemRepository.SaveChangesAsync();
     }

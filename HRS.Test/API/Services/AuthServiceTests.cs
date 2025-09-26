@@ -5,14 +5,12 @@ using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
 using NSubstitute;
 
 namespace HRS.Test.API.Services;
 
 public class AuthServiceTests
 {
-    private readonly IHttpContextAccessor _httpcontextaccessor;
     private readonly IActiveUserService _mockActiveUserService;
     private readonly IAuthService _mockService;
     private readonly ITokenService _tokenService;
@@ -23,8 +21,7 @@ public class AuthServiceTests
         _userRepository = Substitute.For<IUserRepository>();
         _mockActiveUserService = Substitute.For<IActiveUserService>();
         _tokenService = Substitute.For<ITokenService>();
-        _httpcontextaccessor = Substitute.For<IHttpContextAccessor>();
-        _mockService = new AuthService(_userRepository, _mockActiveUserService, _tokenService, _httpcontextaccessor);
+        _mockService = new AuthService(_userRepository, _mockActiveUserService, _tokenService);
     }
 
     [Fact]
