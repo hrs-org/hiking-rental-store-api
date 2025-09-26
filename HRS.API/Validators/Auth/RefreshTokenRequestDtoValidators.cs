@@ -7,7 +7,6 @@ public class RefreshTokenRequestDtoValidators : AbstractValidator<RefreshTokenRe
 {
     public RefreshTokenRequestDtoValidators()
     {
-        RuleFor(x => x.UserId).GreaterThan(0);
         RuleFor(x => x.RefreshToken).NotEmpty();
     }
 }

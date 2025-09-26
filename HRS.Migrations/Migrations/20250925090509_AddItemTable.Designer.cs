@@ -4,6 +4,7 @@ using HRS.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRS.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250925090509_AddItemTable")]
+    partial class AddItemTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,12 +33,6 @@ namespace HRS.Migrations.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("CreatedById")
-                        .HasColumnType("int");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -48,27 +45,17 @@ namespace HRS.Migrations.Migrations
                     b.Property<int?>("ParentId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(65,30)");
+                    b.Property<int>("Price")
+                        .HasColumnType("int");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("UpdatedById")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
 
                     b.HasIndex("ParentId");
 
-                    b.HasIndex("UpdatedById");
-
-                    b.ToTable("Items");
+                    b.ToTable("Item");
                 });
 
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>
@@ -130,40 +117,26 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 9, 26, 4, 29, 39, 202, DateTimeKind.Utc).AddTicks(3800),
+                            CreatedAt = new DateTime(2025, 9, 25, 9, 5, 9, 661, DateTimeKind.Utc).AddTicks(1860),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$ZOKhao/PqZpn1EiJcqnX2.fBU9oCsQbMtd0vaMGqgp8IgZE.Lw/ie",
+                            PasswordHash = "$2a$11$bqqk7jXdVsyjm/waBMb1hOu9.HaA1jRAM76BW2efKVMVRLjTFfce6",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 9, 26, 4, 29, 39, 202, DateTimeKind.Utc).AddTicks(3800),
+                            UpdatedAt = new DateTime(2025, 9, 25, 9, 5, 9, 661, DateTimeKind.Utc).AddTicks(1860),
                             UpdatedBy = 0
                         });
                 });
 
             modelBuilder.Entity("HRS.Domain.Entities.Item", b =>
                 {
-                    b.HasOne("HRS.Domain.Entities.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("HRS.Domain.Entities.Item", "Parent")
                         .WithMany("Children")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("HRS.Domain.Entities.User", "UpdatedBy")
-                        .WithMany()
-                        .HasForeignKey("UpdatedById");
-
-                    b.Navigation("CreatedBy");
-
                     b.Navigation("Parent");
-
-                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>

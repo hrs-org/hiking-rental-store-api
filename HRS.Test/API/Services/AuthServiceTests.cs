@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using FluentAssertions;
 using HRS.API.Contracts.DTOs.Auth;
 using HRS.API.Services;
@@ -6,35 +5,23 @@ using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
 namespace HRS.Test.API.Services;
 
 public class AuthServiceTests
 {
-    private readonly IHttpContextAccessor _httpcontextaccessor;
     private readonly IAuthService _mockService;
+    private readonly IUserContextService _mockUserContextService;
     private readonly ITokenService _tokenService;
     private readonly IUserRepository _userRepository;
 
     public AuthServiceTests()
     {
-        var dict = new Dictionary<string, string?>
-        {
-            ["Jwt:Key"] = "super_secret_long_key_1234567890",
-            ["Jwt:Issuer"] = "HRSApp",
-            ["Jwt:Audience"] = "HRSUsers"
-        };
-
-        IConfiguration mockConfig = new ConfigurationBuilder()
-            .AddInMemoryCollection(dict)
-            .Build();
         _userRepository = Substitute.For<IUserRepository>();
+        _mockUserContextService = Substitute.For<IUserContextService>();
         _tokenService = Substitute.For<ITokenService>();
-        _httpcontextaccessor = Substitute.For<IHttpContextAccessor>();
-        _mockService = new AuthService(mockConfig, _userRepository, _tokenService, _httpcontextaccessor);
+        _mockService = new AuthService(_userRepository, _mockUserContextService, _tokenService);
     }
 
     [Fact]
@@ -138,11 +125,10 @@ public class AuthServiceTests
 
         var requestDto = new RefreshTokenRequestDto
         {
-            UserId = user.Id,
             RefreshToken = user.RefreshToken
         };
 
-        _userRepository.GetByIdAsync(user.Id).Returns(user);
+        _mockUserContextService.GetUserAsync().Returns(user);
 
         _tokenService.GenerateAccessToken(user).Returns("newAccessToken");
         _tokenService.GenerateRefreshToken().Returns("newRefreshToken");
@@ -161,22 +147,6 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task RefreshTokenAsync_ShouldThrow_WhenUserNotFound()
-    {
-        // Arrange
-        var requestDto = new RefreshTokenRequestDto
-        {
-            UserId = 99,
-            RefreshToken = "any"
-        };
-        _userRepository.GetByIdAsync(99).Returns((User?)null);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _mockService.RefreshTokenAsync(requestDto));
-    }
-
-    [Fact]
     public async Task RefreshTokenAsync_ShouldThrow_WhenRefreshTokenMismatch()
     {
         // Arrange
@@ -190,11 +160,10 @@ public class AuthServiceTests
 
         var requestDto = new RefreshTokenRequestDto
         {
-            UserId = 1,
             RefreshToken = "wrongToken"
         };
 
-        _userRepository.GetByIdAsync(1).Returns(user);
+        _mockUserContextService.GetUserAsync().Returns(user);
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
@@ -215,17 +184,15 @@ public class AuthServiceTests
 
         var requestDto = new RefreshTokenRequestDto
         {
-            UserId = 1,
             RefreshToken = "oldRefresh"
         };
 
-        _userRepository.GetByIdAsync(1).Returns(user);
+        _mockUserContextService.GetUserAsync().Returns(user);
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             _mockService.RefreshTokenAsync(requestDto));
     }
-
 
     [Fact]
     public async Task LogoutAsync_WhenUserFound_ClearsRefreshTokenAndUpdatesUser()
@@ -238,14 +205,7 @@ public class AuthServiceTests
             RefreshToken = "oldRefresh",
             RefreshTokenExpiry = DateTime.UtcNow.AddDays(1)
         };
-
-        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
-        var identity = new ClaimsIdentity(claims, "TestAuth");
-        var principal = new ClaimsPrincipal(identity);
-        var context = new DefaultHttpContext { User = principal };
-        _httpcontextaccessor.HttpContext.Returns(context);
-
-        _userRepository.GetByIdAsync(Arg.Any<int>()).Returns(user);
+        _mockUserContextService.GetUserAsync().Returns(user);
 
         // Act
         await _mockService.LogoutAsync();
@@ -255,73 +215,5 @@ public class AuthServiceTests
             u.Id == user.Id &&
             string.IsNullOrEmpty(u.RefreshToken) &&
             u.RefreshTokenExpiry == null));
-    }
-
-    [Fact]
-    public async Task LogoutAsync_WhenUserNotFound_DoesNotThrowOrUpdate()
-    {
-        // Arrange
-        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, "999") };
-        var identity = new ClaimsIdentity(claims, "TestAuth");
-        var principal = new ClaimsPrincipal(identity);
-        var context = new DefaultHttpContext { User = principal };
-        _httpcontextaccessor.HttpContext.Returns(context);
-
-        _userRepository.GetByIdAsync(Arg.Any<int>()).Returns((User?)null);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _mockService.LogoutAsync());
-        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
-    }
-
-    [Fact]
-    public async Task LogoutAsync_WhenHttpContextIsNull_ThrowsUnauthorized()
-    {
-        // Arrange
-        _httpcontextaccessor.HttpContext.Returns((HttpContext?)null);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _mockService.LogoutAsync());
-
-        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
-    }
-
-    [Fact]
-    public async Task LogoutAsync_WhenUserClaimsAreEmpty_ThrowsUnauthorized()
-    {
-        // Arrange
-        var principal = new ClaimsPrincipal(
-            new ClaimsIdentity());
-        var context = new DefaultHttpContext { User = principal };
-        _httpcontextaccessor.HttpContext.Returns(context);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _mockService.LogoutAsync());
-
-        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
-    }
-
-    [Fact]
-    public async Task LogoutAsync_WhenUserIdIsInvalidFormat_ThrowsUnauthorized()
-    {
-        // Arrange
-        var claims = new[]
-        {
-            new Claim(
-                ClaimTypes.NameIdentifier,
-                "invalid-id")
-        };
-        var identity = new ClaimsIdentity(claims, "TestAuth");
-        var principal = new ClaimsPrincipal(identity);
-        var context = new DefaultHttpContext { User = principal };
-        _httpcontextaccessor.HttpContext.Returns(context);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _mockService.LogoutAsync());
-
-        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 }

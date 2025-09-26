@@ -112,7 +112,7 @@ This will update your current database
 Create EF Core migration:
 
 ```bash
-dotnet ef mirations add <migration-name> --project HRS.Migrations --startup-project HRS.API
+dotnet ef migrations add <migration-name> --project HRS.Migrations --startup-project HRS.API
 ```
 
 ---
