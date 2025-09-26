@@ -69,7 +69,6 @@ public class AuthService : IAuthService
         user.RefreshToken = null;
         user.RefreshTokenExpiry = null;
         await _userRepository.UpdateUserAsync(user);
-        await _userRepository.SaveChangesAsync();
 
         return new LogoutResponseDto { Message = "Logout successful" };
     }
