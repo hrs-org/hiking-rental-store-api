@@ -27,8 +27,14 @@ public class UserRepository : CrudRepository<User>, IUserRepository
         await _db.SaveChangesAsync();
     }
     public async Task<List<User>> GetAllEmployee()
-        => await _db.Users.Where(u => u.Role == Domain.Enums.UserRole.Employee).ToListAsync();
-
+    {
+        // return await _db.Users.Where(u => u.Role == Domain.Enums.UserRole.Employee).ToListAsync();
+        return await _db.Users
+        .Where(u => u.Role == Domain.Enums.UserRole.Employee
+             || u.Role == Domain.Enums.UserRole.Manager
+             || u.Role == Domain.Enums.UserRole.Admin)
+        .ToListAsync();
+    }
 
     public async Task<bool> IsEmailUniqueAsync(string email)
     {
