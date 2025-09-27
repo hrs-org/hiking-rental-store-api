@@ -21,7 +21,8 @@ public class RegisterEmployeeDetailDtoValidatorsTests
     [Fact]
     public async Task Should_HaveError_When_FirstName_IsEmpty()
     {
-        var dto = new RegisterEmployeeDetailDto {
+        var dto = new RegisterEmployeeDetailDto
+        {
             FirstName = "",
             LastName = "KRIT)_((*))",
             Email = "LISDAS@wonder.com",
@@ -36,7 +37,8 @@ public class RegisterEmployeeDetailDtoValidatorsTests
     [Fact]
     public async Task Should_HaveError_When_LastName_IsEmpty()
     {
-        var dto = new RegisterEmployeeDetailDto {
+        var dto = new RegisterEmployeeDetailDto
+        {
             FirstName = "KRIT",
             LastName = "",
             Email = "LISDAS@wonder.com",
@@ -51,7 +53,8 @@ public class RegisterEmployeeDetailDtoValidatorsTests
     [Fact]
     public async Task Should_HaveError_When_Email_IsInvalid()
     {
-        var dto = new RegisterEmployeeDetailDto {
+        var dto = new RegisterEmployeeDetailDto
+        {
             FirstName = "KRIT",
             LastName = "",
             Email = "invalid-email",
@@ -66,7 +69,8 @@ public class RegisterEmployeeDetailDtoValidatorsTests
     [Fact]
     public async Task Should_HaveError_When_Email_IsNotUnique()
     {
-        var dto = new RegisterEmployeeDetailDto {
+        var dto = new RegisterEmployeeDetailDto
+        {
             FirstName = "KRIT",
             LastName = "",
             Email = "used@mail.com",
@@ -83,7 +87,8 @@ public class RegisterEmployeeDetailDtoValidatorsTests
     [Fact]
     public async Task Should_Pass_When_Email_IsUnique()
     {
-        var dto = new RegisterEmployeeDetailDto {
+        var dto = new RegisterEmployeeDetailDto
+        {
             FirstName = "KRIT",
             LastName = "",
             Email = "unique@mail.com",
@@ -102,7 +107,8 @@ public class RegisterEmployeeDetailDtoValidatorsTests
     [InlineData("Manager")]
     public async Task Should_Pass_When_Role_IsValid(string role)
     {
-        var dto = new RegisterEmployeeDetailDto {
+        var dto = new RegisterEmployeeDetailDto
+        {
             FirstName = "KRIT",
             LastName = "FERI",
             Email = "asd2222@mail.com",
@@ -117,7 +123,8 @@ public class RegisterEmployeeDetailDtoValidatorsTests
     [Fact]
     public async Task Should_HaveError_When_Role_IsInvalid()
     {
-        var dto = new RegisterEmployeeDetailDto {
+        var dto = new RegisterEmployeeDetailDto
+        {
             FirstName = "KRIT",
             LastName = "FERI",
             Email = "asd2222@mail.com",

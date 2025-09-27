@@ -47,7 +47,8 @@ public class UsersControllerTests
     [Fact]
     public async Task Register_ShouldReturnOk_WhenSuccess()
     {
-        var dto = new RegisterDto {
+        var dto = new RegisterDto
+        {
             FirstName = "Test",
             LastName = "User",
             Email = "exist@hrs.com",
@@ -96,7 +97,8 @@ public class UsersControllerTests
 
     [Fact]
     public async Task UpdateEmployee_ShouldReturnNotFound_WhenFail()
-    {   var dto = new UserDto { Id = 1, FirstName = "A", LastName = "B", Email = "a@b.com", Role = "Employee" };
+    {
+        var dto = new UserDto { Id = 1, FirstName = "A", LastName = "B", Email = "a@b.com", Role = "Employee" };
         _userService.UpdateEmployee(dto).Returns(dto);
         var updatedto = new UserDto { Id = 3, FirstName = "krit", LastName = "tt", Email = "a@bee.com", Role = "Employee" };
         // _userService.UpdateEmployee(Arg.Any<UserDto>()).Returns((UserDto?)null);
