@@ -218,23 +218,19 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task ChangePasswordAsync_WithValidRequest_UpdatesPassword_AndKeepsRefreshTokens()
+    public async Task ChangePasswordAsync_WithValidRequest_UpdatesPassword_AndReturnsBasicInfo()
     {
         // Arrange
         var oldPassword = "OldPassword123!";
         var newPassword = "NewPassword456!";
-
-        var originalRefreshToken = "refresh_token";
-        var originalRefreshExpiry = DateTime.UtcNow.AddDays(7);
-
         var user = new User
         {
             Id = 1,
             Email = "admin@hrs.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(oldPassword),
-            RefreshToken = originalRefreshToken,
-            RefreshTokenExpiry = originalRefreshExpiry
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(oldPassword)
         };
+
+        _mockUserContextService.GetUserAsync().Returns(user);
 
         var requestDto = new ChangePasswordRequestDto
         {
@@ -243,24 +239,16 @@ public class AuthServiceTests
             ConfirmNewPassword = newPassword
         };
 
-        _mockUserContextService.GetUserAsync().Returns(user);
-
         // Act
         var result = await _mockService.ChangePasswordAsync(requestDto);
 
-        // Assert
         result.Should().NotBeNull();
         result.UserId.Should().Be(user.Id);
-
-        result.RefreshTokensRevoked.Should().BeTrue();
+        result.PasswordChangedAtUtc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
         BCrypt.Net.BCrypt.Verify(newPassword, user.PasswordHash).Should().BeTrue();
 
-        await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u =>
-            u.Id == user.Id &&
-            u.RefreshToken == originalRefreshToken &&
-            u.RefreshTokenExpiry == originalRefreshExpiry
-        ));
+        await _userRepository.Received(1).UpdateUserAsync(user);
     }
 
     [Fact]

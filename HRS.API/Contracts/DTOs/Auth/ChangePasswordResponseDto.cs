@@ -4,5 +4,4 @@ public class ChangePasswordResponseDto
 {
     public int UserId { get; set; }
     public DateTime PasswordChangedAtUtc { get; set; }
-    public bool RefreshTokensRevoked { get; set; }
 }

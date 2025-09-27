@@ -88,7 +88,6 @@ public class AuthService : IAuthService
         {
             UserId = user.Id,
             PasswordChangedAtUtc = DateTime.UtcNow,
-            RefreshTokensRevoked = true
         };
     }
 }
