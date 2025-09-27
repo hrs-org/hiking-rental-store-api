@@ -77,6 +77,7 @@ public class AuthService : IAuthService
     public async Task<ChangePasswordResponseDto> ChangePasswordAsync(ChangePasswordRequestDto requestDto)
     {
         var user = await _userContextService.GetUserAsync();
+
         if (string.IsNullOrEmpty(requestDto.CurrentPassword) || !BCrypt.Net.BCrypt.Verify(requestDto.CurrentPassword, user.PasswordHash))
             throw new UnauthorizedAccessException("Current password is incorrect.");
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.NewPassword);
