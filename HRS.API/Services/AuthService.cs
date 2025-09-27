@@ -78,7 +78,7 @@ public class AuthService : IAuthService
         var user = await _userContextService.GetUserAsync();
         if (string.IsNullOrEmpty(requestDto.CurrentPassword) || !BCrypt.Net.BCrypt.Verify(requestDto.CurrentPassword, user.PasswordHash))
             throw new UnauthorizedAccessException("Current password is incorrect.");
-        if(BCrypt.Net.BCrypt.Verify(requestDto.NewPassword, user.PasswordHash))
+        if (BCrypt.Net.BCrypt.Verify(requestDto.NewPassword, user.PasswordHash))
             throw new InvalidOperationException("New password must be different from the current password.");
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.NewPassword);
         user.RefreshToken = null;
