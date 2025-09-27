@@ -39,4 +39,12 @@ public class AuthController : ControllerBase
         var res = await _authService.LogoutAsync();
         return Ok(ApiResponse<LogoutResponseDto>.OkResponse(res, "logout successful"));
     }
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePasswordAsync(
+    [FromBody] ChangePasswordRequestDto requestDto)
+    {
+        var res = await _authService.ChangePasswordAsync(requestDto);
+        return Ok(ApiResponse<ChangePasswordResponseDto>.OkResponse(res, "Password changed successfully"));//is it better to in this way or 204?
+    }
 }

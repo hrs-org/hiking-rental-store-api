@@ -216,4 +216,106 @@ public class AuthServiceTests
             string.IsNullOrEmpty(u.RefreshToken) &&
             u.RefreshTokenExpiry == null));
     }
+    [Fact]
+    public async Task ChangePasswordAsync_WithValidRequest_UpdatesPasswordAndClearsRefreshTokens()
+    {
+        // Arrange
+        var oldPassword = "OldPassword123!";
+        var newPassword = "NewPassword456!";
+
+        var user = new User
+        {
+            Id = 1,
+            Email = "admin@hrs.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(oldPassword),
+            RefreshToken = "refresh_token",
+            RefreshTokenExpiry = DateTime.UtcNow.AddDays(7)
+        };
+
+        var requestDto = new ChangePasswordRequestDto
+        {
+            CurrentPassword = oldPassword,
+            NewPassword = newPassword,
+            ConfirmNewPassword = newPassword
+        };
+
+        _mockUserContextService.GetUserAsync().Returns(user);
+
+        // Act
+        var result = await _mockService.ChangePasswordAsync(requestDto);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.UserId.Should().Be(user.Id);
+        result.RefreshTokensRevoked.Should().BeTrue();
+        BCrypt.Net.BCrypt.Verify(newPassword, user.PasswordHash).Should().BeTrue();
+
+        await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u =>
+            u.Id == user.Id &&
+            u.RefreshToken == null &&
+            u.RefreshTokenExpiry == null));
+    }
+    [Fact]
+    public async Task ChangePasswordAsync_WithIncorrectCurrentPassword_ThrowsUnauthorized()
+    {
+        // Arrange
+        var correctPassword = "CorrectPassword123!";
+        var wrongPassword = "WrongPassword!";
+
+        var user = new User
+        {
+            Id = 1,
+            Email = "admin@hrs.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(correctPassword)
+        };
+
+        var requestDto = new ChangePasswordRequestDto
+        {
+            CurrentPassword = wrongPassword,
+            NewPassword = "NewPassword456!",
+            ConfirmNewPassword = "NewPassword456!"
+        };
+
+        _mockUserContextService.GetUserAsync().Returns(user);
+
+        // Act
+        Func<Task> act = async () => await _mockService.ChangePasswordAsync(requestDto);
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("*incorrect*");
+
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
+    [Fact]
+    public async Task ChangePasswordAsync_WithSameNewPassword_ThrowsInvalidOperation()
+    {
+        // Arrange
+        var samePassword = "SamePassword123!";
+
+        var user = new User
+        {
+            Id = 1,
+            Email = "admin@hrs.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(samePassword)
+        };
+
+        var requestDto = new ChangePasswordRequestDto
+        {
+            CurrentPassword = samePassword,
+            NewPassword = samePassword,
+            ConfirmNewPassword = samePassword
+        };
+
+        _mockUserContextService.GetUserAsync().Returns(user);
+
+        // Act
+        Func<Task> act = async () => await _mockService.ChangePasswordAsync(requestDto);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*must be different*");
+
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
 }

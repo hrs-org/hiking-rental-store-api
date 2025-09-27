@@ -7,4 +7,5 @@ public interface IAuthService
     Task<LoginResponseDto> LoginAsync(LoginRequestDto requestDto);
     Task<LoginResponseDto> RefreshTokenAsync(RefreshTokenRequestDto requestDto);
     Task<LogoutResponseDto> LogoutAsync();
+    Task<ChangePasswordResponseDto> ChangePasswordAsync(ChangePasswordRequestDto requestDto);
 }

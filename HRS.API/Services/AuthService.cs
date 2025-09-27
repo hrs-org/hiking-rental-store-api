@@ -1,5 +1,6 @@
 using HRS.API.Contracts.DTOs.Auth;
 using HRS.API.Services.Interfaces;
+using HRS.Domain.Entities;
 using HRS.Domain.Interfaces;
 
 namespace HRS.API.Services;
@@ -71,5 +72,25 @@ public class AuthService : IAuthService
         await _userRepository.UpdateUserAsync(user);
 
         return new LogoutResponseDto { Message = "Logout successful" };
+    }
+    public async Task<ChangePasswordResponseDto> ChangePasswordAsync(ChangePasswordRequestDto requestDto)
+    {
+        var user = await _userContextService.GetUserAsync();
+        if (string.IsNullOrEmpty(requestDto.CurrentPassword) || !BCrypt.Net.BCrypt.Verify(requestDto.CurrentPassword, user.PasswordHash))
+            throw new UnauthorizedAccessException("Current password is incorrect.");
+        if(BCrypt.Net.BCrypt.Verify(requestDto.NewPassword, user.PasswordHash))
+            throw new InvalidOperationException("New password must be different from the current password.");
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.NewPassword);
+        user.RefreshToken = null;
+        user.RefreshTokenExpiry = null;
+
+        await _userRepository.UpdateUserAsync(user);
+
+        return new ChangePasswordResponseDto
+        {
+            UserId = user.Id,
+            PasswordChangedAtUtc = DateTime.UtcNow,
+            RefreshTokensRevoked = true
+        };
     }
 }
