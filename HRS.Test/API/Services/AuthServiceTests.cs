@@ -216,6 +216,7 @@ public class AuthServiceTests
             string.IsNullOrEmpty(u.RefreshToken) &&
             u.RefreshTokenExpiry == null));
     }
+
     [Fact]
     public async Task ChangePasswordAsync_WithValidRequest_UpdatesPasswordAndClearsRefreshTokens()
     {
@@ -255,6 +256,7 @@ public class AuthServiceTests
             u.RefreshToken == null &&
             u.RefreshTokenExpiry == null));
     }
+
     [Fact]
     public async Task ChangePasswordAsync_WithIncorrectCurrentPassword_ThrowsUnauthorized()
     {
@@ -284,37 +286,6 @@ public class AuthServiceTests
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
             .WithMessage("*incorrect*");
-
-        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
-    }
-    [Fact]
-    public async Task ChangePasswordAsync_WithSameNewPassword_ThrowsInvalidOperation()
-    {
-        // Arrange
-        var samePassword = "SamePassword123!";
-
-        var user = new User
-        {
-            Id = 1,
-            Email = "admin@hrs.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(samePassword)
-        };
-
-        var requestDto = new ChangePasswordRequestDto
-        {
-            CurrentPassword = samePassword,
-            NewPassword = samePassword,
-            ConfirmNewPassword = samePassword
-        };
-
-        _mockUserContextService.GetUserAsync().Returns(user);
-
-        // Act
-        Func<Task> act = async () => await _mockService.ChangePasswordAsync(requestDto);
-
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*must be different*");
 
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }

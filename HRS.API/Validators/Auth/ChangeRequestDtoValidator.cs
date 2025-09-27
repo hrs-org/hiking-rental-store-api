@@ -17,5 +17,9 @@ public class ChangePasswordRequestDtoValidator : AbstractValidator<ChangePasswor
         RuleFor(x => x.ConfirmNewPassword)
             .Equal(x => x.NewPassword)
             .WithMessage("New password and confirmation do not match");
+
+        RuleFor(x => x.NewPassword)
+            .NotEqual(x => x.CurrentPassword)
+            .WithMessage("New password must be different from current password");
     }
 }

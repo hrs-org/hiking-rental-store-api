@@ -71,4 +71,21 @@ public class ChangePasswordRequestDtoValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.ConfirmNewPassword)
             .WithErrorMessage("New password and confirmation do not match");
     }
+
+    [Fact]
+    public void Should_Fail_When_NewPassword_Same_As_Current()
+    {
+        // Arrange
+        var dto = new ChangePasswordRequestDto
+        {
+            CurrentPassword = "SamePassword123!",
+            NewPassword = "SamePassword123!",
+            ConfirmNewPassword = "SamePassword123!"
+        };
+        // Act
+        var result = _validator.TestValidate(dto);
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.NewPassword)
+            .WithErrorMessage("New password must be different from current password");
+    }
 }
