@@ -117,7 +117,6 @@ public class UserService : IUserService
         user.UpdatedAt = DateTime.UtcNow;
         user.UpdatedBy = editor.Id;
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Employee@123");
-        user.Role = UserRole.Employee;
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
