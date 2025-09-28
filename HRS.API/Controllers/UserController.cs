@@ -41,12 +41,20 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("employees")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager,Admin")]
     public async Task<ActionResult<List<UserDto>>> GetEmployees()
     {
         var employeeList = await _userService.GetEmployees();
         if (employeeList == null || employeeList.Count == 0) return NotFound();
-        return Ok(employeeList);
+        return Ok(ApiResponse<List<UserDto>>.OkResponse(employeeList));
+    }
+    [HttpGet("managers")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<UserDto>>> GetManagers()
+    {
+        var managerList = await _userService.GetManagers();
+        if (managerList == null || managerList.Count == 0) return NotFound();
+        return Ok(managerList);
     }
 
     [HttpPut("employees")]

@@ -35,6 +35,11 @@ public class UserRepository : CrudRepository<User>, IUserRepository
         //      || u.Role == Domain.Enums.UserRole.Admin)
         // .ToListAsync();
     }
+    public async Task<List<User>> GetAllManager()
+    {
+        return await _db.Users.Where(u => u.Role == Domain.Enums.UserRole.Manager).ToListAsync();
+
+    }
 
     public async Task<bool> IsEmailUniqueAsync(string email)
     {
