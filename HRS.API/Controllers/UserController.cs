@@ -45,7 +45,6 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<List<UserDto>>> GetEmployees()
     {
         var employeeList = await _userService.GetEmployees();
-        if (employeeList == null || employeeList.Count == 0) return NotFound();
         return Ok(ApiResponse<List<UserDto>>.OkResponse(employeeList));
     }
     [HttpGet("managers")]
@@ -53,8 +52,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<List<UserDto>>> GetManagers()
     {
         var managerList = await _userService.GetManagers();
-        if (managerList == null || managerList.Count == 0) return NotFound();
-        return Ok(managerList);
+        return Ok(ApiResponse<List<UserDto>>.OkResponse(managerList));
     }
 
     [HttpPut("employees")]
@@ -63,7 +61,7 @@ public class UsersController : ControllerBase
     {
         var updatedEmployee = await _userService.UpdateEmployee(dto);
         if (updatedEmployee == null) return NotFound();
-        return Ok(updatedEmployee);
+        return Ok(ApiResponse<UserDto>.OkResponse(updatedEmployee));
     }
 
     [HttpDelete("employees/{id:int}")]
@@ -72,7 +70,7 @@ public class UsersController : ControllerBase
     {
         var success = await _userService.DeleteEmployee(id);
         if (!success) return NotFound();
-        return NoContent();
+        return Ok(ApiResponse<bool>.OkResponse(true, "Employee deleted successfully"));
     }
 
     [HttpPost("employees/add")]
