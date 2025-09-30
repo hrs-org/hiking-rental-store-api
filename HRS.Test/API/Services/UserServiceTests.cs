@@ -15,12 +15,14 @@ public class UserServiceTests
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
     private readonly IUserService _userService;
+    private readonly IEmailService _emailService;
 
     public UserServiceTests()
     {
         _mapper = Substitute.For<IMapper>();
         _userRepository = Substitute.For<IUserRepository>();
-        _userService = new UserService(_mapper, _userRepository);
+        _emailService = Substitute.For<IEmailService>();
+        _userService = new UserService(_mapper, _userRepository, _emailService);
     }
 
     [Fact]
@@ -40,17 +42,28 @@ public class UserServiceTests
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
-            PasswordHash = dto.Password
+            PasswordHash = dto.Password,
+            EmailVerificationToken = "test-token",
+            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24),
+            IsVerified = false
         };
+        
         _userRepository.GetByEmailAsync(dto.Email).Returns((User?)null);
         _mapper.Map<User>(dto).Returns(user);
+        _emailService.SendVerificationEmailAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.CompletedTask);
 
         // Act
         var result = await _userService.Register(dto);
 
         // Assert
         result.Should().BeTrue();
+        await _userRepository.Received(1).AddAsync(Arg.Any<User>());
         await _userRepository.Received(1).SaveChangesAsync();
+        await _emailService.Received(1).SendVerificationEmailAsync(
+            user.Email, 
+            Arg.Any<string>(), 
+            user.FirstName);
     }
 
     [Fact]

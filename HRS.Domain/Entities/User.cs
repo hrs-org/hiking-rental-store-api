@@ -20,4 +20,6 @@ public class User
     public virtual User? UpdatedByUser { get; init; }
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiry { get; set; }
+    public string? EmailVerificationToken { get; set; }
+    public DateTime? EmailVerificationTokenExpiry { get; set; }
 }

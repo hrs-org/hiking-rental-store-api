@@ -11,11 +11,13 @@ public class UserService : IUserService
 {
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
+    private readonly IEmailService _emailService;
 
-    public UserService(IMapper mapper, IUserRepository userRepository)
+    public UserService(IMapper mapper, IUserRepository userRepository, IEmailService emailService)
     {
         _mapper = mapper;
         _userRepository = userRepository;
+        _emailService = emailService;
     }
 
     public async Task<IEnumerable<UserDto>> GetUsers()
@@ -39,8 +41,16 @@ public class UserService : IUserService
             if (dto.Password.Length < 8) throw new ArgumentException("Password must be at least 8 characters long.");
             var user = _mapper.Map<User>(dto);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+            
+            user.EmailVerificationToken = Guid.NewGuid().ToString();
+            user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
+            user.IsVerified = false; 
+            
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
+            
+            await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken, user.FirstName);
+            
             return true;
         }
         catch (InvalidOperationException ex)
