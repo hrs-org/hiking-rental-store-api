@@ -106,7 +106,7 @@ public partial class EmailService : IEmailService
         try
         {
             using var client = new SmtpClient(_smtpHost, _smtpPort);
-            client.EnableSsl = _smtpPort == 587;
+            client.EnableSsl = true;
             client.Credentials = new NetworkCredential(_smtpUsername, _smtpPassword);
 
             using var message = new MailMessage();
