@@ -461,8 +461,8 @@ public class AuthServiceTests
 
         // Verify email was sent
         await _emailService.Received(1).SendVerificationEmailAsync(
-            user.Email, 
-            Arg.Any<string>(), 
+            user.Email,
+            Arg.Any<string>(),
             user.FirstName);
     }
 

@@ -47,7 +47,7 @@ public class UserServiceTests
             EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24),
             IsVerified = false
         };
-        
+
         _userRepository.GetByEmailAsync(dto.Email).Returns((User?)null);
         _mapper.Map<User>(dto).Returns(user);
         _emailService.SendVerificationEmailAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
@@ -61,8 +61,8 @@ public class UserServiceTests
         await _userRepository.Received(1).AddAsync(Arg.Any<User>());
         await _userRepository.Received(1).SaveChangesAsync();
         await _emailService.Received(1).SendVerificationEmailAsync(
-            user.Email, 
-            Arg.Any<string>(), 
+            user.Email,
+            Arg.Any<string>(),
             user.FirstName);
     }
 

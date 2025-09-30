@@ -52,7 +52,7 @@ public class AuthController : ControllerBase
         var res = await _userContextService.GetUserDtoAsync();
         return Ok(ApiResponse<UserDto>.OkResponse(res, "Get current user successful"));
     }
-    
+
     [HttpGet("verify-email")]
     public async Task<IActionResult> VerifyEmailAsync([FromQuery] string email, [FromQuery] string token)
     {
@@ -65,7 +65,7 @@ public class AuthController : ControllerBase
         var frontendUrl = _configuration["Email:FrontendUrl"] ?? "http://localhost:4200";
         var frontendUri = new Uri(frontendUrl);
         var res = await _authService.VerifyEmailAsync(requestDto, frontendUri);
-        
+
         return Redirect(res.RedirectUrl.ToString());
     }
 

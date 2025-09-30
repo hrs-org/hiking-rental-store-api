@@ -68,7 +68,7 @@ public class EmailServiceTests
         // This will likely fail in a test environment without real SMTP,
         // but we can verify the method structure
         var result = await _emailService.SendEmailAsync(recipient, subject, body);
-        
+
         // The result will be false in test environment, but method should not throw
         result.Should().BeFalse(); // Expected to fail in test environment
     }

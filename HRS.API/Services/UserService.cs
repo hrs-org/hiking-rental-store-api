@@ -41,16 +41,16 @@ public class UserService : IUserService
             if (dto.Password.Length < 8) throw new ArgumentException("Password must be at least 8 characters long.");
             var user = _mapper.Map<User>(dto);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-            
+
             user.EmailVerificationToken = Guid.NewGuid().ToString();
             user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
-            user.IsVerified = false; 
-            
+            user.IsVerified = false;
+
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
-            
+
             await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken, user.FirstName);
-            
+
             return true;
         }
         catch (InvalidOperationException ex)

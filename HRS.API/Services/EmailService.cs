@@ -40,12 +40,12 @@ public partial class EmailService : IEmailService
     public async Task SendVerificationEmailAsync(string email, string verificationToken, string firstName)
     {
         LogSendingVerificationEmail(_logger, email, firstName);
-        
+
         var subject = "Verify Your Email - Hiking Rental Store";
         var baseUrl = _baseUrl.TrimEnd('/');
         var verificationUrl = $"{baseUrl}/api/auth/verify-email?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(verificationToken)}";
-        
- 
+
+
 
         var emailTemplate = new EmailTemplate
         {
@@ -59,7 +59,7 @@ public partial class EmailService : IEmailService
 
         var body = GenerateEmailBody(emailTemplate);
         var result = await SendEmailAsync(email, subject, body);
-        
+
         if (result)
         {
             LogVerificationEmailSent(_logger, email);
@@ -106,7 +106,7 @@ public partial class EmailService : IEmailService
         try
         {
             using var client = new SmtpClient(_smtpHost, _smtpPort);
-            client.EnableSsl = _smtpPort == 587; 
+            client.EnableSsl = _smtpPort == 587;
             client.Credentials = new NetworkCredential(_smtpUsername, _smtpPassword);
 
             using var message = new MailMessage();

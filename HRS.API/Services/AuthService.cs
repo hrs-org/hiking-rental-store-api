@@ -11,7 +11,7 @@ public class AuthService : IAuthService
     private readonly IUserRepository _userRepository;
     private readonly IEmailService _emailService;
 
-    public AuthService(IUserRepository userRepository,IUserContextService userContextService,ITokenService tokenService,IEmailService emailService)
+    public AuthService(IUserRepository userRepository, IUserContextService userContextService, ITokenService tokenService, IEmailService emailService)
     {
         _userRepository = userRepository;
         _userContextService = userContextService;
@@ -84,44 +84,44 @@ public class AuthService : IAuthService
         if (user == null)
         {
             var redirectUrl = new Uri(frontendUrl, $"/verification-failed?email={Uri.EscapeDataString(requestDto.Email)}&message={Uri.EscapeDataString("User not found")}");
-            return new EmailVerificationRedirectDto 
-            { 
+            return new EmailVerificationRedirectDto
+            {
                 RedirectUrl = redirectUrl,
-                IsVerified = false, 
-                Message = "User not found" 
+                IsVerified = false,
+                Message = "User not found"
             };
         }
 
         if (user.IsVerified)
         {
             var redirectUrl = new Uri(frontendUrl, $"/verification-success?email={Uri.EscapeDataString(requestDto.Email)}");
-            return new EmailVerificationRedirectDto 
-            { 
+            return new EmailVerificationRedirectDto
+            {
                 RedirectUrl = redirectUrl,
-                IsVerified = true, 
-                Message = "Email is already verified" 
+                IsVerified = true,
+                Message = "Email is already verified"
             };
         }
 
         if (user.EmailVerificationToken != requestDto.VerificationToken)
         {
             var redirectUrl = new Uri(frontendUrl, $"/verification-failed?email={Uri.EscapeDataString(requestDto.Email)}&message={Uri.EscapeDataString("Invalid verification token")}");
-            return new EmailVerificationRedirectDto 
-            { 
+            return new EmailVerificationRedirectDto
+            {
                 RedirectUrl = redirectUrl,
-                IsVerified = false, 
-                Message = "Invalid verification token" 
+                IsVerified = false,
+                Message = "Invalid verification token"
             };
         }
 
         if (user.EmailVerificationTokenExpiry < DateTime.UtcNow)
         {
             var redirectUrl = new Uri(frontendUrl, $"/verification-expired?email={Uri.EscapeDataString(requestDto.Email)}");
-            return new EmailVerificationRedirectDto 
-            { 
+            return new EmailVerificationRedirectDto
+            {
                 RedirectUrl = redirectUrl,
-                IsVerified = false, 
-                Message = "Verification token has expired" 
+                IsVerified = false,
+                Message = "Verification token has expired"
             };
         }
 
@@ -131,11 +131,11 @@ public class AuthService : IAuthService
         await _userRepository.UpdateUserAsync(user);
 
         var successRedirectUrl = new Uri(frontendUrl, $"/verification-success?email={Uri.EscapeDataString(requestDto.Email)}");
-        return new EmailVerificationRedirectDto 
-        { 
+        return new EmailVerificationRedirectDto
+        {
             RedirectUrl = successRedirectUrl,
-            IsVerified = true, 
-            Message = "Email verified successfully" 
+            IsVerified = true,
+            Message = "Email verified successfully"
         };
 
 
@@ -159,7 +159,7 @@ public class AuthService : IAuthService
 
         // Send verification email
         await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken, user.FirstName);
-        
+
         return true;
     }
 }
