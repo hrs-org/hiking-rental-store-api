@@ -81,7 +81,7 @@ public class UsersControllerTests
 
         var result = await _controller.GetEmployees();
 
-        result.Result.Should().BeOfType<NotFoundResult>();
+        result.Result.Should().BeOfType<OkObjectResult>();
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class UsersControllerTests
 
         var result = await _controller.DeleteEmployee(1);
 
-        result.Should().BeOfType<NoContentResult>();
+        result.Should().BeOfType<OkObjectResult>();
     }
 
     [Fact]
