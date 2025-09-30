@@ -90,12 +90,10 @@ public class UserService : IUserService
         return _mapper.Map<RegisterEmployeeDetailDto>(employee);
     }
 
-    public async Task<bool> DeleteEmployee(RegisterEmployeeDetailDto dto)
+    public async Task<bool> DeleteEmployee(int id)
     {
-        var employee = await _userRepository.GetByIdAsync(dto.Id) ?? throw new KeyNotFoundException("User not found.");
+        var employee = await _userRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException("User not found.");
         if (employee.Role == UserRole.Customer) throw new InvalidOperationException("Cannot delete a customer as an employee.");
-        if (employee.FirstName != dto.FirstName || employee.LastName != dto.LastName || employee.Email != dto.Email)
-            throw new InvalidOperationException("Employee details do not match.");
         _userRepository.Remove(employee);
         await _userRepository.SaveChangesAsync();
         return true;
