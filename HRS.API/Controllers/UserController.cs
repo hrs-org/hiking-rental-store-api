@@ -48,7 +48,7 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<List<UserDto>>.OkResponse(employeeList));
     }
     [HttpGet("managers")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager,Admin")]
     public async Task<ActionResult<List<UserDto>>> GetManagers()
     {
         var managerList = await _userService.GetManagers();
@@ -56,7 +56,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("employees")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager,Admin")]
     public async Task<ActionResult<UserDto>> UpdateEmployee([FromBody] UserDto dto)
     {
         var updatedEmployee = await _userService.UpdateEmployee(dto);
@@ -65,7 +65,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("employees/{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager,Admin")]
     public async Task<IActionResult> DeleteEmployee(int id)
     {
         var success = await _userService.DeleteEmployee(id);
@@ -74,7 +74,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("employees/add")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager,Admin")]
     public async Task<ActionResult<UserDto>> CreateNewEmployee([FromBody] RegisterEmployeeDetailDto dto)
     {
         var createdUser = await _userService.CreateNewEmployee(dto);
