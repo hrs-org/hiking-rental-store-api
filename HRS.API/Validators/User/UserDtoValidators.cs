@@ -4,7 +4,7 @@ using HRS.Domain.Interfaces;
 namespace HRS.API.Validators.User;
 
 
-public class UserDtoValidators : AbstractValidator<RegisterEmployeeDetailDto>
+public class UserDtoValidators : AbstractValidator<UserDto>
 {
     public UserDtoValidators(IUserRepository userRepository)
     {
