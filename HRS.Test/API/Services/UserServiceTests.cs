@@ -344,7 +344,7 @@ public class UserServiceTests
 
         // Act
         var result = await _userService.DeleteEmployee(id);
-      
+
         // Assert
         Assert.True(result);
         await _userRepository.Received(1).GetByIdAsync(id);
