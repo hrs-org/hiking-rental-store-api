@@ -50,4 +50,13 @@ public class AuthController : ControllerBase
         var res = await _userContextService.GetUserDtoAsync();
         return Ok(ApiResponse<UserDto>.OkResponse(res, "Get current user successful"));
     }
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePasswordAsync(
+    [FromBody] ChangePasswordRequestDto requestDto)
+    {
+        var res = await _authService.ChangePasswordAsync(requestDto);
+        return Ok(ApiResponse<ChangePasswordResponseDto>.OkResponse(res, "Password changed successfully"));
+    }
 }
