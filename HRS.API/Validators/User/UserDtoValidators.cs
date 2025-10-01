@@ -4,9 +4,9 @@ using HRS.Domain.Interfaces;
 namespace HRS.API.Validators.User;
 
 
-public class RegisterEmployeeDetailDtoValidators : AbstractValidator<RegisterEmployeeDetailDto>
+public class UserDtoValidators : AbstractValidator<RegisterEmployeeDetailDto>
 {
-    public RegisterEmployeeDetailDtoValidators(IUserRepository userRepository)
+    public UserDtoValidators(IUserRepository userRepository)
     {
         RuleFor(x => x.FirstName).NotEmpty();
         RuleFor(x => x.Email)
@@ -18,10 +18,7 @@ public class RegisterEmployeeDetailDtoValidators : AbstractValidator<RegisterEmp
             })
             .WithMessage("Email is already in use.");
         RuleFor(x => x.LastName).NotEmpty();
-        RuleFor(x => x.Role).NotEmpty()
-            .Must(r => r == "Employee" || r == "Admin" || r == "Manager")
-            .WithMessage("Role must be Employee or Admin or Manager");
-        ;
+        RuleFor(x => x.Role).NotEmpty().WithMessage("Role must be Assigned");
 
 
     }
