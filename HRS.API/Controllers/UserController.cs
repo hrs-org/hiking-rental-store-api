@@ -47,9 +47,6 @@ public class UsersController : ControllerBase
         var employeeList = await _userService.GetEmployees();
         return Ok(ApiResponse<List<UserDto>>.OkResponse(employeeList));
     }
-    [HttpGet("managers")]
-    [Authorize(Roles = "Manager,Admin")]
-
 
     [HttpPut("employees")]
     [Authorize(Roles = "Manager,Admin")]
