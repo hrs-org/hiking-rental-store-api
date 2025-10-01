@@ -49,11 +49,7 @@ public class UsersController : ControllerBase
     }
     [HttpGet("managers")]
     [Authorize(Roles = "Manager,Admin")]
-    public async Task<ActionResult<List<UserDto>>> GetManagers()
-    {
-        var managerList = await _userService.GetManagers();
-        return Ok(ApiResponse<List<UserDto>>.OkResponse(managerList));
-    }
+
 
     [HttpPut("employees")]
     [Authorize(Roles = "Manager,Admin")]

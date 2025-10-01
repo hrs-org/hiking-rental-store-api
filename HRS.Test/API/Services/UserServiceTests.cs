@@ -6,7 +6,9 @@ using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
+using Microsoft.IdentityModel.Tokens;
 using NSubstitute;
+using Xunit.Sdk;
 
 namespace HRS.Test.API.Services;
 
@@ -273,8 +275,8 @@ public class UserServiceTests
             new() { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee },
             new() { Id = 3, FirstName = "Feri", LastName = "Shen", Email = " ", Role = UserRole.Customer } // Not an employee
         }.AsQueryable();
-
-        _userRepository.GetAllEmployee().Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
+_userRepository.GetAllEmployee(false)
+    .Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
         var employeeDtos = users
             .Where(u => u.Role == UserRole.Employee)
             .Select(u => new UserDto
@@ -287,7 +289,7 @@ public class UserServiceTests
             }).ToList();
         _mapper.Map<List<UserDto>>(Arg.Any<List<User>>()).Returns(employeeDtos);
         _mapper.Map<List<UserDto>>(Arg.Any<IEnumerable<User>>()).Returns(employeeDtos);
-
+        _userContextService.GetUserAsync().Returns(new User { Role = UserRole.Manager });
         // Act
         var result = await _userService.GetEmployees();
 
@@ -297,7 +299,7 @@ public class UserServiceTests
         Assert.Equal(2, result.Count); // Only 2 employees
         Assert.All(result, r => Assert.Equal("Employee", r.Role));
         await _userRepository.Received(1).GetAllEmployee();
-    }
+          }
 
     [Fact]
     public async Task GetAllEmployees_False() // No Employee
@@ -325,7 +327,7 @@ public class UserServiceTests
             }).ToList();
         _mapper.Map<List<UserDto>>(Arg.Any<List<User>>()).Returns(employeeDtos);
         _mapper.Map<List<UserDto>>(Arg.Any<IEnumerable<User>>()).Returns(employeeDtos);
-
+        _userContextService.GetUserAsync().Returns(new User { Role = UserRole.Manager });
         // Act
         var result = await _userService.GetEmployees();
 

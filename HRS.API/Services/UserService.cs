@@ -70,11 +70,6 @@ public class UserService : IUserService
         return _mapper.Map<List<UserDto>>(employee);
     }
 
-    public async Task<List<UserDto>> GetManagers()
-    {
-        var Manager = await _userRepository.GetAllManager();
-        return _mapper.Map<List<UserDto>>(Manager);
-    }
     public async Task<UserDto?> UpdateEmployee(UserDto dto)
     {
         var editor = await _userContextService.GetUserAsync();
