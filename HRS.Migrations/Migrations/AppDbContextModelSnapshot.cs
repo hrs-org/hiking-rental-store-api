@@ -130,14 +130,14 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 9, 26, 4, 29, 39, 202, DateTimeKind.Utc).AddTicks(3800),
+                            CreatedAt = new DateTime(2025, 10, 1, 6, 42, 50, 928, DateTimeKind.Utc).AddTicks(3000),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$ZOKhao/PqZpn1EiJcqnX2.fBU9oCsQbMtd0vaMGqgp8IgZE.Lw/ie",
+                            PasswordHash = "$2a$11$I4lDIgHSLPn4Ct2DX9M6WuMx2yomN50Y0X8pg4/.aAXfb555RpP4a",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 9, 26, 4, 29, 39, 202, DateTimeKind.Utc).AddTicks(3800),
+                            UpdatedAt = new DateTime(2025, 10, 1, 6, 42, 50, 928, DateTimeKind.Utc).AddTicks(3000),
                             UpdatedBy = 0
                         });
                 });
