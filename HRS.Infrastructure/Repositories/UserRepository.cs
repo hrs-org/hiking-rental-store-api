@@ -26,9 +26,12 @@ public class UserRepository : CrudRepository<User>, IUserRepository
 
         await _db.SaveChangesAsync();
     }
-    public async Task<List<User>> GetAllEmployee()
+    public async Task<List<User>> GetAllEmployee(bool includeManagers = false)
     {
-        return await _db.Users.Where(u => u.Role == Domain.Enums.UserRole.Employee).ToListAsync();
+        return await _db.Users.Where(u => includeManagers ?
+            u.Role == Domain.Enums.UserRole.Manager ||
+            u.Role == Domain.Enums.UserRole.Employee
+            : u.Role == Domain.Enums.UserRole.Employee).ToListAsync();
         // return await _db.Users
         // .Where(u => u.Role == Domain.Enums.UserRole.Employee
         //      || u.Role == Domain.Enums.UserRole.Manager

@@ -64,7 +64,9 @@ public class UserService : IUserService
 
     public async Task<List<UserDto>> GetEmployees()
     {
-        var employee = await _userRepository.GetAllEmployee();
+        var user = await _userContextService.GetUserAsync();
+
+        var employee = await _userRepository.GetAllEmployee(user.Role == UserRole.Admin);
         return _mapper.Map<List<UserDto>>(employee);
     }
 
