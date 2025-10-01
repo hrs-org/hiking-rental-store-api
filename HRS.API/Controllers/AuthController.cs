@@ -42,7 +42,7 @@ public class AuthController : ControllerBase
         var res = await _authService.LogoutAsync();
         return Ok(ApiResponse<LogoutResponseDto>.OkResponse(res, "logout successful"));
     }
-    
+
     [HttpGet("active-user")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUserAsync()
@@ -50,7 +50,7 @@ public class AuthController : ControllerBase
         var res = await _userContextService.GetUserDtoAsync();
         return Ok(ApiResponse<UserDto>.OkResponse(res, "Get current user successful"));
     }
-    
+
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePasswordAsync(
