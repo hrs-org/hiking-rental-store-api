@@ -35,6 +35,8 @@ builder.Services.AddValidatorsFromAssemblyContaining<RefreshTokenRequestDtoValid
 builder.Services.AddValidatorsFromAssemblyContaining<AddItemRequestDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateItemRequestDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterEmployeeDetailDtoValidators>();
+builder.Services.AddValidatorsFromAssemblyContaining<ChangePasswordRequestDtoValidator>();
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -108,11 +110,8 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+if (app.Environment.IsDevelopment()) app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 

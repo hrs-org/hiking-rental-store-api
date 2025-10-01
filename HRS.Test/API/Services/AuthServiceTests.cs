@@ -216,4 +216,71 @@ public class AuthServiceTests
             string.IsNullOrEmpty(u.RefreshToken) &&
             u.RefreshTokenExpiry == null));
     }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WithValidRequest_UpdatesPassword_AndReturnsBasicInfo()
+    {
+        // Arrange
+        var oldPassword = "OldPassword123!";
+        var newPassword = "NewPassword456!";
+        var user = new User
+        {
+            Id = 1,
+            Email = "admin@hrs.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(oldPassword)
+        };
+
+        _mockUserContextService.GetUserAsync().Returns(user);
+
+        var requestDto = new ChangePasswordRequestDto
+        {
+            CurrentPassword = oldPassword,
+            NewPassword = newPassword,
+            ConfirmNewPassword = newPassword
+        };
+
+        // Act
+        var result = await _mockService.ChangePasswordAsync(requestDto);
+
+        result.Should().NotBeNull();
+        result.UserId.Should().Be(user.Id);
+        result.PasswordChangedAtUtc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+
+        BCrypt.Net.BCrypt.Verify(newPassword, user.PasswordHash).Should().BeTrue();
+
+        await _userRepository.Received(1).UpdateUserAsync(user);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WithIncorrectCurrentPassword_ThrowsUnauthorized()
+    {
+        // Arrange
+        var correctPassword = "CorrectPassword123!";
+        var wrongPassword = "WrongPassword!";
+
+        var user = new User
+        {
+            Id = 1,
+            Email = "admin@hrs.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(correctPassword)
+        };
+
+        var requestDto = new ChangePasswordRequestDto
+        {
+            CurrentPassword = wrongPassword,
+            NewPassword = "NewPassword456!",
+            ConfirmNewPassword = "NewPassword456!"
+        };
+
+        _mockUserContextService.GetUserAsync().Returns(user);
+
+        // Act
+        Func<Task> act = async () => await _mockService.ChangePasswordAsync(requestDto);
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("*incorrect*");
+
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
 }

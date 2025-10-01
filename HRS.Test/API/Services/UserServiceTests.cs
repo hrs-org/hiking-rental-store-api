@@ -340,12 +340,11 @@ public class UserServiceTests
         // Arrange
         var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
         _userRepository.GetByIdAsync(2).Returns(user);
-
         int id = 2;
 
         // Act
         var result = await _userService.DeleteEmployee(id);
-
+      
         // Assert
         Assert.True(result);
         await _userRepository.Received(1).GetByIdAsync(id);
@@ -359,7 +358,6 @@ public class UserServiceTests
         // Arrange
         var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Admin, PasswordHash = "123456" };
         _userRepository.GetByIdAsync(2).Returns(user);
-
         int id = 2;
 
         // Act
@@ -378,7 +376,6 @@ public class UserServiceTests
         // Arrange
         var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Customer, PasswordHash = "123456" };
         _userRepository.GetByIdAsync(3).Returns(user);
-
         int id = 3;
 
         // Act
@@ -397,7 +394,6 @@ public class UserServiceTests
         // Arrange
         var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
         _userRepository.GetByIdAsync(3).Returns(user);
-
         int id = 2;
 
         // Act
