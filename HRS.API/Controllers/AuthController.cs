@@ -53,20 +53,11 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<UserDto>.OkResponse(res, "Get current user successful"));
     }
 
-    [HttpGet("verify-email")]
-    public async Task<IActionResult> VerifyEmailAsync([FromQuery] string email, [FromQuery] string token)
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmailAsync([FromBody] EmailVerificationRequestDto requestDto)
     {
-        var requestDto = new EmailVerificationRequestDto
-        {
-            Email = email,
-            VerificationToken = token
-        };
-
-        var frontendUrl = _configuration["Email:FrontendUrl"] ?? "http://localhost:4200";
-        var frontendUri = new Uri(frontendUrl);
-        var res = await _authService.VerifyEmailAsync(requestDto, frontendUri);
-
-        return Redirect(res.RedirectUrl.ToString());
+        var res = await _authService.VerifyEmailAsync(requestDto);
+        return Ok(ApiResponse<EmailVerificationResponseDto>.OkResponse(res, "Email verification completed"));
     }
 
     [HttpPost("resend-verification")]

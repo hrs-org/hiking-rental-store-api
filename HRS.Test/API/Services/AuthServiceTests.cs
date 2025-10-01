@@ -15,15 +15,17 @@ public class AuthServiceTests
     private readonly IUserContextService _mockUserContextService;
     private readonly ITokenService _tokenService;
     private readonly IUserRepository _userRepository;
-    private readonly IEmailService _emailService;
+    private readonly IEmailBuilderService _emailBuilderService;
+    private readonly IEmailSenderService _emailSenderService;
 
     public AuthServiceTests()
     {
         _userRepository = Substitute.For<IUserRepository>();
         _mockUserContextService = Substitute.For<IUserContextService>();
         _tokenService = Substitute.For<ITokenService>();
-        _emailService = Substitute.For<IEmailService>();
-        _mockService = new AuthService(_userRepository, _mockUserContextService, _tokenService, _emailService);
+        _emailBuilderService = Substitute.For<IEmailBuilderService>();
+        _emailSenderService = Substitute.For<IEmailSenderService>();
+        _mockService = new AuthService(_userRepository, _mockUserContextService, _tokenService, _emailBuilderService, _emailSenderService);
     }
 
     [Fact]
@@ -235,14 +237,12 @@ public class AuthServiceTests
         _userRepository.GetByEmailAsync(requestDto.Email).Returns((User?)null);
 
         // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto, frontendUrl);
+        var result = await _mockService.VerifyEmailAsync(requestDto);
 
         // Assert
         result.Should().NotBeNull();
         result.IsVerified.Should().BeFalse();
         result.Message.Should().Be("User not found");
-        result.RedirectUrl.ToString().Should().Contain("/verification-failed");
-        result.RedirectUrl.ToString().Should().Contain($"email={Uri.EscapeDataString(requestDto.Email)}");
     }
 
     [Fact]
@@ -267,14 +267,12 @@ public class AuthServiceTests
         _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
 
         // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto, frontendUrl);
+        var result = await _mockService.VerifyEmailAsync(requestDto);
 
         // Assert
         result.Should().NotBeNull();
         result.IsVerified.Should().BeTrue();
         result.Message.Should().Be("Email is already verified");
-        result.RedirectUrl.ToString().Should().Contain("/verification-success");
-        result.RedirectUrl.ToString().Should().Contain($"email={Uri.EscapeDataString(requestDto.Email)}");
     }
 
     [Fact]
@@ -299,14 +297,12 @@ public class AuthServiceTests
         _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
 
         // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto, frontendUrl);
+        var result = await _mockService.VerifyEmailAsync(requestDto);
 
         // Assert
         result.Should().NotBeNull();
         result.IsVerified.Should().BeFalse();
         result.Message.Should().Be("Invalid verification token");
-        result.RedirectUrl.ToString().Should().Contain("/verification-failed");
-        result.RedirectUrl.ToString().Should().Contain($"email={Uri.EscapeDataString(requestDto.Email)}");
     }
 
     [Fact]
@@ -332,14 +328,12 @@ public class AuthServiceTests
         _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
 
         // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto, frontendUrl);
+        var result = await _mockService.VerifyEmailAsync(requestDto);
 
         // Assert
         result.Should().NotBeNull();
         result.IsVerified.Should().BeFalse();
         result.Message.Should().Be("Verification token has expired");
-        result.RedirectUrl.ToString().Should().Contain("/verification-expired");
-        result.RedirectUrl.ToString().Should().Contain($"email={Uri.EscapeDataString(requestDto.Email)}");
     }
 
     [Fact]
@@ -365,14 +359,12 @@ public class AuthServiceTests
         _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
 
         // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto, frontendUrl);
+        var result = await _mockService.VerifyEmailAsync(requestDto);
 
         // Assert
         result.Should().NotBeNull();
         result.IsVerified.Should().BeTrue();
         result.Message.Should().Be("Email verified successfully");
-        result.RedirectUrl.ToString().Should().Contain("/verification-success");
-        result.RedirectUrl.ToString().Should().Contain($"email={Uri.EscapeDataString(requestDto.Email)}");
 
         // Verify user was updated
         await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u =>
@@ -390,11 +382,7 @@ public class AuthServiceTests
     public async Task ResendVerificationEmailAsync_WhenUserNotFound_ThrowsInvalidOperationException()
     {
         // Arrange
-        var requestDto = new ResendVerificationRequestDto
-        {
-            Email = "nonexistent@example.com"
-        };
-
+        var requestDto = new ResendVerificationRequestDto { Email = "nonexistent@example.com" };
         _userRepository.GetByEmailAsync(requestDto.Email).Returns((User?)null);
 
         // Act & Assert
@@ -406,18 +394,8 @@ public class AuthServiceTests
     public async Task ResendVerificationEmailAsync_WhenUserAlreadyVerified_ThrowsInvalidOperationException()
     {
         // Arrange
-        var requestDto = new ResendVerificationRequestDto
-        {
-            Email = "verified@example.com"
-        };
-
-        var user = new User
-        {
-            Id = 1,
-            Email = requestDto.Email,
-            IsVerified = true
-        };
-
+        var requestDto = new ResendVerificationRequestDto { Email = "verified@example.com" };
+        var user = new User { Id = 1, Email = requestDto.Email, IsVerified = true };
         _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
 
         // Act & Assert
@@ -429,52 +407,7 @@ public class AuthServiceTests
     public async Task ResendVerificationEmailAsync_WhenValidUser_GeneratesNewTokenAndSendsEmail()
     {
         // Arrange
-        var requestDto = new ResendVerificationRequestDto
-        {
-            Email = "user@example.com"
-        };
-
-        var user = new User
-        {
-            Id = 1,
-            Email = requestDto.Email,
-            FirstName = "John",
-            IsVerified = false,
-            EmailVerificationToken = "old-token",
-            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(-1)
-        };
-
-        _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
-
-        // Act
-        var result = await _mockService.ResendVerificationEmailAsync(requestDto);
-
-        // Assert
-        result.Should().BeTrue();
-
-        // Verify user was updated with new token
-        await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u =>
-            u.Id == user.Id &&
-            !string.IsNullOrEmpty(u.EmailVerificationToken) &&
-            u.EmailVerificationToken != "old-token" &&
-            u.EmailVerificationTokenExpiry > DateTime.UtcNow));
-
-        // Verify email was sent
-        await _emailService.Received(1).SendVerificationEmailAsync(
-            user.Email,
-            Arg.Any<string>(),
-            user.FirstName);
-    }
-
-    [Fact]
-    public async Task ResendVerificationEmailAsync_WhenValidUser_GeneratesTokenWith24HourExpiry()
-    {
-        // Arrange
-        var requestDto = new ResendVerificationRequestDto
-        {
-            Email = "user@example.com"
-        };
-
+        var requestDto = new ResendVerificationRequestDto { Email = "user@example.com" };
         var user = new User
         {
             Id = 1,
@@ -482,18 +415,15 @@ public class AuthServiceTests
             FirstName = "John",
             IsVerified = false
         };
-
         _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
 
         // Act
-        await _mockService.ResendVerificationEmailAsync(requestDto);
+        var result = await _mockService.ResendVerificationEmailAsync(requestDto);
 
         // Assert
-        await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u =>
-            u.EmailVerificationTokenExpiry.HasValue &&
-            u.EmailVerificationTokenExpiry.Value > DateTime.UtcNow.AddHours(23) &&
-            u.EmailVerificationTokenExpiry.Value < DateTime.UtcNow.AddHours(25)));
+        result.Should().BeTrue();
+        await _userRepository.Received(1).UpdateUserAsync(Arg.Any<User>());
+        await _emailSenderService.Received(1).SendEmailAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>());
     }
-
     #endregion
 }

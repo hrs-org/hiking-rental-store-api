@@ -1,7 +1,6 @@
 namespace HRS.API.Services.Interfaces;
 
-public interface IEmailService
+public interface IEmailSenderService
 {
-    Task SendVerificationEmailAsync(string email, string verificationToken, string firstName);
     Task<bool> SendEmailAsync(string recipient, string subject, string body, bool isHtml = true);
 }

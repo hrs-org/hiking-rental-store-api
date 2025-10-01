@@ -21,11 +21,16 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IItemService, ItemService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailBuilderService, EmailBuilderService>();
+builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
 builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddHttpContextAccessor();
+
+var appConfig = new AppConfiguration();
+builder.Configuration.GetSection("Email").Bind(appConfig);
+builder.Services.AddSingleton<IAppConfiguration>(appConfig);
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddControllers(options => { options.Filters.Add<ValidationFilter>(); });

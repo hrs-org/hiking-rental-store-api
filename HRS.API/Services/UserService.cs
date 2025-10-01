@@ -11,13 +11,15 @@ public class UserService : IUserService
 {
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
-    private readonly IEmailService _emailService;
+    private readonly IEmailBuilderService _emailBuilderService;
+    private readonly IEmailSenderService _emailSenderService;
 
-    public UserService(IMapper mapper, IUserRepository userRepository, IEmailService emailService)
+    public UserService(IMapper mapper, IUserRepository userRepository, IEmailBuilderService emailBuilderService, IEmailSenderService emailSenderService)
     {
         _mapper = mapper;
         _userRepository = userRepository;
-        _emailService = emailService;
+        _emailBuilderService = emailBuilderService;
+        _emailSenderService = emailSenderService;
     }
 
     public async Task<IEnumerable<UserDto>> GetUsers()
@@ -48,8 +50,11 @@ public class UserService : IUserService
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
-
-            await _emailService.SendVerificationEmailAsync(user.Email, user.EmailVerificationToken, user.FirstName);
+ 
+            var subject = "Verify Your Email - Hiking Rental Store";
+            var emailTemplate = _emailBuilderService.BuildVerificationEmailTemplate(user.Email, user.EmailVerificationToken, user.FirstName);
+            var body = _emailBuilderService.GenerateEmailBody(emailTemplate);
+            await _emailSenderService.SendEmailAsync(user.Email, subject, body);
 
             return true;
         }
