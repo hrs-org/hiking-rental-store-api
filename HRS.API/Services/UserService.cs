@@ -12,6 +12,7 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
     private readonly IUserContextService _userContextService;
+
     public UserService(IMapper mapper, IUserRepository userRepository, IUserContextService userContextService)
     {
         _mapper = mapper;
@@ -65,7 +66,6 @@ public class UserService : IUserService
     public async Task<List<UserDto>> GetEmployees()
     {
         var user = await _userContextService.GetUserAsync();
-
         var employee = await _userRepository.GetAllEmployee(user.Role == UserRole.Admin);
         return _mapper.Map<List<UserDto>>(employee);
     }
@@ -86,7 +86,6 @@ public class UserService : IUserService
             employee.Role = role;
             employee.UpdatedAt = DateTime.UtcNow;
             employee.UpdatedBy = editor.Id;
-
         }
         else
         {
@@ -101,6 +100,7 @@ public class UserService : IUserService
     {
         var employee = await _userRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException("User not found.");
         if (employee.Role == UserRole.Customer) throw new InvalidOperationException("Cannot delete a customer as an employee.");
+
         _userRepository.Remove(employee);
         await _userRepository.SaveChangesAsync();
         return true;

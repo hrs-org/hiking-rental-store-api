@@ -19,7 +19,6 @@ public class UserServiceTests
     private readonly IUserService _userService;
     private readonly IUserContextService _userContextService;
 
-
     public UserServiceTests()
     {
         _mapper = Substitute.For<IMapper>();
@@ -196,8 +195,6 @@ public class UserServiceTests
             LastName = dto.LastName,
             Email = dto.Email,
             Role = UserRole.Employee,
-
-
         };
 
         var userDto = new UserDto
@@ -206,7 +203,6 @@ public class UserServiceTests
             LastName = dto.LastName,
             Email = dto.Email,
             Role = dto.Role,
-
         };
 
         _mapper.Map<User>(dto).Returns(user);
@@ -223,7 +219,6 @@ public class UserServiceTests
         Assert.Equal(dto.LastName, result.LastName);
         Assert.Equal(dto.Email, result.Email);
         Assert.Equal(dto.Role, result.Role);
-
         await _userRepository.Received(1).AddAsync(Arg.Any<User>());
         await _userRepository.Received(1).SaveChangesAsync();
     }

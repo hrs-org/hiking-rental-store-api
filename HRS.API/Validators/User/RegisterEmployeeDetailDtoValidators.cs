@@ -21,7 +21,7 @@ public class RegisterEmployeeDetailDtoValidators : AbstractValidator<RegisterEmp
         RuleFor(x => x.Role).NotEmpty()
             .Must(r => r == "Employee" || r == "Admin" || r == "Manager")
             .WithMessage("Role must be Employee or Admin or Manager");
-        ;
+
 
 
     }

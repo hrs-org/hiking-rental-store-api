@@ -9,72 +9,72 @@ using Xunit;
 
 namespace HRS.Test.API.Mappings.Profiles;
 
-    public class ItemProfileTests
+public class ItemProfileTests
+{
+    private readonly IMapper _mapper;
+
+    public ItemProfileTests()
     {
-        private readonly IMapper _mapper;
+        var loggerFactory = LoggerFactory.Create(builder => { });
 
-        public ItemProfileTests()
+        var config = new MapperConfiguration(cfg =>
         {
-            var loggerFactory = LoggerFactory.Create(builder => { });
+            cfg.AddProfile<ItemProfile>();
+        }, loggerFactory);
 
-            var config = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile<ItemProfile>();
-            }, loggerFactory);
+        config.AssertConfigurationIsValid();
 
-            config.AssertConfigurationIsValid();
+        _mapper = config.CreateMapper();
+    }
 
-            _mapper = config.CreateMapper();
-        }
-
-        [Fact]
-        public void Should_Map_AddItemRequestDto_To_Item()
+    [Fact]
+    public void Should_Map_AddItemRequestDto_To_Item()
+    {
+        var dto = new AddItemRequestDto
         {
-            var dto = new AddItemRequestDto
-            {
-                Name = "Tent",
-                Description = "Camping tent",
-                Price = 100,
-                Quantity = 5,
-                Children = new List<AddItemRequestDto>
+            Name = "Tent",
+            Description = "Camping tent",
+            Price = 100,
+            Quantity = 5,
+            Children = new List<AddItemRequestDto>
                 {
                     new AddItemRequestDto { Name = "Child Tent", Description = "Small tent", Price = 50, Quantity = 2 }
                 }
-            };
+        };
 
-            var item = _mapper.Map<Item>(dto);
+        var item = _mapper.Map<Item>(dto);
 
-            item.Id.Should().Be(0);
-            item.ParentId.Should().BeNull();
-            item.Name.Should().Be(dto.Name);
-            item.Children.Should().HaveCount(1);
-            item.Children.First().Name.Should().Be("Child Tent");
-        }
+        item.Id.Should().Be(0);
+        item.ParentId.Should().BeNull();
+        item.Name.Should().Be(dto.Name);
+        item.Children.Should().HaveCount(1);
+        item.Children.First().Name.Should().Be("Child Tent");
+    }
 
-        [Fact]
-        public void Should_Map_Item_To_ItemResponseDto()
+    [Fact]
+    public void Should_Map_Item_To_ItemResponseDto()
+    {
+        var user = new User { Id = 1, FirstName = "Admin", LastName = "User", Email = "r@w.com", Role = Domain.Enums.UserRole.Admin, PasswordHash = "hashedpassword" };
+        var item = new Item
         {
-            var user = new User { Id = 1, FirstName = "Admin", LastName = "User", Email = "r@w.com", Role = Domain.Enums.UserRole.Admin, PasswordHash = "hashedpassword" };
-            var item = new Item
-            {
-                Id = 1,
-                Name = "Tent",
-                Description = "Camping tent",
-                Price = 100,
-                Quantity = 5,
-                CreatedBy = user,
-                Children = new List<Item>
+            Id = 1,
+            Name = "Tent",
+            Description = "Camping tent",
+            Price = 100,
+            Quantity = 5,
+            CreatedBy = user,
+            Children = new List<Item>
                 {
                     new Item { Id = 2, Name = "Child Tent", Description = "Small tent", Price = 50, Quantity = 2, CreatedBy = user }
                 }
-            };
+        };
 
-            var dto = _mapper.Map<ItemResponseDto>(item);
+        var dto = _mapper.Map<ItemResponseDto>(item);
 
-            dto.Id.Should().Be(1);
-            dto.Name.Should().Be("Tent");
-            dto.Children.Should().HaveCount(1);
-            dto.Children.First().Name.Should().Be("Child Tent");
-        }
+        dto.Id.Should().Be(1);
+        dto.Name.Should().Be("Tent");
+        dto.Children.Should().HaveCount(1);
+        dto.Children.First().Name.Should().Be("Child Tent");
     }
+}
 
