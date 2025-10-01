@@ -1,6 +1,7 @@
 using FluentValidation;
 using HRS.API.Contracts.DTOs;
 using HRS.API.Contracts.DTOs.Auth;
+using HRS.API.Contracts.DTOs.User;
 using HRS.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace HRS.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IUserContextService _userContextService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IUserContextService userContextService)
     {
         _authService = authService;
+        _userContextService = userContextService;
     }
 
     [HttpPost("login")]
@@ -39,13 +42,21 @@ public class AuthController : ControllerBase
         var res = await _authService.LogoutAsync();
         return Ok(ApiResponse<LogoutResponseDto>.OkResponse(res, "logout successful"));
     }
-
+    
+    [HttpGet("active-user")]
+    [Authorize]
+    public async Task<IActionResult> GetCurrentUserAsync()
+    {
+        var res = await _userContextService.GetUserDtoAsync();
+        return Ok(ApiResponse<UserDto>.OkResponse(res, "Get current user successful"));
+    }
+    
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePasswordAsync(
     [FromBody] ChangePasswordRequestDto requestDto)
     {
         var res = await _authService.ChangePasswordAsync(requestDto);
-        return Ok(ApiResponse<ChangePasswordResponseDto>.OkResponse(res, "Password changed successfully"));//is it better to in this way or 204?
+        return Ok(ApiResponse<ChangePasswordResponseDto>.OkResponse(res, "Password changed successfully"));
     }
 }

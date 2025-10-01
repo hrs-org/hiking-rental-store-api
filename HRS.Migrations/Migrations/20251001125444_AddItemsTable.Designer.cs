@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRS.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250925090509_AddItemTable")]
-    partial class AddItemTable
+    [Migration("20251001125444_AddItemsTable")]
+    partial class AddItemsTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,6 +33,12 @@ namespace HRS.Migrations.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -45,17 +51,27 @@ namespace HRS.Migrations.Migrations
                     b.Property<int?>("ParentId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Price")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("Item");
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("Items");
                 });
 
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>
@@ -117,26 +133,40 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 9, 25, 9, 5, 9, 661, DateTimeKind.Utc).AddTicks(1860),
+                            CreatedAt = new DateTime(2025, 10, 1, 12, 54, 44, 314, DateTimeKind.Utc).AddTicks(7200),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$bqqk7jXdVsyjm/waBMb1hOu9.HaA1jRAM76BW2efKVMVRLjTFfce6",
+                            PasswordHash = "$2a$11$aMT.9LnatQUKwhPNnyITduQlnwcISjBDTrDY31D.8NYwbEhmH731q",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 9, 25, 9, 5, 9, 661, DateTimeKind.Utc).AddTicks(1860),
+                            UpdatedAt = new DateTime(2025, 10, 1, 12, 54, 44, 314, DateTimeKind.Utc).AddTicks(7200),
                             UpdatedBy = 0
                         });
                 });
 
             modelBuilder.Entity("HRS.Domain.Entities.Item", b =>
                 {
+                    b.HasOne("HRS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("HRS.Domain.Entities.Item", "Parent")
                         .WithMany("Children")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("HRS.Domain.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
                     b.Navigation("Parent");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>

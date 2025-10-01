@@ -36,7 +36,7 @@ public class ItemService : IItemService
     {
         var entity = _mapper.Map<Item>(dto);
 
-        var user = _userContextService.GetUserAsync();
+        var user = await _userContextService.GetUserAsync();
 
         entity.CreatedById = user.Id;
         entity.CreatedAt = DateTime.UtcNow;
