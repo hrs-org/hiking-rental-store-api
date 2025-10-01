@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRS.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251001064251_AddItemsTable")]
+    [Migration("20251001125444_AddItemsTable")]
     partial class AddItemsTable
     {
         /// <inheritdoc />
@@ -133,14 +133,14 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 1, 6, 42, 50, 928, DateTimeKind.Utc).AddTicks(3000),
+                            CreatedAt = new DateTime(2025, 10, 1, 12, 54, 44, 314, DateTimeKind.Utc).AddTicks(7200),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$I4lDIgHSLPn4Ct2DX9M6WuMx2yomN50Y0X8pg4/.aAXfb555RpP4a",
+                            PasswordHash = "$2a$11$aMT.9LnatQUKwhPNnyITduQlnwcISjBDTrDY31D.8NYwbEhmH731q",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 10, 1, 6, 42, 50, 928, DateTimeKind.Utc).AddTicks(3000),
+                            UpdatedAt = new DateTime(2025, 10, 1, 12, 54, 44, 314, DateTimeKind.Utc).AddTicks(7200),
                             UpdatedBy = 0
                         });
                 });
