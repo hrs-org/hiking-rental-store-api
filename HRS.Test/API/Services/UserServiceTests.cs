@@ -275,8 +275,8 @@ public class UserServiceTests
             new() { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee },
             new() { Id = 3, FirstName = "Feri", LastName = "Shen", Email = " ", Role = UserRole.Customer } // Not an employee
         }.AsQueryable();
-_userRepository.GetAllEmployee(false)
-    .Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
+        _userRepository.GetAllEmployee(false)
+            .Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
         var employeeDtos = users
             .Where(u => u.Role == UserRole.Employee)
             .Select(u => new UserDto
@@ -299,7 +299,7 @@ _userRepository.GetAllEmployee(false)
         Assert.Equal(2, result.Count); // Only 2 employees
         Assert.All(result, r => Assert.Equal("Employee", r.Role));
         await _userRepository.Received(1).GetAllEmployee();
-          }
+    }
 
     [Fact]
     public async Task GetAllEmployees_False() // No Employee
