@@ -11,11 +11,13 @@ public class UserService : IUserService
 {
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
+    private readonly IUserContextService _userContextService;
 
-    public UserService(IMapper mapper, IUserRepository userRepository)
+    public UserService(IMapper mapper, IUserRepository userRepository, IUserContextService userContextService)
     {
         _mapper = mapper;
         _userRepository = userRepository;
+        _userContextService = userContextService;
     }
 
     public async Task<IEnumerable<UserDto>> GetUsers()
@@ -61,14 +63,16 @@ public class UserService : IUserService
         return true;
     }
 
-    public async Task<List<RegisterEmployeeDetailDto>> GetEmployees()
+    public async Task<List<UserDto>> GetEmployees()
     {
-        var employee = await _userRepository.GetAllEmployee();
-        return _mapper.Map<List<RegisterEmployeeDetailDto>>(employee);
+        var user = await _userContextService.GetUserAsync();
+        var employee = await _userRepository.GetAllEmployee(user.Role == UserRole.Admin);
+        return _mapper.Map<List<UserDto>>(employee);
     }
 
-    public async Task<RegisterEmployeeDetailDto?> UpdateEmployee(RegisterEmployeeDetailDto dto)
+    public async Task<UserDto?> UpdateEmployee(UserDto dto)
     {
+        var editor = await _userContextService.GetUserAsync();
         var employee = await _userRepository.GetByIdAsync(dto.Id);
         if (employee == null) throw new KeyNotFoundException("User not found.");
         if (employee.Role == UserRole.Customer) throw new InvalidOperationException("Cannot update a customer to an employee.");
@@ -80,6 +84,8 @@ public class UserService : IUserService
             employee.LastName = dto.LastName;
             employee.Email = dto.Email;
             employee.Role = role;
+            employee.UpdatedAt = DateTime.UtcNow;
+            employee.UpdatedBy = editor.Id;
         }
         else
         {
@@ -87,13 +93,14 @@ public class UserService : IUserService
         }
 
         await _userRepository.SaveChangesAsync();
-        return _mapper.Map<RegisterEmployeeDetailDto>(employee);
+        return _mapper.Map<UserDto>(employee);
     }
 
     public async Task<bool> DeleteEmployee(int id)
     {
         var employee = await _userRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException("User not found.");
         if (employee.Role == UserRole.Customer) throw new InvalidOperationException("Cannot delete a customer as an employee.");
+
         _userRepository.Remove(employee);
         await _userRepository.SaveChangesAsync();
         return true;
@@ -102,9 +109,11 @@ public class UserService : IUserService
     public async Task<UserDto> CreateNewEmployee(RegisterEmployeeDetailDto dto)
     {
         var user = _mapper.Map<User>(dto);
-
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456");
-        user.Role = UserRole.Employee;
+        var editor = await _userContextService.GetUserAsync();
+        user.CreatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedBy = editor.Id;
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Employee@123");
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();

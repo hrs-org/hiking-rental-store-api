@@ -40,26 +40,25 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<bool>.OkResponse(res, "Registration successful"));
     }
 
-    [HttpGet("employee")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<List<RegisterEmployeeDetailDto>>> GetEmployees()
+    [HttpGet("employees")]
+    [Authorize(Roles = "Manager,Admin")]
+    public async Task<ActionResult<List<UserDto>>> GetEmployees()
     {
         var employeeList = await _userService.GetEmployees();
-        if (employeeList == null || employeeList.Count == 0) return NotFound();
-        return Ok(employeeList);
+        return Ok(ApiResponse<List<UserDto>>.OkResponse(employeeList));
     }
 
-    [HttpPut("employee")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<RegisterEmployeeDetailDto>> UpdateEmployee([FromBody] RegisterEmployeeDetailDto dto)
+    [HttpPut("employees")]
+    [Authorize(Roles = "Manager,Admin")]
+    public async Task<ActionResult<UserDto>> UpdateEmployee([FromBody] UserDto dto)
     {
         var updatedEmployee = await _userService.UpdateEmployee(dto);
         if (updatedEmployee == null) return NotFound();
-        return Ok(updatedEmployee);
+        return Ok(ApiResponse<UserDto>.OkResponse(updatedEmployee));
     }
 
     [HttpDelete("employees/{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager,Admin")]
     public async Task<IActionResult> DeleteEmployee(int id)
     {
         var success = await _userService.DeleteEmployee(id);
@@ -67,12 +66,12 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<bool>.OkResponse(true, "Employee deleted successfully"));
     }
 
-    [HttpPost("new-employee")]
-    [Authorize(Roles = "Admin")]
+    [HttpPost("employees/add")]
+    [Authorize(Roles = "Manager,Admin")]
     public async Task<ActionResult<UserDto>> CreateNewEmployee([FromBody] RegisterEmployeeDetailDto dto)
     {
         var createdUser = await _userService.CreateNewEmployee(dto);
-        return CreatedAtAction(nameof(GetUserAsync), new { id = createdUser.Id }, createdUser);
+        return Ok(ApiResponse<UserDto>.OkResponse(createdUser, "Employee Created successfully"));
     }
 
     [HttpDelete("{id:int}")]

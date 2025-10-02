@@ -6,7 +6,9 @@ using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
+using Microsoft.IdentityModel.Tokens;
 using NSubstitute;
+using Xunit.Sdk;
 
 namespace HRS.Test.API.Services;
 
@@ -15,12 +17,14 @@ public class UserServiceTests
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
     private readonly IUserService _userService;
+    private readonly IUserContextService _userContextService;
 
     public UserServiceTests()
     {
         _mapper = Substitute.For<IMapper>();
         _userRepository = Substitute.For<IUserRepository>();
-        _userService = new UserService(_mapper, _userRepository);
+        _userContextService = Substitute.For<IUserContextService>();
+        _userService = new UserService(_mapper, _userRepository, _userContextService);
     }
 
     [Fact]
@@ -179,7 +183,6 @@ public class UserServiceTests
         // Arrange
         var dto = new RegisterEmployeeDetailDto
         {
-            Id = 4,
             FirstName = "Alice",
             LastName = "Wonder",
             Email = "alice@wonder.com",
@@ -188,27 +191,25 @@ public class UserServiceTests
 
         var user = new User
         {
-            Id = dto.Id,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
-            Role = UserRole.Employee
+            Role = UserRole.Employee,
         };
 
         var userDto = new UserDto
         {
-            Id = dto.Id,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
-            Role = dto.Role
+            Role = dto.Role,
         };
 
         _mapper.Map<User>(dto).Returns(user);
         _mapper.Map<UserDto>(user).Returns(userDto);
         _userRepository.AddAsync(user).Returns(Task.CompletedTask);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
-
+        _userContextService.GetUserAsync().Returns(new User { Role = UserRole.Manager, Id = 99 });
         // Act
         var result = await _userService.CreateNewEmployee(dto);
 
@@ -218,7 +219,6 @@ public class UserServiceTests
         Assert.Equal(dto.LastName, result.LastName);
         Assert.Equal(dto.Email, result.Email);
         Assert.Equal(dto.Role, result.Role);
-
         await _userRepository.Received(1).AddAsync(Arg.Any<User>());
         await _userRepository.Received(1).SaveChangesAsync();
     }
@@ -227,10 +227,9 @@ public class UserServiceTests
     public async Task CreateEmployee_Flase() // Detail not go wrong
     {
         // Arrange
-        var dto = new RegisterEmployeeDetailDto { Id = 4, FirstName = "Alice", LastName = "Wonder", Email = "alice@wonder.com", Role = "Employee" };
+        var dto = new RegisterEmployeeDetailDto { FirstName = "Alice", LastName = "Wonder", Email = "alice@wonder.com", Role = "Employee" };
         var user = new User
         {
-            Id = dto.Id,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
@@ -239,7 +238,6 @@ public class UserServiceTests
 
         var userDto = new UserDto
         {
-            Id = dto.Id,
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
@@ -250,6 +248,7 @@ public class UserServiceTests
         _mapper.Map<UserDto>(user).Returns(userDto);
         _userRepository.AddAsync(user).Returns(Task.CompletedTask);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
+        _userContextService.GetUserAsync().Returns(new User { Role = UserRole.Manager, Id = 99 });
 
         // Act
         var result = await _userService.CreateNewEmployee(dto);
@@ -272,11 +271,11 @@ public class UserServiceTests
             new() { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee },
             new() { Id = 3, FirstName = "Feri", LastName = "Shen", Email = " ", Role = UserRole.Customer } // Not an employee
         }.AsQueryable();
-
-        _userRepository.GetAllEmployee().Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
+        _userRepository.GetAllEmployee()
+            .Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
         var employeeDtos = users
             .Where(u => u.Role == UserRole.Employee)
-            .Select(u => new RegisterEmployeeDetailDto
+            .Select(u => new UserDto
             {
                 Id = u.Id,
                 FirstName = u.FirstName,
@@ -284,9 +283,9 @@ public class UserServiceTests
                 Email = u.Email,
                 Role = u.Role.ToString()
             }).ToList();
-        _mapper.Map<List<RegisterEmployeeDetailDto>>(Arg.Any<List<User>>()).Returns(employeeDtos);
-        _mapper.Map<List<RegisterEmployeeDetailDto>>(Arg.Any<IEnumerable<User>>()).Returns(employeeDtos);
-
+        _mapper.Map<List<UserDto>>(Arg.Any<List<User>>()).Returns(employeeDtos);
+        _mapper.Map<List<UserDto>>(Arg.Any<IEnumerable<User>>()).Returns(employeeDtos);
+        _userContextService.GetUserAsync().Returns(new User { Role = UserRole.Manager });
         // Act
         var result = await _userService.GetEmployees();
 
@@ -311,10 +310,10 @@ public class UserServiceTests
             new() { Id = 3, FirstName = "Feri", LastName = "Shen", Email = " ", Role = UserRole.Customer } // Not an employee
         }.AsQueryable();
 
-        _userRepository.GetAllEmployee().Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
+        _userRepository.GetAllEmployee(false).Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
         var employeeDtos = users
             .Where(u => u.Role == UserRole.Employee)
-            .Select(u => new RegisterEmployeeDetailDto
+            .Select(u => new UserDto
             {
                 Id = u.Id,
                 FirstName = u.FirstName,
@@ -322,9 +321,9 @@ public class UserServiceTests
                 Email = u.Email,
                 Role = u.Role.ToString()
             }).ToList();
-        _mapper.Map<List<RegisterEmployeeDetailDto>>(Arg.Any<List<User>>()).Returns(employeeDtos);
-        _mapper.Map<List<RegisterEmployeeDetailDto>>(Arg.Any<IEnumerable<User>>()).Returns(employeeDtos);
-
+        _mapper.Map<List<UserDto>>(Arg.Any<List<User>>()).Returns(employeeDtos);
+        _mapper.Map<List<UserDto>>(Arg.Any<IEnumerable<User>>()).Returns(employeeDtos);
+        _userContextService.GetUserAsync().Returns(new User { Role = UserRole.Manager });
         // Act
         var result = await _userService.GetEmployees();
 
@@ -342,22 +341,14 @@ public class UserServiceTests
         // Arrange
         var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
         _userRepository.GetByIdAsync(2).Returns(user);
-
-        var dto = new RegisterEmployeeDetailDto
-        {
-            Id = 2,
-            FirstName = "Evan",
-            LastName = "Jasper",
-            Email = " ",
-            Role = "Employee"
-        };
+        int id = 2;
 
         // Act
-        var result = await _userService.DeleteEmployee(dto.Id);
+        var result = await _userService.DeleteEmployee(id);
 
         // Assert
         Assert.True(result);
-        await _userRepository.Received(1).GetByIdAsync(dto.Id);
+        await _userRepository.Received(1).GetByIdAsync(id);
         _userRepository.Received(1).Remove(user);
         await _userRepository.Received(1).SaveChangesAsync();
     }
@@ -368,22 +359,14 @@ public class UserServiceTests
         // Arrange
         var user = new User { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Admin, PasswordHash = "123456" };
         _userRepository.GetByIdAsync(2).Returns(user);
-
-        var dto = new RegisterEmployeeDetailDto
-        {
-            Id = 2,
-            FirstName = "Evan",
-            LastName = "Jasper",
-            Email = " ",
-            Role = "Admin"
-        };
+        int id = 2;
 
         // Act
-        var result = await _userService.DeleteEmployee(dto.Id);
+        var result = await _userService.DeleteEmployee(id);
 
         // Assert
         Assert.True(result);
-        await _userRepository.Received(1).GetByIdAsync(dto.Id);
+        await _userRepository.Received(1).GetByIdAsync(id);
         _userRepository.Received(1).Remove(user);
         await _userRepository.Received(1).SaveChangesAsync();
     }
@@ -394,18 +377,10 @@ public class UserServiceTests
         // Arrange
         var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Customer, PasswordHash = "123456" };
         _userRepository.GetByIdAsync(3).Returns(user);
-
-        var dto = new RegisterEmployeeDetailDto
-        {
-            Id = 3,
-            FirstName = "Evan",
-            LastName = "Jasper",
-            Email = " ",
-            Role = "Employee"
-        };
+        int id = 3;
 
         // Act
-        var result = async () => await _userService.DeleteEmployee(dto.Id);
+        var result = async () => await _userService.DeleteEmployee(id);
 
         // Assert
         await result.Should().ThrowAsync<InvalidOperationException>()
@@ -415,28 +390,20 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task DeleteEmployee_False2() //Employee =null
+    public async Task DeleteEmployee_False3() //Employee =null
     {
         // Arrange
         var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
         _userRepository.GetByIdAsync(3).Returns(user);
-
-        var dto = new RegisterEmployeeDetailDto
-        {
-            Id = 2,
-            FirstName = "Hey",
-            LastName = "Girl",
-            Email = " ",
-            Role = "Employee"
-        };
+        int id = 2;
 
         // Act
-        var result = async () => await _userService.DeleteEmployee(dto.Id);
+        var result = async () => await _userService.DeleteEmployee(id);
 
         // Assert
         await result.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("User not found.");
-        await _userRepository.Received(1).GetByIdAsync(dto.Id);
+        await _userRepository.Received(1).GetByIdAsync(id);
         _userRepository.DidNotReceive().Remove(user);
         await _userRepository.DidNotReceive().SaveChangesAsync();
     }
@@ -450,7 +417,7 @@ public class UserServiceTests
         _userRepository.GetByIdAsync(2).Returns(user);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
 
-        var dto = new RegisterEmployeeDetailDto
+        var dto = new UserDto
         {
             Id = 2,
             FirstName = "Evan",
@@ -458,7 +425,9 @@ public class UserServiceTests
             Email = " ",
             Role = "Manager"
         };
-        _mapper.Map<RegisterEmployeeDetailDto>(user).Returns(dto);
+        _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
 
         // Act
         var result = await _userService.UpdateEmployee(dto);
@@ -486,7 +455,7 @@ public class UserServiceTests
         _userRepository.GetByIdAsync(2).Returns(user);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
 
-        var dto = new RegisterEmployeeDetailDto
+        var dto = new UserDto
         {
             Id = 2,
             FirstName = "Shen",
@@ -494,7 +463,10 @@ public class UserServiceTests
             Email = "XXX",
             Role = "Manager"
         };
-        _mapper.Map<RegisterEmployeeDetailDto>(user).Returns(dto);
+        _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
+
         // Act
         var result = await _userService.UpdateEmployee(dto);
 
@@ -521,7 +493,7 @@ public class UserServiceTests
         _userRepository.GetByIdAsync(3).Returns(user);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
 
-        var dto = new RegisterEmployeeDetailDto
+        var dto = new UserDto
         {
             Id = 3,
             FirstName = "Shen",
@@ -529,7 +501,9 @@ public class UserServiceTests
             Email = "XXX",
             Role = "Manager"
         };
-        _mapper.Map<RegisterEmployeeDetailDto>(user).Returns(dto);
+        _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
 
         // Act
         var result = async () => await _userService.UpdateEmployee(dto);
@@ -554,7 +528,7 @@ public class UserServiceTests
         _userRepository.GetByIdAsync(2).Returns(user);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
 
-        var dto = new RegisterEmployeeDetailDto
+        var dto = new UserDto
         {
             Id = 3,
             FirstName = "Evan",
@@ -562,7 +536,9 @@ public class UserServiceTests
             Email = "XXX",
             Role = "Manager"
         };
-        _mapper.Map<RegisterEmployeeDetailDto>(user).Returns(dto);
+        _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
 
         // Act
         var result = async () => await _userService.UpdateEmployee(dto);
@@ -582,7 +558,7 @@ public class UserServiceTests
         _userRepository.GetByIdAsync(2).Returns(user);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
 
-        var dto = new RegisterEmployeeDetailDto
+        var dto = new UserDto
         {
             Id = 2,
             FirstName = "Evan",
@@ -590,7 +566,9 @@ public class UserServiceTests
             Email = "XXX",
             Role = "Manager"
         };
-        _mapper.Map<RegisterEmployeeDetailDto>(user).Returns(dto);
+        _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
 
         // Act
         var result = await _userService.UpdateEmployee(dto);
@@ -618,7 +596,7 @@ public class UserServiceTests
         _userRepository.GetByIdAsync(3).Returns(user);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
 
-        var dto = new RegisterEmployeeDetailDto
+        var dto = new UserDto
         {
             Id = 3,
             FirstName = "Evan",
@@ -626,12 +604,46 @@ public class UserServiceTests
             Email = "III",
             Role = "Teacher"
         };
-        _mapper.Map<RegisterEmployeeDetailDto>(user).Returns(dto);
+        _mapper.Map<UserDto>(user).Returns(dto);
+        var editor = new User { Id = 99 };
+        _userContextService.GetUserAsync().Returns(editor);
+
         // Act
         var result = async () => await _userService.UpdateEmployee(dto);
 
         // Assert
         await result.Should().ThrowAsync<ArgumentException>()
             .WithMessage("Invalid role specified.");
+    }
+
+    [Fact]
+    public async Task DeleteUser_ShouldReturnTrue_WhenUserExists()
+    {
+        // Arrange
+        var user = new User { Id = 1, FirstName = "Evan", LastName = "Jasper", Email = "III", Role = UserRole.Employee, PasswordHash = "123456" };
+        _userRepository.GetByIdAsync(1).Returns(user);
+
+        // Act
+        var result = await _userService.DeleteUser(1);
+
+        // Assert
+        result.Should().BeTrue();
+        _userRepository.Received(1).Remove(user);
+    }
+
+    [Fact]
+    public async Task DeleteUser_ShouldThrow_WhenUserNotFound()
+    {
+        // Arrange
+        _userRepository.GetByIdAsync(1).Returns((User?)null);
+
+        // Act
+        var act = async () => await _userService.DeleteUser(1);
+
+        // Assert
+        await act.Should()
+                 .ThrowAsync<KeyNotFoundException>()
+                 .WithMessage("User not found.");
+        _userRepository.DidNotReceive().Remove(Arg.Any<User>());
     }
 }
