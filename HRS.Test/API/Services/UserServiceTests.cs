@@ -209,7 +209,7 @@ public class UserServiceTests
         _mapper.Map<UserDto>(user).Returns(userDto);
         _userRepository.AddAsync(user).Returns(Task.CompletedTask);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
-
+        _userContextService.GetUserAsync().Returns(new User { Role = UserRole.Manager, Id = 99 });
         // Act
         var result = await _userService.CreateNewEmployee(dto);
 
@@ -248,6 +248,7 @@ public class UserServiceTests
         _mapper.Map<UserDto>(user).Returns(userDto);
         _userRepository.AddAsync(user).Returns(Task.CompletedTask);
         _userRepository.SaveChangesAsync().Returns(Task.FromResult(1));
+        _userContextService.GetUserAsync().Returns(new User { Role = UserRole.Manager, Id = 99 });
 
         // Act
         var result = await _userService.CreateNewEmployee(dto);
@@ -270,7 +271,7 @@ public class UserServiceTests
             new() { Id = 2, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee },
             new() { Id = 3, FirstName = "Feri", LastName = "Shen", Email = " ", Role = UserRole.Customer } // Not an employee
         }.AsQueryable();
-        _userRepository.GetAllEmployee(false)
+        _userRepository.GetAllEmployee()
             .Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
         var employeeDtos = users
             .Where(u => u.Role == UserRole.Employee)
@@ -309,7 +310,7 @@ public class UserServiceTests
             new() { Id = 3, FirstName = "Feri", LastName = "Shen", Email = " ", Role = UserRole.Customer } // Not an employee
         }.AsQueryable();
 
-        _userRepository.GetAllEmployee().Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
+        _userRepository.GetAllEmployee(false).Returns(users.Where(u => u.Role == UserRole.Employee).ToList());
         var employeeDtos = users
             .Where(u => u.Role == UserRole.Employee)
             .Select(u => new UserDto

@@ -137,9 +137,10 @@ public class UsersControllerTests
 
         var result = await _controller.CreateNewEmployee(dto);
 
-        result.Result.Should().BeOfType<CreatedAtActionResult>();
-        var createdRes = result.Result as CreatedAtActionResult;
-        createdRes!.Value.Should().Be(created);
+        result.Result.Should().BeOfType<OkObjectResult>();
+        var createdRes = result.Result.As<OkObjectResult>().Value as ApiResponse<UserDto>;
+        createdRes!.Success.Should().BeTrue();
+        createdRes.Data.Should().Be(created);
     }
 
     [Fact]

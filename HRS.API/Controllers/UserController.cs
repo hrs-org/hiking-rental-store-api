@@ -71,7 +71,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserDto>> CreateNewEmployee([FromBody] RegisterEmployeeDetailDto dto)
     {
         var createdUser = await _userService.CreateNewEmployee(dto);
-        return CreatedAtAction("GetUser", new { id = createdUser.Id }, createdUser);
+        return Ok(ApiResponse<UserDto>.OkResponse(createdUser, "Employee Created successfully"));
     }
 
     [HttpDelete("{id:int}")]

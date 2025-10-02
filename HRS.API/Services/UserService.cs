@@ -109,7 +109,7 @@ public class UserService : IUserService
     public async Task<UserDto> CreateNewEmployee(RegisterEmployeeDetailDto dto)
     {
         var user = _mapper.Map<User>(dto);
-        var editor = _userContextService.GetUserAsync();
+        var editor = await _userContextService.GetUserAsync();
         user.CreatedAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
         user.UpdatedBy = editor.Id;
