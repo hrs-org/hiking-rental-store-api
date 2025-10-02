@@ -50,7 +50,7 @@ public class UserService : IUserService
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
- 
+
             var subject = "Verify Your Email - Hiking Rental Store";
             var emailTemplate = _emailBuilderService.BuildVerificationEmailTemplate(user.Email, user.EmailVerificationToken, user.FirstName);
             var body = _emailBuilderService.GenerateEmailBody(emailTemplate);

@@ -66,7 +66,7 @@ public class AuthController : ControllerBase
         var res = await _authService.ResendVerificationEmailAsync(requestDto);
         return Ok(ApiResponse<bool>.OkResponse(res, "Verification email sent successfully"));
     }
-    
+
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePasswordAsync(

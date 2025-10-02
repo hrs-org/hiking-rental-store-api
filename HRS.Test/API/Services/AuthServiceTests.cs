@@ -280,38 +280,38 @@ public class AuthServiceTests
         await _userRepository.Received(1).UpdateUserAsync(user);
     }
 
-[Fact]
-public async Task ChangePasswordAsync_WithIncorrectCurrentPassword_ThrowsUnauthorized()
-{
-    // Arrange
-    var correctPassword = "CorrectPassword123!";
-    var wrongPassword = "WrongPassword123!";
-
-    var user = new User
+    [Fact]
+    public async Task ChangePasswordAsync_WithIncorrectCurrentPassword_ThrowsUnauthorized()
     {
-        Id = 1,
-        Email = "user@example.com",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword(correctPassword)
-    };
+        // Arrange
+        var correctPassword = "CorrectPassword123!";
+        var wrongPassword = "WrongPassword123!";
 
-    _mockUserContextService.GetUserAsync().Returns(user);
+        var user = new User
+        {
+            Id = 1,
+            Email = "user@example.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(correctPassword)
+        };
 
-    var requestDto = new ChangePasswordRequestDto
-    {
-        CurrentPassword = wrongPassword,     
-        NewPassword = "NewPassword123!",
-        ConfirmNewPassword = "NewPassword123!"
-    };
+        _mockUserContextService.GetUserAsync().Returns(user);
 
-    // Act
-    Func<Task> act = async () => await _mockService.ChangePasswordAsync(requestDto);
+        var requestDto = new ChangePasswordRequestDto
+        {
+            CurrentPassword = wrongPassword,
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "NewPassword123!"
+        };
 
-    // Assert
-    await act.Should()
-        .ThrowAsync<UnauthorizedAccessException>()
-        .WithMessage("Current password is incorrect.");
+        // Act
+        Func<Task> act = async () => await _mockService.ChangePasswordAsync(requestDto);
 
-    await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+        // Assert
+        await act.Should()
+            .ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("Current password is incorrect.");
+
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 
     [Fact]
