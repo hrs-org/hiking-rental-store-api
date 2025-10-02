@@ -58,13 +58,13 @@ public class UsersController : ControllerBase
         return Ok(updatedEmployee);
     }
 
-    [HttpDelete("employee")]
+    [HttpDelete("employees/{id:int}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteEmployee([FromBody] RegisterEmployeeDetailDto dto)
+    public async Task<IActionResult> DeleteEmployee(int id)
     {
-        var success = await _userService.DeleteEmployee(dto);
+        var success = await _userService.DeleteEmployee(id);
         if (!success) return NotFound();
-        return NoContent();
+        return Ok(ApiResponse<bool>.OkResponse(true, "Employee deleted successfully"));
     }
 
     [HttpPost("new-employee")]

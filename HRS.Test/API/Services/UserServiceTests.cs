@@ -371,7 +371,7 @@ public class UserServiceTests
         };
 
         // Act
-        var result = await _userService.DeleteEmployee(dto);
+        var result = await _userService.DeleteEmployee(dto.Id);
 
         // Assert
         Assert.True(result);
@@ -397,7 +397,7 @@ public class UserServiceTests
         };
 
         // Act
-        var result = await _userService.DeleteEmployee(dto);
+        var result = await _userService.DeleteEmployee(dto.Id);
 
         // Assert
         Assert.True(result);
@@ -423,7 +423,7 @@ public class UserServiceTests
         };
 
         // Act
-        var result = async () => await _userService.DeleteEmployee(dto);
+        var result = async () => await _userService.DeleteEmployee(dto.Id);
 
         // Assert
         await result.Should().ThrowAsync<InvalidOperationException>()
@@ -433,34 +433,7 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task DeleteEmployee_False2() //Wrong detail
-    {
-        // Arrange
-        var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
-        _userRepository.GetByIdAsync(3).Returns(user);
-
-        var dto = new RegisterEmployeeDetailDto
-        {
-            Id = 3,
-            FirstName = "Hey",
-            LastName = "Girl",
-            Email = " ",
-            Role = "Employee"
-        };
-
-        // Act
-        var result = async () => await _userService.DeleteEmployee(dto);
-
-        // Assert
-        await result.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("Employee details do not match.");
-        await _userRepository.Received(1).GetByIdAsync(dto.Id);
-        _userRepository.DidNotReceive().Remove(user);
-        await _userRepository.DidNotReceive().SaveChangesAsync();
-    }
-
-    [Fact]
-    public async Task DeleteEmployee_False3() //Employee =null
+    public async Task DeleteEmployee_False2() //Employee =null
     {
         // Arrange
         var user = new User { Id = 3, FirstName = "Evan", LastName = "Jasper", Email = " ", Role = UserRole.Employee, PasswordHash = "123456" };
@@ -476,7 +449,7 @@ public class UserServiceTests
         };
 
         // Act
-        var result = async () => await _userService.DeleteEmployee(dto);
+        var result = async () => await _userService.DeleteEmployee(dto.Id);
 
         // Assert
         await result.Should().ThrowAsync<KeyNotFoundException>()

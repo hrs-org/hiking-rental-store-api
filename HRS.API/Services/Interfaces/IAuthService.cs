@@ -9,4 +9,5 @@ public interface IAuthService
     Task<LogoutResponseDto> LogoutAsync();
     Task<EmailVerificationResponseDto> VerifyEmailAsync(EmailVerificationRequestDto requestDto);
     Task<bool> ResendVerificationEmailAsync(ResendVerificationRequestDto requestDto);
+    Task<ChangePasswordResponseDto> ChangePasswordAsync(ChangePasswordRequestDto requestDto);
 }

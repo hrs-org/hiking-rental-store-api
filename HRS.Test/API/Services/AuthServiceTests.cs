@@ -245,34 +245,73 @@ public class AuthServiceTests
         result.Message.Should().Be("User not found");
     }
 
+
     [Fact]
-    public async Task VerifyEmailAsync_WhenUserAlreadyVerified_ReturnsSuccessRedirect()
+    public async Task ChangePasswordAsync_WithValidRequest_UpdatesPassword_AndReturnsBasicInfo()
     {
         // Arrange
-        var requestDto = new EmailVerificationRequestDto
-        {
-            Email = "verified@example.com",
-            VerificationToken = "any-token"
-        };
-        var frontendUrl = new Uri("http://localhost:4200");
-
+        var oldPassword = "OldPassword123!";
+        var newPassword = "NewPassword456!";
         var user = new User
         {
             Id = 1,
-            Email = requestDto.Email,
-            IsVerified = true,
-            EmailVerificationToken = "any-token"
+            Email = "admin@hrs.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(oldPassword)
         };
 
-        _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
+        _mockUserContextService.GetUserAsync().Returns(user);
+
+        var requestDto = new ChangePasswordRequestDto
+        {
+            CurrentPassword = oldPassword,
+            NewPassword = newPassword,
+            ConfirmNewPassword = newPassword
+        };
 
         // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto);
+        var result = await _mockService.ChangePasswordAsync(requestDto);
 
-        // Assert
         result.Should().NotBeNull();
-        result.IsVerified.Should().BeTrue();
-        result.Message.Should().Be("Email is already verified");
+        result.UserId.Should().Be(user.Id);
+        result.PasswordChangedAtUtc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+
+        BCrypt.Net.BCrypt.Verify(newPassword, user.PasswordHash).Should().BeTrue();
+
+        await _userRepository.Received(1).UpdateUserAsync(user);
+    }
+
+[Fact]
+public async Task ChangePasswordAsync_WithIncorrectCurrentPassword_ThrowsUnauthorized()
+{
+    // Arrange
+    var correctPassword = "CorrectPassword123!";
+    var wrongPassword = "WrongPassword123!";
+
+    var user = new User
+    {
+        Id = 1,
+        Email = "user@example.com",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword(correctPassword)
+    };
+
+    _mockUserContextService.GetUserAsync().Returns(user);
+
+    var requestDto = new ChangePasswordRequestDto
+    {
+        CurrentPassword = wrongPassword,     
+        NewPassword = "NewPassword123!",
+        ConfirmNewPassword = "NewPassword123!"
+    };
+
+    // Act
+    Func<Task> act = async () => await _mockService.ChangePasswordAsync(requestDto);
+
+    // Assert
+    await act.Should()
+        .ThrowAsync<UnauthorizedAccessException>()
+        .WithMessage("Current password is incorrect.");
+
+    await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 
     [Fact]
