@@ -10,9 +10,6 @@ public static class ItemRequestValidatorHelper
         validator.RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Item name is required");
 
-        validator.RuleFor(x => x.Description)
-            .NotEmpty().WithMessage("Item Description is required");
-
         validator.RuleFor(x => x.Quantity)
             .NotNull().WithMessage("Item Quantity is required")
             .GreaterThanOrEqualTo(0).WithMessage("Item Quantity cannot be negative");
