@@ -1,36 +1,23 @@
-using System.Threading.Tasks;
 using FluentAssertions;
 using HRS.API.Services;
 using HRS.API.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace HRS.Test.API.Services;
 
 public class EmailSenderServiceTests
 {
-    private readonly ILoggerFactory _loggerFactory;
-    private readonly IAppConfiguration _appConfig;
+    private readonly IAppConfiguration _appConfiguration;
     private readonly EmailSenderService _emailSenderService;
+    private readonly ILogger<EmailSenderService> _logger;
 
     public EmailSenderServiceTests()
     {
-        _loggerFactory = Substitute.For<ILoggerFactory>();
-        var logger = Substitute.For<ILogger<EmailSenderService>>();
-        _loggerFactory.CreateLogger<EmailSenderService>().Returns(logger);
+        _appConfiguration = Substitute.For<IAppConfiguration>();
+        _logger = Substitute.For<ILogger<EmailSenderService>>();
 
-        _appConfig = new AppConfiguration
-        {
-            SmtpHost = "invalid-host",
-            SmtpPort = 587,
-            SmtpUsername = "test@example.com",
-            SmtpPassword = "password",
-            FromEmail = "noreply@hrs.com",
-            FromName = "HRS Team"
-        };
-
-        _emailSenderService = new EmailSenderService(_loggerFactory, _appConfig);
+        _emailSenderService = new EmailSenderService(_logger, _appConfiguration);
     }
 
     [Fact]
@@ -52,7 +39,7 @@ public class EmailSenderServiceTests
         var subject = "Test Subject";
         var body = "<html><body>Test HTML Body</body></html>";
 
-        var result = await _email_sender_service_Send(recipient, subject, body, true);
+        var result = await _email_sender_service_Send(recipient, subject, body);
 
         result.Should().BeFalse();
     }

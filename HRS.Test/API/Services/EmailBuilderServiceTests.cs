@@ -1,9 +1,8 @@
 using FluentAssertions;
+using HRS.API.Models;
 using HRS.API.Services;
 using HRS.API.Services.Interfaces;
-using HRS.API.Models;
-using System;
-using Xunit;
+using NSubstitute;
 
 namespace HRS.Test.API.Services;
 
@@ -14,11 +13,7 @@ public class EmailBuilderServiceTests
 
     public EmailBuilderServiceTests()
     {
-        _appConfig = new AppConfiguration
-        {
-            FrontendUrl = new Uri("http://localhost:4200")
-        };
-
+        _appConfig = Substitute.For<IAppConfiguration>();
         _emailBuilderService = new EmailBuilderService(_appConfig);
     }
 
@@ -29,6 +24,8 @@ public class EmailBuilderServiceTests
         var email = "test@example.com";
         var verificationToken = "token123";
         var firstName = "John";
+
+        _appConfig.FrontendUrl.Returns("http://localhost:4200");
 
         // Act
         var result = _email_builder_service_Build(email, verificationToken, firstName);

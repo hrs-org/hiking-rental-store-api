@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace HRS.API.Services.Interfaces;
+﻿namespace HRS.API.Services.Interfaces;
 
 public interface IAppConfiguration
 {
@@ -10,6 +8,5 @@ public interface IAppConfiguration
     string SmtpPassword { get; set; }
     string FromEmail { get; set; }
     string FromName { get; set; }
-    Uri BaseUrl { get; set; }
-    Uri FrontendUrl { get; set; }
+    string FrontendUrl { get; set; }
 }
