@@ -14,11 +14,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IUserContextService _userContextService;
+    private readonly IConfiguration _configuration;
 
-    public AuthController(IAuthService authService, IUserContextService userContextService)
+    public AuthController(IAuthService authService, IUserContextService userContextService, IConfiguration configuration)
     {
         _authService = authService;
         _userContextService = userContextService;
+        _configuration = configuration;
     }
 
     [HttpPost("login")]
@@ -49,6 +51,20 @@ public class AuthController : ControllerBase
     {
         var res = await _userContextService.GetUserDtoAsync();
         return Ok(ApiResponse<UserDto>.OkResponse(res, "Get current user successful"));
+    }
+
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmailAsync([FromBody] EmailVerificationRequestDto requestDto)
+    {
+        var res = await _authService.VerifyEmailAsync(requestDto);
+        return Ok(ApiResponse<EmailVerificationResponseDto>.OkResponse(res, "Email verification completed"));
+    }
+
+    [HttpPost("resend-verification")]
+    public async Task<IActionResult> ResendVerificationAsync([FromBody] ResendVerificationRequestDto requestDto)
+    {
+        var res = await _authService.ResendVerificationEmailAsync(requestDto);
+        return Ok(ApiResponse<bool>.OkResponse(res, "Verification email sent successfully"));
     }
 
     [HttpPost("change-password")]

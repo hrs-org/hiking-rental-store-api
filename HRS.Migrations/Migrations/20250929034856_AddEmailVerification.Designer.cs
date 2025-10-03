@@ -4,6 +4,7 @@ using HRS.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRS.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250929034856_AddEmailVerification")]
+    partial class AddEmailVerification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -137,14 +140,14 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 1, 12, 54, 44, 314, DateTimeKind.Utc).AddTicks(7200),
+                            CreatedAt = new DateTime(2025, 9, 29, 3, 48, 56, 471, DateTimeKind.Utc).AddTicks(1974),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$aMT.9LnatQUKwhPNnyITduQlnwcISjBDTrDY31D.8NYwbEhmH731q",
+                            PasswordHash = "$2a$11$zMTqtBjPFMYhjjDMLcemS.R5hcqm/PMK/qca6xnUVu8jgRgPEf2ye",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 10, 1, 12, 54, 44, 314, DateTimeKind.Utc).AddTicks(7200),
+                            UpdatedAt = new DateTime(2025, 9, 29, 3, 48, 56, 471, DateTimeKind.Utc).AddTicks(1975),
                             UpdatedBy = 0
                         });
                 });

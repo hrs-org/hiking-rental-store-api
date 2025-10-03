@@ -5,6 +5,7 @@ using HRS.API.Controllers;
 using HRS.API.Services.Interfaces;
 using HRS.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
 namespace HRS.Test.API.Controllers;
@@ -14,12 +15,14 @@ public class AuthControllerTests
     private readonly IAuthService _authService;
     private readonly AuthController _controller;
     private readonly IUserContextService _userContextService;
+    private readonly IConfiguration _configuration;
 
     public AuthControllerTests()
     {
         _authService = Substitute.For<IAuthService>();
         _userContextService = Substitute.For<IUserContextService>();
-        _controller = new AuthController(_authService, _userContextService);
+        _configuration = Substitute.For<IConfiguration>();
+        _controller = new AuthController(_authService, _userContextService, _configuration);
     }
 
     [Fact]

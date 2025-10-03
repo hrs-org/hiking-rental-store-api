@@ -13,6 +13,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .Property(u => u.Role)
             .HasConversion<string>();
 
+        builder
+        .Property(u => u.EmailVerificationToken)
+            .HasMaxLength(255);
+
         var adminPassword = BCrypt.Net.BCrypt.HashPassword("Admin123!");
 
         builder.HasData(new User

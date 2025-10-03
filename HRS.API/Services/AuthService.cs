@@ -10,12 +10,16 @@ public class AuthService : IAuthService
     private readonly ITokenService _tokenService;
     private readonly IUserContextService _userContextService;
     private readonly IUserRepository _userRepository;
+    private readonly IEmailBuilderService _emailBuilderService;
+    private readonly IEmailSenderService _emailSenderService;
 
-    public AuthService(IUserRepository userRepository, IUserContextService userContextService, ITokenService tokenService)
+    public AuthService(IUserRepository userRepository, IUserContextService userContextService, ITokenService tokenService, IEmailBuilderService emailBuilderService, IEmailSenderService emailSenderService)
     {
         _userRepository = userRepository;
         _userContextService = userContextService;
         _tokenService = tokenService;
+        _emailBuilderService = emailBuilderService;
+        _emailSenderService = emailSenderService;
     }
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto requestDto)
@@ -23,6 +27,9 @@ public class AuthService : IAuthService
         var user = await _userRepository.GetByEmailAsync(requestDto.Email);
         if (user == null || !BCrypt.Net.BCrypt.Verify(requestDto.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("email or password is incorrect");
+
+        if (!user.IsVerified)
+            throw new UnauthorizedAccessException("Please verify your email before logging in");
 
         var accessToken = _tokenService.GenerateAccessToken(user);
         var refreshToken = _tokenService.GenerateRefreshToken();
@@ -72,6 +79,80 @@ public class AuthService : IAuthService
         await _userRepository.UpdateUserAsync(user);
 
         return new LogoutResponseDto { Message = "Logout successful" };
+    }
+
+    public async Task<EmailVerificationResponseDto> VerifyEmailAsync(EmailVerificationRequestDto requestDto)
+    {
+        var user = await _userRepository.GetByEmailAsync(requestDto.Email);
+        if (user == null)
+        {
+            return new EmailVerificationResponseDto
+            {
+                IsVerified = false,
+                Message = "User not found"
+            };
+        }
+
+        if (user.IsVerified)
+        {
+            return new EmailVerificationResponseDto
+            {
+                IsVerified = true,
+                Message = "Email is already verified"
+            };
+        }
+
+        if (user.EmailVerificationToken != requestDto.VerificationToken)
+        {
+            return new EmailVerificationResponseDto
+            {
+                IsVerified = false,
+                Message = "Invalid verification token"
+            };
+        }
+
+        if (user.EmailVerificationTokenExpiry < DateTime.UtcNow)
+        {
+            return new EmailVerificationResponseDto
+            {
+                IsVerified = false,
+                Message = "Verification token has expired"
+            };
+        }
+
+        user.IsVerified = true;
+        user.EmailVerificationToken = null;
+        user.EmailVerificationTokenExpiry = null;
+        await _userRepository.UpdateUserAsync(user);
+
+        return new EmailVerificationResponseDto
+        {
+            IsVerified = true,
+            Message = "Email verified successfully"
+        };
+    }
+
+    public async Task<bool> ResendVerificationEmailAsync(ResendVerificationRequestDto requestDto)
+    {
+        var user = await _userRepository.GetByEmailAsync(requestDto.Email);
+        if (user == null)
+            throw new InvalidOperationException("User not found");
+
+        if (user.IsVerified)
+            throw new InvalidOperationException("Email is already verified");
+
+        // Generate new verification token
+        user.EmailVerificationToken = Guid.NewGuid().ToString();
+        user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
+        await _userRepository.UpdateUserAsync(user);
+
+        // Send verification email using builder and sender directly
+        var subject = "Verify Your Email - Hiking Rental Store";
+        var emailTemplate = _emailBuilderService.BuildVerificationEmailTemplate(user.Email, user.EmailVerificationToken, user.FirstName);
+        var body = _emailBuilderService.GenerateEmailBody(emailTemplate);
+        await _emailSenderService.SendEmailAsync(user.Email, subject, body);
+
+        return true;
     }
 
     public async Task<ChangePasswordResponseDto> ChangePasswordAsync(ChangePasswordRequestDto requestDto)

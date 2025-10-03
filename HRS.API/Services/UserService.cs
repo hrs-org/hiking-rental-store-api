@@ -12,12 +12,16 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
     private readonly IUserContextService _userContextService;
+    private readonly IEmailBuilderService _emailBuilderService;
+    private readonly IEmailSenderService _emailSenderService;
 
-    public UserService(IMapper mapper, IUserRepository userRepository, IUserContextService userContextService)
+    public UserService(IMapper mapper, IUserRepository userRepository, IUserContextService userContextService, IEmailBuilderService emailBuilderService, IEmailSenderService emailSenderService)
     {
         _mapper = mapper;
         _userRepository = userRepository;
         _userContextService = userContextService;
+        _emailBuilderService = emailBuilderService;
+        _emailSenderService = emailSenderService;
     }
 
     public async Task<IEnumerable<UserDto>> GetUsers()
@@ -41,8 +45,19 @@ public class UserService : IUserService
             if (dto.Password.Length < 8) throw new ArgumentException("Password must be at least 8 characters long.");
             var user = _mapper.Map<User>(dto);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+            user.EmailVerificationToken = Guid.NewGuid().ToString();
+            user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
+            user.IsVerified = false;
+
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
+
+            var subject = "Verify Your Email - Hiking Rental Store";
+            var emailTemplate = _emailBuilderService.BuildVerificationEmailTemplate(user.Email, user.EmailVerificationToken, user.FirstName);
+            var body = _emailBuilderService.GenerateEmailBody(emailTemplate);
+            await _emailSenderService.SendEmailAsync(user.Email, subject, body);
+
             return true;
         }
         catch (InvalidOperationException ex)

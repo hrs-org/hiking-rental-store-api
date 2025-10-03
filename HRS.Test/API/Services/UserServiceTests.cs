@@ -17,14 +17,18 @@ public class UserServiceTests
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
     private readonly IUserService _userService;
+    private readonly IEmailBuilderService _emailBuilderService;
+    private readonly IEmailSenderService _emailSenderService;
     private readonly IUserContextService _userContextService;
 
     public UserServiceTests()
     {
         _mapper = Substitute.For<IMapper>();
         _userRepository = Substitute.For<IUserRepository>();
+        _emailBuilderService = Substitute.For<IEmailBuilderService>();
+        _emailSenderService = Substitute.For<IEmailSenderService>();
         _userContextService = Substitute.For<IUserContextService>();
-        _userService = new UserService(_mapper, _userRepository, _userContextService);
+        _userService = new UserService(_mapper, _userRepository, _userContextService, _emailBuilderService, _emailSenderService);
     }
 
     [Fact]
@@ -44,17 +48,31 @@ public class UserServiceTests
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             Email = dto.Email,
-            PasswordHash = dto.Password
+            PasswordHash = dto.Password,
+            EmailVerificationToken = "test-token",
+            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24),
+            IsVerified = false
         };
+
         _userRepository.GetByEmailAsync(dto.Email).Returns((User?)null);
         _mapper.Map<User>(dto).Returns(user);
+        _emailBuilderService.BuildVerificationEmailTemplate(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns(new HRS.API.Models.EmailTemplate());
+        _emailBuilderService.GenerateEmailBody(Arg.Any<HRS.API.Models.EmailTemplate>())
+            .Returns("Email body");
+        _emailSenderService.SendEmailAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns(true);
 
         // Act
         var result = await _userService.Register(dto);
 
         // Assert
         result.Should().BeTrue();
+        await _userRepository.Received(1).AddAsync(Arg.Any<User>());
         await _userRepository.Received(1).SaveChangesAsync();
+        _emailBuilderService.Received(1).BuildVerificationEmailTemplate(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>());
+        _emailBuilderService.Received(1).GenerateEmailBody(Arg.Any<HRS.API.Models.EmailTemplate>());
+        await _emailSenderService.Received(1).SendEmailAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>());
     }
 
     [Fact]
