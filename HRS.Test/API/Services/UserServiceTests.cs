@@ -28,7 +28,7 @@ public class UserServiceTests
         _emailBuilderService = Substitute.For<IEmailBuilderService>();
         _emailSenderService = Substitute.For<IEmailSenderService>();
         _userContextService = Substitute.For<IUserContextService>();
-        _userService = new UserService(_mapper, _userRepository, _userContextService,  _emailBuilderService, _emailSenderService);
+        _userService = new UserService(_mapper, _userRepository, _userContextService, _emailBuilderService, _emailSenderService);
     }
 
     [Fact]
