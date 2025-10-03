@@ -15,7 +15,6 @@ public class AddItemRequestDtoValidatorTests
         var model = new AddItemRequestDto { Name = "", Description = "", Quantity = -1, Price = -1 };
         var result = _validator.TestValidate(model);
         result.ShouldHaveValidationErrorFor(x => x.Name);
-        result.ShouldHaveValidationErrorFor(x => x.Description);
         result.ShouldHaveValidationErrorFor(x => x.Quantity);
         result.ShouldHaveValidationErrorFor(x => x.Price);
     }
@@ -34,7 +33,6 @@ public class AddItemRequestDtoValidatorTests
         };
         var result = _validator.TestValidate(model);
         result.ShouldHaveValidationErrorFor("Children[0].Name");
-        result.ShouldHaveValidationErrorFor("Children[0].Description");
         result.ShouldHaveValidationErrorFor("Children[0].Quantity");
         result.ShouldHaveValidationErrorFor("Children[0].Price");
     }

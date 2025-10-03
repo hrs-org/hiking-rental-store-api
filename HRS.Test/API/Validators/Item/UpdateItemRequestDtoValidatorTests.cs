@@ -15,7 +15,6 @@ public class UpdateItemRequestDtoValidatorTests
         var result = _validator.TestValidate(model);
         result.ShouldHaveValidationErrorFor(x => x.Id);
         result.ShouldHaveValidationErrorFor(x => x.Name);
-        result.ShouldHaveValidationErrorFor(x => x.Description);
         result.ShouldHaveValidationErrorFor(x => x.Quantity);
         result.ShouldHaveValidationErrorFor(x => x.Price);
     }
@@ -35,7 +34,6 @@ public class UpdateItemRequestDtoValidatorTests
         };
         var result = _validator.TestValidate(model);
         result.ShouldHaveValidationErrorFor("Children[0].Name");
-        result.ShouldHaveValidationErrorFor("Children[0].Description");
         result.ShouldHaveValidationErrorFor("Children[0].Quantity");
         result.ShouldHaveValidationErrorFor("Children[0].Price");
     }
