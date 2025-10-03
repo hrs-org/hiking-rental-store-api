@@ -6,6 +6,7 @@ using HRS.API.Services;
 using HRS.API.Services.Interfaces;
 using HRS.API.Validators.Auth;
 using HRS.API.Validators.Item;
+using HRS.API.Validators.User;
 using HRS.Domain.Interfaces;
 using HRS.Infrastructure;
 using HRS.Infrastructure.Repositories;
@@ -39,7 +40,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestDtoValidator>()
 builder.Services.AddValidatorsFromAssemblyContaining<RefreshTokenRequestDtoValidators>();
 builder.Services.AddValidatorsFromAssemblyContaining<AddItemRequestDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateItemRequestDtoValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterEmployeeDetailDtoValidators>();
 builder.Services.AddValidatorsFromAssemblyContaining<ChangePasswordRequestDtoValidator>();
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
