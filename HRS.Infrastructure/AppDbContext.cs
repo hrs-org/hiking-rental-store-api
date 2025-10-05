@@ -11,6 +11,8 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users { get; set; } = default!;
+    public DbSet<UserSession> UserSessions { get; set; } = default!;
+    public DbSet<UserVerification> UserVerifications { get; set; } = default!;
     public DbSet<Item> Items { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -18,6 +20,8 @@ public class AppDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new UserSessionConfiguration());
+        modelBuilder.ApplyConfiguration(new UserVerificationConfiguration());
         modelBuilder.ApplyConfiguration(new ItemConfiguration());
     }
 }
