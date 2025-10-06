@@ -151,9 +151,9 @@ public class UserVerificationRepositoryTests
             new UserVerification { Id = 1, UserId = 1, Token = "t1", Type = "email", Expiry = DateTime.UtcNow.AddMinutes(10), ConsumedAt = null },
             new UserVerification { Id = 2, UserId = 1, Token = "t2", Type = "email", Expiry = DateTime.UtcNow.AddMinutes(-10), ConsumedAt = null }, // expired
             new UserVerification
-                { Id = 3, UserId = 1, Token = "t3", Type = "email", Expiry = DateTime.UtcNow.AddMinutes(10), ConsumedAt = DateTime.UtcNow }, // already consumed
+            { Id = 3, UserId = 1, Token = "t3", Type = "email", Expiry = DateTime.UtcNow.AddMinutes(10), ConsumedAt = DateTime.UtcNow }, // already consumed
             new UserVerification
-                { Id = 4, UserId = 2, Token = "t4", Type = "email", Expiry = DateTime.UtcNow.AddMinutes(10), ConsumedAt = null } // different user
+            { Id = 4, UserId = 2, Token = "t4", Type = "email", Expiry = DateTime.UtcNow.AddMinutes(10), ConsumedAt = null } // different user
         );
         await dbContext.SaveChangesAsync();
 
