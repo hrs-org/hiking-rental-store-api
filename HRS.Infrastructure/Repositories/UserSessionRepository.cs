@@ -27,18 +27,28 @@ public class UserSessionRepository : CrudRepository<UserSession>, IUserSessionRe
 
     public Task RevokeAllSessionsAsync(int userId, string reason)
     {
-        return _db.UserSessions
+        var sessions = _db.UserSessions
             .Where(s => s.UserId == userId && !s.IsRevoked)
-            .ExecuteUpdateAsync(u => u
-                .SetProperty(s => s.IsRevoked, true)
-                .SetProperty(s => s.RevokedReason, reason));
+            .ToList();
+
+        foreach (var session in sessions)
+        {
+            session.IsRevoked = true;
+            session.RevokedReason = reason;
+        }
+
+        return _db.SaveChangesAsync();
     }
 
-    public Task<int> CleanUpExpiredSessionsAsync()
+    public async Task<int> CleanUpExpiredSessionsAsync()
     {
-        var result = _db.UserSessions
-            .Where(s => s.IsRevoked || s.ExpiresAt <= DateTime.UtcNow)
-            .ExecuteDeleteAsync();
-        return result;
+        var now = DateTime.UtcNow;
+        var sessionsToDelete = await _db.UserSessions
+            .Where(s => s.IsRevoked || s.ExpiresAt <= now)
+            .ToListAsync();
+
+        _db.UserSessions.RemoveRange(sessionsToDelete);
+        await _db.SaveChangesAsync();
+        return sessionsToDelete.Count;
     }
 }

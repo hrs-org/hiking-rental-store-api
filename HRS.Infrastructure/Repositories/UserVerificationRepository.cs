@@ -29,9 +29,16 @@ public class UserVerificationRepository : CrudRepository<UserVerification>, IUse
 
     public Task RevokeExistingAsync(int userId, string type)
     {
-        return _db.UserVerifications
-            .Where(x => x.UserId == userId && x.Type == type && x.ConsumedAt == null && x.Expiry > DateTime.UtcNow)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(v => v.ConsumedAt, DateTime.UtcNow));
+        var now = DateTime.UtcNow;
+        var verifications = _db.UserVerifications
+            .Where(x => x.UserId == userId && x.Type == type && x.ConsumedAt == null && x.Expiry > now)
+            .ToList();
+
+        foreach (var v in verifications)
+        {
+            v.ConsumedAt = now;
+        }
+
+        return _db.SaveChangesAsync();
     }
 }
