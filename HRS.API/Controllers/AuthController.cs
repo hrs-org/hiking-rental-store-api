@@ -33,7 +33,7 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<LoginResponseDto>.OkResponse(new LoginResponseDto { UserId = res.UserId, Token = res.Token }, "Login successful"));
     }
 
-    [HttpPost("refresh")]
+    [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshTokenAsync()
     {
         var refreshToken = Request.Cookies["refresh_token"];
