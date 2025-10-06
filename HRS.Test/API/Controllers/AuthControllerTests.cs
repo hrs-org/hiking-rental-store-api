@@ -104,7 +104,7 @@ public class AuthControllerTests
         var apiResponse = okResult.Value as dynamic;
         ((UserDto)apiResponse?.Data!).Should().BeEquivalentTo(userDto);
     }
-    
+
     [Fact]
     public async Task RefreshTokenAsync_ReturnsUnauthorized_WhenCookieMissing()
     {

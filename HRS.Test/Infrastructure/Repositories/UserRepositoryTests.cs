@@ -115,7 +115,7 @@ public class UserRepositoryTests
         using var dbContext = CreateDbContext(dbName);
         var repository = new UserRepository(dbContext);
         dbContext.Users.Add(new User
-            { Id = 1, FirstName = "Evan", LastName = "Feri", Email = "test@mail.com", Role = UserRole.Employee, PasswordHash = "123456" });
+        { Id = 1, FirstName = "Evan", LastName = "Feri", Email = "test@mail.com", Role = UserRole.Employee, PasswordHash = "123456" });
         await dbContext.SaveChangesAsync();
 
         // Act
@@ -148,7 +148,7 @@ public class UserRepositoryTests
         using var dbContext = CreateDbContext(dbName);
         var repository = new UserRepository(dbContext);
         dbContext.Users.Add(new User
-            { Id = 3, FirstName = "Evan", LastName = "Feri", Email = "test@mail.com", Role = UserRole.Employee, PasswordHash = "123456" });
+        { Id = 3, FirstName = "Evan", LastName = "Feri", Email = "test@mail.com", Role = UserRole.Employee, PasswordHash = "123456" });
         await dbContext.SaveChangesAsync();
 
         // Act

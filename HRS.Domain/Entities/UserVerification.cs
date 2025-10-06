@@ -15,9 +15,9 @@ public class UserVerification
 
     [ForeignKey(nameof(UserId))] public virtual User User { get; set; } = null!;
 
-    [Required] [MaxLength(100)] public string Token { get; set; } = null!;
+    [Required][MaxLength(100)] public string Token { get; set; } = null!;
 
-    [Required] [MaxLength(50)] public string Type { get; set; } = "Email";
+    [Required][MaxLength(50)] public string Type { get; set; } = "Email";
 
     [Required] public DateTime Expiry { get; set; }
 
