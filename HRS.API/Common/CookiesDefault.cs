@@ -8,6 +8,6 @@ public static class CookiesDefault
         Secure = true,
         SameSite = SameSiteMode.None,
         Expires = DateTime.UtcNow.AddDays(30),
-        Path = "/api/auth/refresh"
+        Path = "/api/auth"
     };
 }

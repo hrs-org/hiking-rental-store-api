@@ -8,7 +8,7 @@ public class ItemRequestDto
 
     public string Description { get; set; } = string.Empty;
 
-    [Required] [Range(0, int.MaxValue)] public required int Quantity { get; set; }
+    [Required][Range(0, int.MaxValue)] public required int Quantity { get; set; }
 
     [Required]
     [Range(0.0, double.MaxValue)]

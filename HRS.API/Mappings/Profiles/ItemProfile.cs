@@ -11,6 +11,7 @@ public class ItemProfile : Profile
         CreateMap<ItemRateRequestDto, ItemRate>()
             .ForMember(d => d.Id, opt => opt.Ignore())
             .ForMember(d => d.Item, opt => opt.Ignore())
+            .ForMember(d => d.ItemId, opt => opt.Ignore())
             .ForMember(d => d.CreatedBy, opt => opt.Ignore())
             .ForMember(d => d.CreatedById, opt => opt.Ignore())
             .ForMember(d => d.UpdatedBy, opt => opt.Ignore())
@@ -43,10 +44,8 @@ public class ItemProfile : Profile
             .ForMember(d => d.UpdatedBy, opt => opt.Ignore())
             .ForMember(d => d.UpdatedAt, opt => opt.Ignore());
 
-        CreateMap<Item, ItemResponseDto>()
-            .ForMember(d => d.Children, opt => opt.MapFrom(s => s.Children));
-
         CreateMap<ItemRate, ItemRateResponseDto>();
+
         CreateMap<Item, ItemResponseDto>()
             .ForMember(d => d.Children, opt => opt.MapFrom(s => s.Children))
             .ForMember(d => d.Rates, opt => opt.MapFrom(s => s.Rates));
