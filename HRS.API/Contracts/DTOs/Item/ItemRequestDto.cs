@@ -24,15 +24,18 @@ public class ItemRateRequestDto
     public bool IsActive { get; set; } = true;
 }
 
-public class AddItemRequestDto : ItemRequestDto
+public class ParentItemRequestDto : ItemRequestDto
 {
-    public ICollection<AddItemRequestDto>? Children { get; set; }
     public ICollection<ItemRateRequestDto>? Rates { get; set; }
 }
 
-public class UpdateItemRequestDto : ItemRequestDto
+public class AddItemRequestDto : ParentItemRequestDto
+{
+    public ICollection<AddItemRequestDto>? Children { get; set; }
+}
+
+public class UpdateItemRequestDto : ParentItemRequestDto
 {
     public int? Id { get; set; }
     public ICollection<UpdateItemRequestDto>? Children { get; set; }
-    public ICollection<ItemRateRequestDto>? Rates { get; set; }
 }
