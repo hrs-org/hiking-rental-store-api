@@ -15,6 +15,7 @@ public class ItemRepository : CrudRepository<Item>, IItemRepository
         return await _db.Items
             .Where(i => i.ParentId == null)
             .Include(i => i.Children)
+            .Include(i => i.Rates)
             .ToListAsync();
     }
 
@@ -22,6 +23,7 @@ public class ItemRepository : CrudRepository<Item>, IItemRepository
     {
         return await _db.Items
             .Include(i => i.Children)
+            .Include(i => i.Rates)
             .FirstOrDefaultAsync(i => i.Id == id);
     }
 }

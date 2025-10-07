@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<UserVerification> UserVerifications { get; set; } = default!;
     public DbSet<Item> Items { get; set; } = default!;
 
+    public DbSet<ItemRate> ItemRates { get; set; } = default!;
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

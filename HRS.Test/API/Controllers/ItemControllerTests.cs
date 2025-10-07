@@ -23,7 +23,7 @@ public class ItemControllerTests
     {
         // Arrange
         var items = new List<ItemResponseDto> { new() { Id = 1 }, new() { Id = 2 } };
-        _itemService.GetItemsAsync().Returns(items);
+        _itemService.GetRootItemsAsync().Returns(items);
 
         // Act
         var result = await _controller.GetItemsAsync();
@@ -58,10 +58,10 @@ public class ItemControllerTests
         // Arrange
         var addDto = new AddItemRequestDto { Name = "Test", Description = "This is Test", Quantity = 10, Price = 10.5m };
         var created = new ItemResponseDto { Id = 1, Name = "Test" };
-        _itemService.CreateItemAsync(addDto).Returns(created);
+        _itemService.CreateAsync(addDto).Returns(created);
 
         // Act
-        var result = await _controller.AddNewItem(addDto);
+        var result = await _controller.CreateItemAsync(addDto);
 
         // Assert
         var createdResult = result as CreatedAtActionResult;
@@ -76,7 +76,7 @@ public class ItemControllerTests
     {
         // Arrange
         var updateDto = new UpdateItemRequestDto { Id = 1, Name = "Updated", Description = "This is Updated", Quantity = 10, Price = 10.5m };
-        _itemService.UpdateItemAsync(updateDto).Returns(Task.CompletedTask);
+        _itemService.UpdateAsync(updateDto).Returns(Task.CompletedTask);
 
         // Act
         var result = await _controller.UpdateItemAsync(1, updateDto);
@@ -84,20 +84,20 @@ public class ItemControllerTests
         // Assert
         result.Should().BeOfType<NoContentResult>();
         updateDto.Id.Should().Be(1);
-        await _itemService.Received(1).UpdateItemAsync(updateDto);
+        await _itemService.Received(1).UpdateAsync(updateDto);
     }
 
     [Fact]
     public async Task DeleteItemAsync_ReturnsNoContent()
     {
         // Arrange
-        _itemService.DeleteItemAsync(1).Returns(Task.CompletedTask);
+        _itemService.DeleteAsync(1).Returns(Task.CompletedTask);
 
         // Act
         var result = await _controller.DeleteItemAsync(1);
 
         // Assert
         result.Should().BeOfType<NoContentResult>();
-        await _itemService.Received(1).DeleteItemAsync(1);
+        await _itemService.Received(1).DeleteAsync(1);
     }
 }

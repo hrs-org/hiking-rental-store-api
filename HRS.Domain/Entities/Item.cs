@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HRS.Domain.Entities;
@@ -5,31 +6,33 @@ namespace HRS.Domain.Entities;
 [Table("Items")]
 public class Item
 {
-    public int Id { get; set; }
+    [Key] public int Id { get; set; }
 
-    public required string Name { get; set; }
+    [Required] [MaxLength(150)] public string Name { get; set; } = null!;
 
-    public string Description { get; set; } = string.Empty;
+    [MaxLength(500)] public string Description { get; set; } = string.Empty;
 
-    public int Quantity { get; set; }
+    [Required] public int Quantity { get; set; }
 
-    public decimal Price { get; set; }
+    [Column(TypeName = "decimal(10,2)")] public decimal Price { get; set; }
 
     public int? ParentId { get; set; }
 
-    public Item? Parent { get; set; }
+    [ForeignKey(nameof(ParentId))] public Item? Parent { get; set; }
 
     public ICollection<Item> Children { get; set; } = [];
 
+    public ICollection<ItemRate> Rates { get; set; } = [];
+
     public int CreatedById { get; set; }
 
-    [ForeignKey("CreatedById")] public required User CreatedBy { get; set; }
+    [ForeignKey(nameof(CreatedById))] public required User CreatedBy { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public int? UpdatedById { get; set; }
 
-    [ForeignKey("UpdatedById")] public User? UpdatedBy { get; set; }
+    [ForeignKey(nameof(UpdatedById))] public User? UpdatedBy { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

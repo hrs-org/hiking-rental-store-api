@@ -9,110 +9,222 @@ namespace HRS.API.Services;
 public class ItemService : IItemService
 {
     private const string ItemNotFound = "Item not found";
+    private readonly IItemRateRepository _itemRateRepository;
     private readonly IItemRepository _itemRepository;
     private readonly IMapper _mapper;
     private readonly IUserContextService _userContextService;
 
-    public ItemService(IMapper mapper, IUserContextService userContextService, IItemRepository itemRepository)
+    public ItemService(IMapper mapper, IUserContextService userContextService, IItemRepository itemRepository, IItemRateRepository itemRateRepository)
     {
         _mapper = mapper;
         _userContextService = userContextService;
         _itemRepository = itemRepository;
+        _itemRateRepository = itemRateRepository;
     }
 
     public async Task<ItemResponseDto> GetItemAsync(int id)
     {
-        var res = await _itemRepository.GetByIdWithChildrenAsync(id);
-        return res == null ? throw new KeyNotFoundException(ItemNotFound) : _mapper.Map<ItemResponseDto>(res);
+        var item = await _itemRepository.GetByIdWithChildrenAsync(id) ?? throw new KeyNotFoundException(ItemNotFound);
+        return _mapper.Map<ItemResponseDto>(item);
     }
 
-    public async Task<IEnumerable<ItemResponseDto>> GetItemsAsync()
+    public async Task<IEnumerable<ItemResponseDto>> GetRootItemsAsync()
     {
-        var res = await _itemRepository.GetRootItemsAsync();
-        return _mapper.Map<IEnumerable<ItemResponseDto>>(res);
+        var items = await _itemRepository.GetRootItemsAsync();
+        return _mapper.Map<IEnumerable<ItemResponseDto>>(items);
     }
 
-    public async Task<ItemResponseDto> CreateItemAsync(AddItemRequestDto dto)
+    public async Task<ItemResponseDto> CreateAsync(AddItemRequestDto dto)
     {
-        var entity = _mapper.Map<Item>(dto);
-
         var user = await _userContextService.GetUserAsync();
 
-        entity.CreatedById = user.Id;
-        entity.CreatedAt = DateTime.UtcNow;
-        if (entity.Children.Count > 0)
+        await using var tx = await _itemRepository.BeginTransactionAsync();
+
+        try
         {
-            entity.Quantity = entity.Children.Sum(c => c.Quantity);
-            foreach (var child in entity.Children)
+            var entity = _mapper.Map<Item>(dto);
+
+            entity.CreatedById = user.Id;
+            entity.CreatedAt = DateTime.UtcNow;
+            entity.UpdatedById = user.Id;
+            entity.UpdatedAt = DateTime.UtcNow;
+
+            if (entity.Children?.Count > 0)
             {
-                child.CreatedAt = DateTime.UtcNow;
-                child.CreatedById = user.Id;
+                entity.Quantity = entity.Children.Sum(c => c.Quantity);
+                foreach (var child in entity.Children)
+                {
+                    child.CreatedById = user.Id;
+                    child.CreatedAt = DateTime.UtcNow;
+                    child.UpdatedById = user.Id;
+                    child.UpdatedAt = DateTime.UtcNow;
+                }
             }
+
+            if (entity.Rates?.Count > 0)
+                foreach (var rate in entity.Rates)
+                {
+                    rate.CreatedById = user.Id;
+                    rate.CreatedAt = DateTime.UtcNow;
+                    rate.UpdatedById = user.Id;
+                    rate.UpdatedAt = DateTime.UtcNow;
+                }
+
+            await _itemRepository.AddAsync(entity);
+            await _itemRepository.SaveChangesAsync();
+
+            await SyncItemRatesAsync(entity, dto.Rates, user.Id);
+            await _itemRateRepository.SaveChangesAsync();
+
+            await tx.CommitAsync();
+
+            return _mapper.Map<ItemResponseDto>(entity);
         }
-
-        await _itemRepository.AddAsync(entity);
-        await _itemRepository.SaveChangesAsync();
-
-        var response = _mapper.Map<ItemResponseDto>(entity);
-        return response;
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
-    public async Task UpdateItemAsync(UpdateItemRequestDto dto)
+    public async Task<ItemResponseDto> UpdateAsync(UpdateItemRequestDto dto)
     {
         if (!dto.Id.HasValue) throw new KeyNotFoundException(ItemNotFound);
 
-        var existingItem = await _itemRepository.GetByIdWithChildrenAsync(dto.Id.Value) ?? throw new KeyNotFoundException(ItemNotFound);
         var user = await _userContextService.GetUserAsync();
 
-        existingItem.Name = dto.Name;
-        existingItem.Description = dto.Description;
-        existingItem.Quantity = dto.Quantity;
-        existingItem.Price = dto.Price;
-        existingItem.UpdatedBy = user;
-        existingItem.UpdatedAt = DateTime.UtcNow;
+        await using var tx = await _itemRepository.BeginTransactionAsync();
 
-        var children = dto.Children?
-            .ToDictionary(c => c.Id ?? 0) ?? [];
-
-        foreach (var child in existingItem.Children.ToList())
-            if (children.TryGetValue(child.Id, out var dtoChild))
-            {
-                child.Name = dtoChild.Name;
-                child.Description = dtoChild.Description;
-                child.Quantity = dtoChild.Quantity;
-                child.Price = dtoChild.Price;
-                child.UpdatedBy = user;
-                child.UpdatedAt = DateTime.UtcNow;
-
-                children.Remove(child.Id);
-            }
-            else
-            {
-                _itemRepository.Remove(child);
-            }
-
-        var newChilds = children.Values.Select(dtoChild => new Item
+        try
         {
-            Name = dtoChild.Name,
-            Description = dtoChild.Description,
-            Quantity = dtoChild.Quantity,
-            Price = dtoChild.Price,
-            ParentId = existingItem.Id,
-            CreatedBy = user,
-            CreatedAt = DateTime.UtcNow
-        });
+            var item = await _itemRepository.GetByIdWithChildrenAsync(dto.Id.Value)
+                       ?? throw new KeyNotFoundException(ItemNotFound);
 
-        foreach (var newChild in newChilds) existingItem.Children.Add(newChild);
+            item.Name = dto.Name;
+            item.Description = dto.Description;
+            item.Price = dto.Price;
+            item.UpdatedAt = DateTime.UtcNow;
+            item.UpdatedById = user.Id;
 
-        existingItem.Quantity = existingItem.Children.Sum(c => c.Quantity);
+            var dtoChildren = dto.Children?.ToDictionary(c => c.Id ?? 0) ?? new Dictionary<int, UpdateItemRequestDto>();
 
-        await _itemRepository.SaveChangesAsync();
+            // Update existing children
+            foreach (var child in item.Children.ToList())
+                if (dtoChildren.TryGetValue(child.Id, out var dtoChild))
+                {
+                    child.Name = dtoChild.Name;
+                    child.Description = dtoChild.Description;
+                    child.Quantity = dtoChild.Quantity;
+                    child.Price = dtoChild.Price;
+                    child.UpdatedAt = DateTime.UtcNow;
+                    child.UpdatedById = user.Id;
+
+                    dtoChildren.Remove(child.Id);
+                }
+                else
+                {
+                    _itemRepository.Remove(child);
+                }
+
+            // Add new children
+            foreach (var dtoChild in dtoChildren.Values)
+            {
+                var newChild = new Item
+                {
+                    Name = dtoChild.Name,
+                    Description = dtoChild.Description,
+                    Quantity = dtoChild.Quantity,
+                    Price = dtoChild.Price,
+                    ParentId = item.Id,
+                    CreatedById = user.Id,
+                    CreatedBy = user,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedById = user.Id,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                item.Children.Add(newChild);
+            }
+
+            // Recalculate parent quantity
+            item.Quantity = item.Children.Sum(c => c.Quantity);
+
+            await SyncItemRatesAsync(item, dto.Rates, user.Id);
+
+            await _itemRepository.SaveChangesAsync();
+            await _itemRateRepository.SaveChangesAsync();
+
+            await tx.CommitAsync();
+
+            return _mapper.Map<ItemResponseDto>(item);
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
-    public async Task DeleteItemAsync(int id)
+    public async Task DeleteAsync(int id)
     {
         var item = await _itemRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException(ItemNotFound);
         _itemRepository.Remove(item);
         await _itemRepository.SaveChangesAsync();
+    }
+
+    public Task<int> GetAvailableQuantityAsync(int itemId, DateTime startDate, DateTime endDate) =>
+        Task.FromResult(0);
+
+    public async Task<decimal> GetItemRateAsync(int itemId, int rentalDays)
+    {
+        var rate = await _itemRateRepository.GetApplicableRateAsync(itemId, rentalDays);
+        if (rate == null)
+            throw new InvalidOperationException("No applicable rate found for this item");
+
+        return rate.DailyRate;
+    }
+
+    private async Task SyncItemRatesAsync(Item item, ICollection<ItemRateRequestDto>? rates, int userId)
+    {
+        if (rates == null || rates.Count == 0)
+            return;
+
+        // Load existing rates for this item
+        var existingRates = (await _itemRateRepository.GetRatesByItemIdAsync(item.Id)).ToList();
+
+        // Map incoming rates (no IDs, just values)
+        foreach (var dto in rates)
+        {
+            var match = existingRates.FirstOrDefault(r => r.MinDays == dto.MinDays);
+            if (match != null)
+            {
+                // Update existing
+                match.DailyRate = dto.DailyRate;
+                match.IsActive = dto.IsActive;
+                match.UpdatedAt = DateTime.UtcNow;
+                match.UpdatedById = userId;
+            }
+            else
+            {
+                // Create new
+                var newRate = new ItemRate
+                {
+                    ItemId = item.Id,
+                    MinDays = dto.MinDays,
+                    DailyRate = dto.DailyRate,
+                    IsActive = dto.IsActive,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedById = userId
+                };
+                await _itemRateRepository.AddAsync(newRate);
+            }
+        }
+
+        // Remove any obsolete rates not in the new list
+        var toRemove = existingRates
+            .Where(r => rates.All(dto => dto.MinDays != r.MinDays))
+            .ToList();
+
+        if (toRemove.Count > 0)
+            _itemRateRepository.RemoveRange(toRemove);
     }
 }

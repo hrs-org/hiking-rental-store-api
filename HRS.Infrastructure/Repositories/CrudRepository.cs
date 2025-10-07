@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using HRS.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace HRS.Infrastructure.Repositories;
 
@@ -33,4 +34,6 @@ public class CrudRepository<T> : ICrudRepository<T> where T : class
     public void RemoveRange(IEnumerable<T> entities) => _dbSet.RemoveRange(entities);
 
     public async Task<int> SaveChangesAsync() => await _db.SaveChangesAsync();
+
+    public async Task<IDbContextTransaction> BeginTransactionAsync() => await _db.Database.BeginTransactionAsync();
 }

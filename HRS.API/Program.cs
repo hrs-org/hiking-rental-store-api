@@ -29,6 +29,7 @@ builder.Services.AddScoped<IUserSessionService, UserSessionService>();
 builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IItemRateRepository, ItemRateRepository>();
 builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();
 builder.Services.AddScoped<IUserVerificationRepository, UserVerificationRepository>();
 builder.Services.AddScoped<IAppConfiguration, AppConfiguration>();

@@ -18,5 +18,10 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .WithMany(i => i.Children)
             .HasForeignKey(i => i.ParentId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(i => i.Rates)
+            .WithOne(r => r.Item)
+            .HasForeignKey(r => r.ItemId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

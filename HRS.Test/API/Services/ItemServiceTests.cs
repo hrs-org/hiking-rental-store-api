@@ -11,6 +11,7 @@ namespace HRS.Test.API.Services;
 
 public class ItemServiceTests
 {
+    private readonly IItemRateRepository _itemRateRepository;
     private readonly IItemRepository _itemRepository;
     private readonly IMapper _mapper;
     private readonly ItemService _service;
@@ -19,9 +20,10 @@ public class ItemServiceTests
     public ItemServiceTests()
     {
         _itemRepository = Substitute.For<IItemRepository>();
+        _itemRateRepository = Substitute.For<IItemRateRepository>();
         _mapper = Substitute.For<IMapper>();
         _userContextService = Substitute.For<IUserContextService>();
-        _service = new ItemService(_mapper, _userContextService, _itemRepository);
+        _service = new ItemService(_mapper, _userContextService, _itemRepository, _itemRateRepository);
     }
 
     [Fact]
@@ -111,7 +113,7 @@ public class ItemServiceTests
         _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(dtos);
 
         // Act
-        var result = await _service.GetItemsAsync();
+        var result = await _service.GetRootItemsAsync();
 
         // Assert
         result.Should().BeEquivalentTo(dtos);
@@ -165,7 +167,7 @@ public class ItemServiceTests
         _userContextService.GetUserAsync().Returns(user);
 
         // Act
-        var result = await _service.CreateItemAsync(addDto);
+        var result = await _service.CreateAsync(addDto);
 
         // Assert
         await _itemRepository.Received(1).AddAsync(entity);
@@ -215,7 +217,7 @@ public class ItemServiceTests
         _userContextService.GetUserAsync().Returns(user);
 
         // Act
-        await _service.UpdateItemAsync(dto);
+        await _service.UpdateAsync(dto);
 
         // Assert
         await _itemRepository.Received(1).SaveChangesAsync();
@@ -230,7 +232,7 @@ public class ItemServiceTests
         var dto = new UpdateItemRequestDto { Id = 1, Name = "Test", Description = "This is Test", Quantity = 2, Price = 10.5m };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateItemAsync(dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateAsync(dto));
     }
 
     [Fact]
@@ -240,7 +242,7 @@ public class ItemServiceTests
         var dto = new UpdateItemRequestDto { Id = 0, Name = "Test", Description = "This is Test", Quantity = 2, Price = 10.5m };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateItemAsync(dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateAsync(dto));
     }
 
     [Fact]
@@ -252,7 +254,7 @@ public class ItemServiceTests
         _itemRepository.GetByIdAsync(1).Returns(item);
 
         // Act
-        await _service.DeleteItemAsync(1);
+        await _service.DeleteAsync(1);
 
         // Assert
         _itemRepository.Received(1).Remove(item);
@@ -266,6 +268,6 @@ public class ItemServiceTests
         _itemRepository.GetByIdAsync(1).Returns((Item)null!);
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.DeleteItemAsync(1));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.DeleteAsync(1));
     }
 }
