@@ -56,7 +56,7 @@ public class AuthController : ControllerBase
         var res = await _authService.LogoutAsync();
         Response.Cookies.Delete("refresh_token", new CookieOptions
         {
-            Path = "/api/auth/refresh"
+            Path = "/api/auth"
         });
         return Ok(ApiResponse<LogoutResponseDto>.OkResponse(res, "logout successful"));
     }

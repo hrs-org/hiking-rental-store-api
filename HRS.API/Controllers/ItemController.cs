@@ -21,7 +21,7 @@ public class ItemController : ControllerBase
     [Authorize(Roles = "Admin, Manager")]
     public async Task<ActionResult<List<ItemResponseDto>>> GetItemsAsync()
     {
-        var res = await _itemService.GetItemsAsync();
+        var res = await _itemService.GetRootItemsAsync();
         return Ok(ApiResponse<List<ItemResponseDto>>.OkResponse(res.ToList()));
     }
 
@@ -33,11 +33,11 @@ public class ItemController : ControllerBase
         return Ok(ApiResponse<ItemResponseDto>.OkResponse(res));
     }
 
-    [HttpPost("add")]
+    [HttpPost]
     [Authorize(Roles = "Admin, Manager")]
-    public async Task<ActionResult> AddNewItem([FromBody] AddItemRequestDto request)
+    public async Task<ActionResult> CreateItemAsync([FromBody] AddItemRequestDto request)
     {
-        var createdItem = await _itemService.CreateItemAsync(request);
+        var createdItem = await _itemService.CreateAsync(request);
 
         return CreatedAtAction(
             "GetItem",
@@ -51,15 +51,15 @@ public class ItemController : ControllerBase
     public async Task<ActionResult> UpdateItemAsync(int id, [FromBody] UpdateItemRequestDto request)
     {
         request.Id = id;
-        await _itemService.UpdateItemAsync(request);
-        return NoContent();
+        await _itemService.UpdateAsync(request);
+        return Ok(ApiResponse<object>.OkResponse(null, "Item updated successfully"));
     }
 
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin, Manager")]
     public async Task<ActionResult> DeleteItemAsync(int id)
     {
-        await _itemService.DeleteItemAsync(id);
-        return NoContent();
+        await _itemService.DeleteAsync(id);
+        return Ok(ApiResponse<object>.OkResponse(null, "Item deleted successfully"));
     }
 }
