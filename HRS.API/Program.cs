@@ -20,13 +20,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IEmailBuilderService, EmailBuilderService>();
 builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
+builder.Services.AddScoped<IUserVerificationService, UserVerificationService>();
+builder.Services.AddScoped<IUserSessionService, UserSessionService>();
 builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+builder.Services.AddScoped<IUserVerificationRepository, UserVerificationRepository>();
 builder.Services.AddScoped<IAppConfiguration, AppConfiguration>();
 builder.Services.AddHttpContextAccessor();
 
@@ -35,7 +39,6 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers(options => { options.Filters.Add<ValidationFilter>(); });
 
 builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestDtoValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<RefreshTokenRequestDtoValidators>();
 builder.Services.AddValidatorsFromAssemblyContaining<AddItemRequestDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateItemRequestDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterEmployeeDetailDtoValidators>();

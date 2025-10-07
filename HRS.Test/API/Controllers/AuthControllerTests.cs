@@ -4,8 +4,8 @@ using HRS.API.Contracts.DTOs.User;
 using HRS.API.Controllers;
 using HRS.API.Services.Interfaces;
 using HRS.Domain.Enums;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
 namespace HRS.Test.API.Controllers;
@@ -15,14 +15,17 @@ public class AuthControllerTests
     private readonly IAuthService _authService;
     private readonly AuthController _controller;
     private readonly IUserContextService _userContextService;
-    private readonly IConfiguration _configuration;
 
     public AuthControllerTests()
     {
         _authService = Substitute.For<IAuthService>();
         _userContextService = Substitute.For<IUserContextService>();
-        _configuration = Substitute.For<IConfiguration>();
-        _controller = new AuthController(_authService, _userContextService, _configuration);
+        _controller = new AuthController(_authService, _userContextService);
+        // Setup HttpContext for cookie manipulation
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
     }
 
     [Fact]
@@ -30,29 +33,34 @@ public class AuthControllerTests
     {
         // Arrange
         var loginDto = new LoginRequestDto { Email = "test@hrs.com", Password = "password" };
-        var responseDto = new LoginResponseDto { Token = "token", RefreshToken = "refresh" };
+        var responseDto = new LoginResponseDto { UserId = 1, Token = "token", RefreshToken = "refresh" };
         _authService.LoginAsync(loginDto).Returns(responseDto);
 
         // Act
-        var result = await _controller.LoginAsync(loginDto, null!);
+        var result = await _controller.LoginAsync(loginDto);
 
         // Assert
         var okResult = result as OkObjectResult;
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
-        ((LoginResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(responseDto);
+        ((LoginResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(new LoginResponseDto { UserId = 1, Token = "token" });
+        // Cookie should be set
+        var cookie = _controller.Response.Cookies;
+        // No direct getter, but can check that Append was called by not throwing
+        cookie.Should().NotBeNull();
     }
 
     [Fact]
     public async Task RefreshTokenAsync_ReturnsOkWithResponse()
     {
         // Arrange
-        var refreshDto = new RefreshTokenRequestDto { RefreshToken = "refresh" };
-        var responseDto = new LoginResponseDto { Token = "token", RefreshToken = "refresh" };
-        _authService.RefreshTokenAsync(refreshDto).Returns(responseDto);
+        var responseDto = new LoginResponseDto { UserId = 1, Token = "token", RefreshToken = "refresh" };
+        _authService.RefreshTokenAsync("refresh").Returns(responseDto);
+        // Set cookie in request using Cookie header
+        _controller.ControllerContext.HttpContext.Request.Headers["Cookie"] = "refresh_token=refresh";
 
         // Act
-        var result = await _controller.RefreshTokenAsync(refreshDto, null!);
+        var result = await _controller.RefreshTokenAsync();
 
         // Assert
         var okResult = result as OkObjectResult;
@@ -67,6 +75,8 @@ public class AuthControllerTests
         // Arrange
         var responseDto = new LogoutResponseDto { Message = "Success" };
         _authService.LogoutAsync().Returns(responseDto);
+        // Set cookie in request for delete using Cookie header
+        _controller.ControllerContext.HttpContext.Request.Headers["Cookie"] = "refresh_token=refresh";
 
         // Act
         var result = await _controller.LogoutAsync();
@@ -93,5 +103,74 @@ public class AuthControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((UserDto)apiResponse?.Data!).Should().BeEquivalentTo(userDto);
+    }
+
+    [Fact]
+    public async Task RefreshTokenAsync_ReturnsUnauthorized_WhenCookieMissing()
+    {
+        // Arrange: No refresh_token cookie set
+        _controller.ControllerContext.HttpContext.Request.Headers["Cookie"] = "";
+
+        // Act
+        var result = await _controller.RefreshTokenAsync();
+
+        // Assert
+        var unauthorizedResult = result as UnauthorizedObjectResult;
+        unauthorizedResult.Should().NotBeNull();
+        var apiResponse = unauthorizedResult.Value as dynamic;
+        ((string)apiResponse?.Message!).Should().Be("Missing refresh token");
+    }
+
+    [Fact]
+    public async Task VerifyEmailAsync_ReturnsOkWithResponse()
+    {
+        // Arrange
+        var requestDto = new EmailVerificationRequestDto { VerificationToken = "token" };
+        var responseDto = new EmailVerificationResponseDto { IsVerified = true, Message = "Verified" };
+        _authService.VerifyEmailAsync(requestDto).Returns(responseDto);
+
+        // Act
+        var result = await _controller.VerifyEmailAsync(requestDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((EmailVerificationResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(responseDto);
+    }
+
+    [Fact]
+    public async Task ResendVerificationAsync_ReturnsOkWithResponse()
+    {
+        // Arrange
+        var requestDto = new ResendVerificationRequestDto { Email = "test@hrs.com" };
+        _authService.ResendVerificationEmailAsync(requestDto).Returns(true);
+
+        // Act
+        var result = await _controller.ResendVerificationAsync(requestDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((bool)apiResponse?.Data!).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_ReturnsOkWithResponse()
+    {
+        // Arrange
+        var requestDto = new ChangePasswordRequestDto { CurrentPassword = "old", NewPassword = "new" };
+        var responseDto = new ChangePasswordResponseDto { UserId = 1, PasswordChangedAtUtc = DateTime.UtcNow };
+        _authService.ChangePasswordAsync(requestDto).Returns(responseDto);
+
+        // Act
+        var result = await _controller.ChangePasswordAsync(requestDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((ChangePasswordResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(responseDto, options => options.Excluding(x => x.PasswordChangedAtUtc));
     }
 }

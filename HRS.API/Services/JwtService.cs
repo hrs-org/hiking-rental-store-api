@@ -3,22 +3,28 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using HRS.API.Services.Interfaces;
-using HRS.Domain.Entities;
+using HRS.Domain.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 
 namespace HRS.API.Services;
 
-public class TokenService : ITokenService
+public class JwtService : IJwtService
 {
-    private readonly IConfiguration _config;
+    private readonly IAppConfiguration _appConfiguration;
+    private readonly IUserRepository _userRepository;
 
-    public TokenService(IConfiguration config)
+    public JwtService(IAppConfiguration appConfiguration, IUserRepository userRepository)
     {
-        _config = config;
+        _appConfiguration = appConfiguration;
+        _userRepository = userRepository;
     }
 
-    public string GenerateAccessToken(User user)
+    public async Task<string> GenerateAccessToken(int userId)
     {
+        var user = await _userRepository.GetByIdAsync(userId);
+
+        if (user == null) throw new KeyNotFoundException("User not found");
+
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -26,12 +32,12 @@ public class TokenService : ITokenService
             new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_appConfiguration.JwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            _config["Jwt:Issuer"],
-            _config["Jwt:Audience"],
+            _appConfiguration.JwtIssuer,
+            _appConfiguration.JwtAudience,
             claims,
             expires: DateTime.UtcNow.AddHours(2),
             signingCredentials: creds);

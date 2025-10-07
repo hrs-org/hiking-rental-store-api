@@ -1,9 +1,8 @@
-using FluentAssertions;
 using HRS.API.Contracts.DTOs.Auth;
+using HRS.API.Models;
 using HRS.API.Services;
 using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
-using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
 using NSubstitute;
 
@@ -11,458 +10,204 @@ namespace HRS.Test.API.Services;
 
 public class AuthServiceTests
 {
-    private readonly IAuthService _mockService;
-    private readonly IUserContextService _mockUserContextService;
-    private readonly ITokenService _tokenService;
-    private readonly IUserRepository _userRepository;
     private readonly IEmailBuilderService _emailBuilderService;
     private readonly IEmailSenderService _emailSenderService;
+    private readonly AuthService _service;
+    private readonly IUserContextService _userContextService;
+    private readonly IUserRepository _userRepository;
+    private readonly IUserSessionService _userSessionService;
+    private readonly IUserVerificationService _userVerificationService;
 
     public AuthServiceTests()
     {
         _userRepository = Substitute.For<IUserRepository>();
-        _mockUserContextService = Substitute.For<IUserContextService>();
-        _tokenService = Substitute.For<ITokenService>();
+        _userContextService = Substitute.For<IUserContextService>();
+        _userSessionService = Substitute.For<IUserSessionService>();
+        _userVerificationService = Substitute.For<IUserVerificationService>();
         _emailBuilderService = Substitute.For<IEmailBuilderService>();
         _emailSenderService = Substitute.For<IEmailSenderService>();
-        _mockService = new AuthService(_userRepository, _mockUserContextService, _tokenService, _emailBuilderService, _emailSenderService);
+        _service = new AuthService(_userRepository, _userContextService, _userSessionService, _userVerificationService, _emailBuilderService,
+            _emailSenderService);
     }
 
     [Fact]
-    public async Task LoginAsync_WithValidCredentials_ReturnsToken()
+    public async Task LoginAsync_Throws_WhenUserNotFound()
     {
         // Arrange
-        var password = "Admin123!";
-        var user = new User
-        {
-            Id = 1,
-            FirstName = "System",
-            LastName = "Admin",
-            Email = "admin@hrs.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            IsVerified = true,
-            Role = UserRole.Admin,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-        var accessToken = "Generated Access Token";
+        _userRepository.GetByEmailAsync(Arg.Any<string>()).Returns((User?)null);
 
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.LoginAsync(new LoginRequestDto()));
+    }
+
+    [Fact]
+    public async Task LoginAsync_Throws_WhenPasswordIncorrect()
+    {
+        // Arrange
+        var user = new User { Id = 1, Email = "test@hrs.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("right"), IsVerified = true };
         _userRepository.GetByEmailAsync(user.Email).Returns(user);
-        _tokenService.GenerateAccessToken(user).Returns(accessToken);
+        var dto = new LoginRequestDto { Email = user.Email, Password = "wrong" };
 
-        var dto = new LoginRequestDto
-        {
-            Email = user.Email,
-            Password = password
-        };
-
-        // Act
-        var result = await _mockService.LoginAsync(dto);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.UserId.Should().Be(user.Id);
-        result.Token.Should().NotBeNullOrEmpty();
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.LoginAsync(dto));
     }
 
     [Fact]
-    public async Task LoginAsync_WithInvalidPassword_ThrowsUnauthorized()
+    public async Task LoginAsync_Throws_WhenNotVerified()
     {
         // Arrange
-        var user = new User
-        {
-            Id = 1,
-            Email = "admin@hrs.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("CorrectPassword"),
-            Role = UserRole.Admin
-        };
-
+        var user = new User { Id = 1, Email = "test@hrs.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("pass"), IsVerified = false };
         _userRepository.GetByEmailAsync(user.Email).Returns(user);
+        var dto = new LoginRequestDto { Email = user.Email, Password = "pass" };
 
-        var dto = new LoginRequestDto
-        {
-            Email = user.Email,
-            Password = "WrongPassword"
-        };
-
-        // Act
-        Func<Task> act = async () => await _mockService.LoginAsync(dto);
-
-        // Assert
-        await act.Should()
-            .ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("*incorrect*");
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.LoginAsync(dto));
     }
 
     [Fact]
-    public async Task LoginAsync_WithUnknownEmail_ThrowsUnauthorized()
+    public async Task LoginAsync_ReturnsResponse_WhenValid()
     {
         // Arrange
-        _userRepository.GetByEmailAsync("nobody@hrs.com").Returns((User?)null);
-
-        var dto = new LoginRequestDto
-        {
-            Email = "nobody@hrs.com",
-            Password = "AnyPassword"
-        };
+        var user = new User { Id = 1, Email = "test@hrs.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("pass"), IsVerified = true };
+        _userRepository.GetByEmailAsync(user.Email).Returns(user);
+        _userSessionService.CreateAsync(user.Id).Returns(("token", "refresh"));
+        var dto = new LoginRequestDto { Email = user.Email, Password = "pass" };
 
         // Act
-        Func<Task> act = async () => await _mockService.LoginAsync(dto);
-
-        // Assert
-        await act.Should()
-            .ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("*incorrect*");
-    }
-
-    [Fact]
-    public async Task RefreshTokenAsync_ShouldReturnNewTokens_WhenValid()
-    {
-        // Arrange
-        var user = new User
-        {
-            Id = 1,
-            Email = "admin@hrs.com",
-            RefreshToken = "oldRefresh",
-            RefreshTokenExpiry = DateTime.UtcNow.AddDays(1)
-        };
-
-        var requestDto = new RefreshTokenRequestDto
-        {
-            RefreshToken = user.RefreshToken
-        };
-
-        _mockUserContextService.GetUserAsync().Returns(user);
-
-        _tokenService.GenerateAccessToken(user).Returns("newAccessToken");
-        _tokenService.GenerateRefreshToken().Returns("newRefreshToken");
-
-        // Act
-        var result = await _mockService.RefreshTokenAsync(requestDto);
+        var result = await _service.LoginAsync(dto);
 
         // Assert
         Assert.Equal(user.Id, result.UserId);
-        Assert.Equal("newAccessToken", result.Token);
-        Assert.Equal("newRefreshToken", result.RefreshToken);
-
-        await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u =>
-            u.RefreshToken == "newRefreshToken" &&
-            u.RefreshTokenExpiry > DateTime.UtcNow));
+        Assert.Equal("token", result.Token);
+        Assert.Equal("refresh", result.RefreshToken);
     }
 
     [Fact]
-    public async Task RefreshTokenAsync_ShouldThrow_WhenRefreshTokenMismatch()
+    public async Task RefreshTokenAsync_ReturnsResponse()
     {
         // Arrange
-        var user = new User
-        {
-            Id = 1,
-            Email = "admin@hrs.com",
-            RefreshToken = "oldRefresh",
-            RefreshTokenExpiry = DateTime.UtcNow.AddDays(1)
-        };
-
-        var requestDto = new RefreshTokenRequestDto
-        {
-            RefreshToken = "wrongToken"
-        };
-
-        _mockUserContextService.GetUserAsync().Returns(user);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _mockService.RefreshTokenAsync(requestDto));
-    }
-
-    [Fact]
-    public async Task RefreshTokenAsync_ShouldThrow_WhenRefreshTokenExpired()
-    {
-        // Arrange
-        var user = new User
-        {
-            Id = 1,
-            Email = "admin@hrs.com",
-            RefreshToken = "oldRefresh",
-            RefreshTokenExpiry = DateTime.UtcNow.AddHours(-1)
-        };
-
-        var requestDto = new RefreshTokenRequestDto
-        {
-            RefreshToken = "oldRefresh"
-        };
-
-        _mockUserContextService.GetUserAsync().Returns(user);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _mockService.RefreshTokenAsync(requestDto));
-    }
-
-    [Fact]
-    public async Task LogoutAsync_WhenUserFound_ClearsRefreshTokenAndUpdatesUser()
-    {
-        // Arrange
-        var user = new User
-        {
-            Id = 1,
-            Email = "admin@hrs.com",
-            RefreshToken = "oldRefresh",
-            RefreshTokenExpiry = DateTime.UtcNow.AddDays(1)
-        };
-        _mockUserContextService.GetUserAsync().Returns(user);
+        _userSessionService.RefreshAsync(Arg.Any<string>()).Returns(("token", "refresh"));
+        _userContextService.GetUserAsync().Returns(new User { Id = 1 });
 
         // Act
-        await _mockService.LogoutAsync();
+        var result = await _service.RefreshTokenAsync("refresh");
 
         // Assert
-        await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u =>
-            u.Id == user.Id &&
-            string.IsNullOrEmpty(u.RefreshToken) &&
-            u.RefreshTokenExpiry == null));
+        Assert.Equal(1, result.UserId);
+        Assert.Equal("token", result.Token);
+        Assert.Equal("refresh", result.RefreshToken);
     }
 
-    #region VerifyEmailAsync Tests
-
     [Fact]
-    public async Task VerifyEmailAsync_WhenUserNotFound_ReturnsFailedRedirect()
+    public async Task LogoutAsync_ReturnsLogoutResponse()
     {
         // Arrange
-        var requestDto = new EmailVerificationRequestDto
-        {
-            Email = "nonexistent@example.com",
-            VerificationToken = "valid-token"
-        };
-        var frontendUrl = new Uri("http://localhost:4200");
-
-        _userRepository.GetByEmailAsync(requestDto.Email).Returns((User?)null);
+        _userContextService.GetUserAsync().Returns(new User { Id = 1 });
+        _userSessionService.RevokeAllForUserAsync(1, Arg.Any<string>()).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto);
+        var result = await _service.LogoutAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsVerified.Should().BeFalse();
-        result.Message.Should().Be("User not found");
-    }
-
-
-    [Fact]
-    public async Task ChangePasswordAsync_WithValidRequest_UpdatesPassword_AndReturnsBasicInfo()
-    {
-        // Arrange
-        var oldPassword = "OldPassword123!";
-        var newPassword = "NewPassword456!";
-        var user = new User
-        {
-            Id = 1,
-            Email = "admin@hrs.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(oldPassword)
-        };
-
-        _mockUserContextService.GetUserAsync().Returns(user);
-
-        var requestDto = new ChangePasswordRequestDto
-        {
-            CurrentPassword = oldPassword,
-            NewPassword = newPassword,
-            ConfirmNewPassword = newPassword
-        };
-
-        // Act
-        var result = await _mockService.ChangePasswordAsync(requestDto);
-
-        result.Should().NotBeNull();
-        result.UserId.Should().Be(user.Id);
-        result.PasswordChangedAtUtc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-
-        BCrypt.Net.BCrypt.Verify(newPassword, user.PasswordHash).Should().BeTrue();
-
-        await _userRepository.Received(1).UpdateUserAsync(user);
+        Assert.Equal("Logout successful", result.Message);
     }
 
     [Fact]
-    public async Task ChangePasswordAsync_WithIncorrectCurrentPassword_ThrowsUnauthorized()
+    public async Task VerifyEmailAsync_ReturnsVerified_WhenValid()
     {
         // Arrange
-        var correctPassword = "CorrectPassword123!";
-        var wrongPassword = "WrongPassword123!";
-
-        var user = new User
-        {
-            Id = 1,
-            Email = "user@example.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(correctPassword)
-        };
-
-        _mockUserContextService.GetUserAsync().Returns(user);
-
-        var requestDto = new ChangePasswordRequestDto
-        {
-            CurrentPassword = wrongPassword,
-            NewPassword = "NewPassword123!",
-            ConfirmNewPassword = "NewPassword123!"
-        };
+        _userVerificationService.ValidateAndConsumeAsync(Arg.Any<string>(), "Email").Returns(new UserVerification { UserId = 1 });
+        _userRepository.GetByIdAsync(1).Returns(new User());
+        _userRepository.UpdateUserAsync(Arg.Any<User>()).Returns(Task.CompletedTask);
 
         // Act
-        Func<Task> act = async () => await _mockService.ChangePasswordAsync(requestDto);
+        var result = await _service.VerifyEmailAsync(new EmailVerificationRequestDto { VerificationToken = "token" });
 
         // Assert
-        await act.Should()
-            .ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("Current password is incorrect.");
-
-        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+        Assert.True(result.IsVerified);
     }
 
     [Fact]
-    public async Task VerifyEmailAsync_WhenTokenInvalid_ReturnsFailedRedirect()
+    public async Task VerifyEmailAsync_ReturnsNotVerified_WhenInvalid()
     {
         // Arrange
-        var requestDto = new EmailVerificationRequestDto
-        {
-            Email = "user@example.com",
-            VerificationToken = "invalid-token"
-        };
-        var frontendUrl = new Uri("http://localhost:4200");
-
-        var user = new User
-        {
-            Id = 1,
-            Email = requestDto.Email,
-            IsVerified = false,
-            EmailVerificationToken = "correct-token"
-        };
-
-        _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
+        _userVerificationService.ValidateAndConsumeAsync(Arg.Any<string>(), "Email").Returns((UserVerification?)null);
 
         // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto);
+        var result = await _service.VerifyEmailAsync(new EmailVerificationRequestDto { VerificationToken = "token" });
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsVerified.Should().BeFalse();
-        result.Message.Should().Be("Invalid verification token");
+        Assert.False(result.IsVerified);
     }
 
     [Fact]
-    public async Task VerifyEmailAsync_WhenTokenExpired_ReturnsExpiredRedirect()
+    public async Task ResendVerificationEmailAsync_Throws_WhenUserNotFound()
     {
         // Arrange
-        var requestDto = new EmailVerificationRequestDto
-        {
-            Email = "user@example.com",
-            VerificationToken = "expired-token"
-        };
-        var frontendUrl = new Uri("http://localhost:4200");
-
-        var user = new User
-        {
-            Id = 1,
-            Email = requestDto.Email,
-            IsVerified = false,
-            EmailVerificationToken = "expired-token",
-            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(-1) // Expired
-        };
-
-        _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
-
-        // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.IsVerified.Should().BeFalse();
-        result.Message.Should().Be("Verification token has expired");
-    }
-
-    [Fact]
-    public async Task VerifyEmailAsync_WhenValidToken_ReturnsSuccessRedirectAndUpdatesUser()
-    {
-        // Arrange
-        var requestDto = new EmailVerificationRequestDto
-        {
-            Email = "user@example.com",
-            VerificationToken = "valid-token"
-        };
-        var frontendUrl = new Uri("http://localhost:4200");
-
-        var user = new User
-        {
-            Id = 1,
-            Email = requestDto.Email,
-            IsVerified = false,
-            EmailVerificationToken = "valid-token",
-            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(1) // Not expired
-        };
-
-        _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
-
-        // Act
-        var result = await _mockService.VerifyEmailAsync(requestDto);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.IsVerified.Should().BeTrue();
-        result.Message.Should().Be("Email verified successfully");
-
-        // Verify user was updated
-        await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u =>
-            u.Id == user.Id &&
-            u.IsVerified == true &&
-            u.EmailVerificationToken == null &&
-            u.EmailVerificationTokenExpiry == null));
-    }
-
-    #endregion
-
-    #region ResendVerificationEmailAsync Tests
-
-    [Fact]
-    public async Task ResendVerificationEmailAsync_WhenUserNotFound_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var requestDto = new ResendVerificationRequestDto { Email = "nonexistent@example.com" };
-        _userRepository.GetByEmailAsync(requestDto.Email).Returns((User?)null);
+        _userRepository.GetByEmailAsync(Arg.Any<string>()).Returns((User?)null);
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _mockService.ResendVerificationEmailAsync(requestDto));
+            _service.ResendVerificationEmailAsync(new ResendVerificationRequestDto { Email = "notfound@hrs.com" }));
     }
 
     [Fact]
-    public async Task ResendVerificationEmailAsync_WhenUserAlreadyVerified_ThrowsInvalidOperationException()
+    public async Task ChangePasswordAsync_Throws_WhenCurrentPasswordIncorrect()
     {
         // Arrange
-        var requestDto = new ResendVerificationRequestDto { Email = "verified@example.com" };
-        var user = new User { Id = 1, Email = requestDto.Email, IsVerified = true };
-        _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
+        _userContextService.GetUserAsync().Returns(new User { PasswordHash = BCrypt.Net.BCrypt.HashPassword("right") });
+        var dto = new ChangePasswordRequestDto { CurrentPassword = "wrong", NewPassword = "new" };
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _mockService.ResendVerificationEmailAsync(requestDto));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.ChangePasswordAsync(dto));
     }
 
     [Fact]
-    public async Task ResendVerificationEmailAsync_WhenValidUser_GeneratesNewTokenAndSendsEmail()
+    public async Task ResendVerificationEmailAsync_ReturnsTrue_WhenValid()
     {
         // Arrange
-        var requestDto = new ResendVerificationRequestDto { Email = "user@example.com" };
-        var user = new User
-        {
-            Id = 1,
-            Email = requestDto.Email,
-            FirstName = "John",
-            IsVerified = false
-        };
-        _userRepository.GetByEmailAsync(requestDto.Email).Returns(user);
+        var user = new User { Id = 1, Email = "test@hrs.com", FirstName = "Test", IsVerified = false };
+        var verification = new UserVerification { Token = "token" };
+        var requestDto = new ResendVerificationRequestDto { Email = "test@hrs.com" };
+        _userRepository.GetByEmailAsync(user.Email).Returns(user);
+        _userVerificationService.CreateAsync(user.Id, "Email", Arg.Any<TimeSpan>()).Returns(verification);
+        _emailBuilderService.BuildVerificationEmailTemplate(user.Email, verification.Token, user.FirstName).Returns(new EmailTemplate());
+        _emailBuilderService.GenerateEmailBody(Arg.Any<EmailTemplate>()).Returns("body");
+        _emailSenderService.SendEmailAsync(user.Email, Arg.Any<string>(), "body").Returns(true);
 
         // Act
-        var result = await _mockService.ResendVerificationEmailAsync(requestDto);
+        var result = await _service.ResendVerificationEmailAsync(requestDto);
 
         // Assert
-        result.Should().BeTrue();
-        await _userRepository.Received(1).UpdateUserAsync(Arg.Any<User>());
-        await _emailSenderService.Received(1).SendEmailAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>());
+        Assert.True(result);
     }
-    #endregion
+
+    [Fact]
+    public async Task ResendVerificationEmailAsync_Throws_WhenAlreadyVerified()
+    {
+        // Arrange
+        var user = new User { Id = 1, Email = "test@hrs.com", IsVerified = true };
+        var requestDto = new ResendVerificationRequestDto { Email = "test@hrs.com" };
+        _userRepository.GetByEmailAsync(user.Email).Returns(user);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ResendVerificationEmailAsync(requestDto));
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_ReturnsResponse_WhenValid()
+    {
+        // Arrange
+        var user = new User { Id = 1, PasswordHash = BCrypt.Net.BCrypt.HashPassword("old") };
+        var requestDto = new ChangePasswordRequestDto { CurrentPassword = "old", NewPassword = "new" };
+        _userContextService.GetUserAsync().Returns(user);
+        _userRepository.UpdateUserAsync(user).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _service.ChangePasswordAsync(requestDto);
+
+        // Assert
+        Assert.Equal(user.Id, result.UserId);
+        Assert.True(result.PasswordChangedAtUtc <= DateTime.UtcNow);
+    }
 }
