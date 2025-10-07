@@ -171,9 +171,6 @@ public class ItemService : IItemService
         await _itemRepository.SaveChangesAsync();
     }
 
-    public Task<int> GetAvailableQuantityAsync(int itemId, DateTime startDate, DateTime endDate) =>
-        Task.FromResult(0);
-
     public async Task<decimal> GetItemRateAsync(int itemId, int rentalDays)
     {
         var rate = await _itemRateRepository.GetApplicableRateAsync(itemId, rentalDays);

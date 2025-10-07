@@ -9,6 +9,5 @@ public interface IItemService
     Task<ItemResponseDto> CreateAsync(AddItemRequestDto dto);
     Task<ItemResponseDto> UpdateAsync(UpdateItemRequestDto dto);
     Task DeleteAsync(int id);
-    Task<int> GetAvailableQuantityAsync(int itemId, DateTime startDate, DateTime endDate);
     Task<decimal> GetItemRateAsync(int itemId, int rentalDays);
 }

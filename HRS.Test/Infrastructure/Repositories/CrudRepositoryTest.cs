@@ -3,7 +3,7 @@ using HRS.Domain.Enums;
 using HRS.Infrastructure;
 using HRS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace HRS.Test.Infrastructure.Repositories;
 
@@ -16,7 +16,6 @@ public class CrudRepositoryTests
             .Options;
 
         return new AppDbContext(options);
-
     }
 
 
@@ -132,9 +131,9 @@ public class CrudRepositoryTests
         var user = new User { Id = 2, FirstName = "Evan", LastName = "Feri", Email = "test@mail.com", Role = UserRole.Manager, PasswordHash = "123456" };
         var items = new[]
         {
-                new Item { Id = 9, Name = "Item9", Description = "D9", Quantity = 1, Price = 10 , CreatedBy= user},
-                new Item { Id = 10, Name = "Item10", Description = "D10", Quantity = 2, Price = 20, CreatedBy= user}
-            };
+            new Item { Id = 9, Name = "Item9", Description = "D9", Quantity = 1, Price = 10, CreatedBy = user },
+            new Item { Id = 10, Name = "Item10", Description = "D10", Quantity = 2, Price = 20, CreatedBy = user }
+        };
 
         await repo.AddRangeAsync(items);
         await repo.SaveChangesAsync();
@@ -152,9 +151,9 @@ public class CrudRepositoryTests
         var user = new User { Id = 2, FirstName = "Evan", LastName = "Feri", Email = "test@mail.com", Role = UserRole.Manager, PasswordHash = "123456" };
         var items = new[]
         {
-                new Item { Id = 11, Name = "Item11", Description = "D11", Quantity = 1, Price = 10 , CreatedBy= user},
-                new Item { Id = 12, Name = "Item12", Description = "D12", Quantity = 2, Price = 20 , CreatedBy= user}
-            };
+            new Item { Id = 11, Name = "Item11", Description = "D11", Quantity = 1, Price = 10, CreatedBy = user },
+            new Item { Id = 12, Name = "Item12", Description = "D12", Quantity = 2, Price = 20, CreatedBy = user }
+        };
 
         dbContext.Items.AddRange(items);
         await dbContext.SaveChangesAsync();
@@ -166,4 +165,3 @@ public class CrudRepositoryTests
         Assert.Empty(result);
     }
 }
-
