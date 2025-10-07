@@ -1,4 +1,4 @@
-using FluentValidation;
+using HRS.API.Common;
 using HRS.API.Contracts.DTOs;
 using HRS.API.Contracts.DTOs.Auth;
 using HRS.API.Contracts.DTOs.User;
@@ -14,27 +14,39 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IUserContextService _userContextService;
-    private readonly IConfiguration _configuration;
 
-    public AuthController(IAuthService authService, IUserContextService userContextService, IConfiguration configuration)
+    public AuthController(IAuthService authService, IUserContextService userContextService)
     {
         _authService = authService;
         _userContextService = userContextService;
-        _configuration = configuration;
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> LoginAsync([FromBody] LoginRequestDto requestDto, IValidator<LoginRequestDto> validator)
+    public async Task<IActionResult> LoginAsync([FromBody] LoginRequestDto requestDto)
     {
         var res = await _authService.LoginAsync(requestDto);
-        return Ok(ApiResponse<LoginResponseDto>.OkResponse(res, "Login successful"));
+        Response.Cookies.Append(
+            "refresh_token",
+            res.RefreshToken,
+            CookiesDefault.RefreshCookieOptions);
+
+        return Ok(ApiResponse<LoginResponseDto>.OkResponse(new LoginResponseDto { UserId = res.UserId, Token = res.Token }, "Login successful"));
     }
 
-    [HttpPost("refresh")]
-    public async Task<IActionResult> RefreshTokenAsync([FromBody] RefreshTokenRequestDto requestDto, IValidator<RefreshTokenRequestDto> validator)
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshTokenAsync()
     {
-        var res = await _authService.RefreshTokenAsync(requestDto);
-        return Ok(ApiResponse<LoginResponseDto>.OkResponse(res, "Refresh token successful"));
+        var refreshToken = Request.Cookies["refresh_token"];
+        if (string.IsNullOrEmpty(refreshToken))
+            return Unauthorized(ApiResponse<object>.FailResponse("Missing refresh token"));
+
+        var res = await _authService.RefreshTokenAsync(refreshToken);
+
+        Response.Cookies.Append(
+            "refresh_token",
+            res.RefreshToken,
+            CookiesDefault.RefreshCookieOptions);
+        return Ok(ApiResponse<LoginResponseDto>.OkResponse(res, "Token refreshed successfully"));
     }
 
     [HttpPost("logout")]
@@ -42,6 +54,10 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> LogoutAsync()
     {
         var res = await _authService.LogoutAsync();
+        Response.Cookies.Delete("refresh_token", new CookieOptions
+        {
+            Path = "/api/auth/refresh"
+        });
         return Ok(ApiResponse<LogoutResponseDto>.OkResponse(res, "logout successful"));
     }
 
@@ -64,13 +80,13 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ResendVerificationAsync([FromBody] ResendVerificationRequestDto requestDto)
     {
         var res = await _authService.ResendVerificationEmailAsync(requestDto);
-        return Ok(ApiResponse<bool>.OkResponse(res, "Verification email sent successfully"));
+        return Ok(ApiResponse<bool>.OkResponse(res, "If your email exists, a verification link has been sent."));
     }
 
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePasswordAsync(
-    [FromBody] ChangePasswordRequestDto requestDto)
+        [FromBody] ChangePasswordRequestDto requestDto)
     {
         var res = await _authService.ChangePasswordAsync(requestDto);
         return Ok(ApiResponse<ChangePasswordResponseDto>.OkResponse(res, "Password changed successfully"));

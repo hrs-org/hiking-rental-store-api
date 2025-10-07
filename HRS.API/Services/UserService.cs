@@ -9,19 +9,27 @@ namespace HRS.API.Services;
 
 public class UserService : IUserService
 {
-    private readonly IMapper _mapper;
-    private readonly IUserRepository _userRepository;
-    private readonly IUserContextService _userContextService;
     private readonly IEmailBuilderService _emailBuilderService;
     private readonly IEmailSenderService _emailSenderService;
+    private readonly IMapper _mapper;
+    private readonly IUserContextService _userContextService;
+    private readonly IUserRepository _userRepository;
+    private readonly IUserVerificationService _userVerificationService;
 
-    public UserService(IMapper mapper, IUserRepository userRepository, IUserContextService userContextService, IEmailBuilderService emailBuilderService, IEmailSenderService emailSenderService)
+    public UserService(
+        IMapper mapper,
+        IUserRepository userRepository,
+        IUserContextService userContextService,
+        IEmailBuilderService emailBuilderService,
+        IEmailSenderService emailSenderService,
+        IUserVerificationService userVerificationService)
     {
         _mapper = mapper;
         _userRepository = userRepository;
         _userContextService = userContextService;
         _emailBuilderService = emailBuilderService;
         _emailSenderService = emailSenderService;
+        _userVerificationService = userVerificationService;
     }
 
     public async Task<IEnumerable<UserDto>> GetUsers()
@@ -38,36 +46,36 @@ public class UserService : IUserService
 
     public async Task<bool> Register(RegisterDto dto)
     {
-        try
-        {
-            var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
-            if (existingUser != null) throw new InvalidOperationException("User with this email already exists.");
-            if (dto.Password.Length < 8) throw new ArgumentException("Password must be at least 8 characters long.");
-            var user = _mapper.Map<User>(dto);
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
+        if (existingUser != null)
+            throw new InvalidOperationException("User with this email already exists.");
+        if (dto.Password.Length < 8)
+            throw new ArgumentException("Password must be at least 8 characters long.");
 
-            user.EmailVerificationToken = Guid.NewGuid().ToString();
-            user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
-            user.IsVerified = false;
+        var user = _mapper.Map<User>(dto);
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        user.IsVerified = false;
 
-            await _userRepository.AddAsync(user);
-            await _userRepository.SaveChangesAsync();
+        await _userRepository.AddAsync(user);
+        await _userRepository.SaveChangesAsync();
 
-            var subject = "Verify Your Email - Hiking Rental Store";
-            var emailTemplate = _emailBuilderService.BuildVerificationEmailTemplate(user.Email, user.EmailVerificationToken, user.FirstName);
-            var body = _emailBuilderService.GenerateEmailBody(emailTemplate);
-            await _emailSenderService.SendEmailAsync(user.Email, subject, body);
+        var verification = await _userVerificationService.CreateAsync(
+            user.Id,
+            "Email",
+            TimeSpan.FromHours(24)
+        );
 
-            return true;
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new InvalidOperationException("Error checking for existing user: " + ex.Message, ex);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ArgumentException("Error with provided data: " + ex.Message, ex);
-        }
+        var subject = "Verify Your Email - Hiking Rental Store";
+        var template = _emailBuilderService.BuildVerificationEmailTemplate(
+            user.Email,
+            verification.Token,
+            user.FirstName
+        );
+        var body = _emailBuilderService.GenerateEmailBody(template);
+
+        await _emailSenderService.SendEmailAsync(user.Email, subject, body);
+
+        return true;
     }
 
     public async Task<bool> DeleteUser(int id)
