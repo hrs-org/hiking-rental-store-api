@@ -26,6 +26,7 @@ public class ItemProfileTests
     [Fact]
     public void Should_Map_AddItemRequestDto_To_Item()
     {
+        // Arrange
         var dto = new AddItemRequestDto
         {
             Name = "Tent",
@@ -43,8 +44,10 @@ public class ItemProfileTests
             }
         };
 
+        // Act
         var item = _mapper.Map<Item>(dto);
 
+        // Assert
         item.Id.Should().Be(0);
         item.ParentId.Should().BeNull();
         item.Name.Should().Be(dto.Name);
@@ -56,6 +59,7 @@ public class ItemProfileTests
     [Fact]
     public void Should_Map_Item_To_ItemResponseDto()
     {
+        // Arrange
         var user = new User { Id = 1, FirstName = "Admin", LastName = "User", Email = "r@w.com", Role = UserRole.Admin, PasswordHash = "hashedpassword" };
         var item = new Item
         {
@@ -76,8 +80,10 @@ public class ItemProfileTests
             }
         };
 
+        // Act
         var dto = _mapper.Map<ItemResponseDto>(item);
 
+        // Assert
         dto.Id.Should().Be(1);
         dto.Name.Should().Be("Tent");
         dto.Children.Should().HaveCount(1);
@@ -88,8 +94,13 @@ public class ItemProfileTests
     [Fact]
     public void Should_Map_ItemRateRequestDto_To_ItemRate()
     {
+        // Arrange
         var dto = new ItemRateRequestDto { MinDays = 5, DailyRate = 99.99m, IsActive = true };
+
+        // Act
         var entity = _mapper.Map<ItemRate>(dto);
+
+        // Assert
         entity.MinDays.Should().Be(5);
         entity.DailyRate.Should().Be(99.99m);
         entity.IsActive.Should().BeTrue();
@@ -98,8 +109,13 @@ public class ItemProfileTests
     [Fact]
     public void Should_Map_ItemRate_To_ItemRateResponseDto()
     {
+        // Arrange
         var entity = new ItemRate { Id = 7, MinDays = 2, DailyRate = 55.5m, IsActive = false };
+
+        // Act
         var dto = _mapper.Map<ItemRateResponseDto>(entity);
+
+        // Assert
         dto.MinDays.Should().Be(2);
         dto.DailyRate.Should().Be(55.5m);
         dto.IsActive.Should().BeFalse();
