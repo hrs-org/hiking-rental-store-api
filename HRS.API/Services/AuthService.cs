@@ -166,7 +166,7 @@ public class AuthService : IAuthService
 
         if (BCrypt.Net.BCrypt.Verify(requestDto.NewPassword, user.PasswordHash))
             return new ResetPasswordResponseDto { IsSuccess = false, Message = "New password cannot be the same as the current password." };
-            
+
         var verification = await _userVerificationService.ValidateAndConsumeAsync(requestDto.Token, "PasswordReset");
         if (verification == null || verification.UserId != user.Id)
             return new ResetPasswordResponseDto { IsSuccess = false, Message = "Invalid or expired password reset token." };
@@ -175,5 +175,5 @@ public class AuthService : IAuthService
         await _userRepository.UpdateUserAsync(user);
 
         return new ResetPasswordResponseDto { IsSuccess = true, Message = "Password has been reset successfully." };
-}
+    }
 }
