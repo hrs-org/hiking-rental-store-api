@@ -3,26 +3,21 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HRS.Domain.Entities;
 
-[Table("Items")]
-public class Item
+[Table("Packages")]
+public class Package
 {
     [Key] public int Id { get; set; }
 
     [Required][MaxLength(150)] public string Name { get; set; } = null!;
 
-    [MaxLength(500)] public string Description { get; set; } = string.Empty;
+    [MaxLength(500)] public string? Description { get; set; }
 
-    [Required] public int Quantity { get; set; }
+    [Required]
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal BasePrice { get; set; }
 
-    [Column(TypeName = "decimal(10,2)")] public decimal Price { get; set; }
-
-    public int? ParentId { get; set; }
-
-    [ForeignKey(nameof(ParentId))] public Item? Parent { get; set; }
-
-    public ICollection<Item> Children { get; set; } = [];
-
-    public ICollection<ItemRate> Rates { get; set; } = [];
+    public ICollection<PackageItem> PackageItems { get; set; } = [];
+    public ICollection<PackageRate> PackageRates { get; set; } = [];
 
     public int CreatedById { get; set; }
 

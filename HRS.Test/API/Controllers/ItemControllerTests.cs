@@ -23,7 +23,7 @@ public class ItemControllerTests
     {
         // Arrange
         var items = new List<ItemResponseDto> { new() { Id = 1 }, new() { Id = 2 } };
-        _itemService.GetItemsAsync().Returns(items);
+        _itemService.GetRootItemsAsync().Returns(items);
 
         // Act
         var result = await _controller.GetItemsAsync();
@@ -58,10 +58,10 @@ public class ItemControllerTests
         // Arrange
         var addDto = new AddItemRequestDto { Name = "Test", Description = "This is Test", Quantity = 10, Price = 10.5m };
         var created = new ItemResponseDto { Id = 1, Name = "Test" };
-        _itemService.CreateItemAsync(addDto).Returns(created);
+        _itemService.CreateAsync(addDto).Returns(created);
 
         // Act
-        var result = await _controller.AddNewItem(addDto);
+        var result = await _controller.CreateItemAsync(addDto);
 
         // Assert
         var createdResult = result as CreatedAtActionResult;
@@ -72,32 +72,100 @@ public class ItemControllerTests
     }
 
     [Fact]
-    public async Task UpdateItemAsync_ReturnsNoContent()
+    public async Task AddNewItem_WithRates_ReturnsCreatedAtAction()
     {
         // Arrange
-        var updateDto = new UpdateItemRequestDto { Id = 1, Name = "Updated", Description = "This is Updated", Quantity = 10, Price = 10.5m };
-        _itemService.UpdateItemAsync(updateDto).Returns(Task.CompletedTask);
+        var addDto = new AddItemRequestDto
+        {
+            Name = "Tent",
+            Description = "4-person tent",
+            Quantity = 5,
+            Price = 100m,
+            Rates = new List<ItemRateRequestDto>
+            {
+                new() { MinDays = 1, DailyRate = 20m, IsActive = true },
+                new() { MinDays = 3, DailyRate = 15m, IsActive = true }
+            }
+        };
+        var created = new ItemResponseDto
+        {
+            Id = 10,
+            Name = "Tent",
+            Rates = new List<ItemRateResponseDto>
+            {
+                new() { MinDays = 1, DailyRate = 20m, IsActive = true },
+                new() { MinDays = 3, DailyRate = 15m, IsActive = true }
+            }
+        };
+        _itemService.CreateAsync(addDto).Returns(created);
 
         // Act
-        var result = await _controller.UpdateItemAsync(1, updateDto);
+        var result = await _controller.CreateItemAsync(addDto);
 
         // Assert
-        result.Should().BeOfType<NoContentResult>();
-        updateDto.Id.Should().Be(1);
-        await _itemService.Received(1).UpdateItemAsync(updateDto);
+        var createdResult = result as CreatedAtActionResult;
+        createdResult.Should().NotBeNull();
+        var apiResponse = createdResult.Value as dynamic;
+        ((ItemResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(created);
+        createdResult.RouteValues?["id"].Should().Be(created.Id);
+        createdResult.ActionName.Should().Be("GetItem");
     }
 
     [Fact]
-    public async Task DeleteItemAsync_ReturnsNoContent()
+    public async Task UpdateItemAsync_WithRates_ReturnsOkWithApiResponse()
     {
         // Arrange
-        _itemService.DeleteItemAsync(1).Returns(Task.CompletedTask);
+        var updateDto = new UpdateItemRequestDto
+        {
+            Id = 10,
+            Name = "Tent Updated",
+            Description = "Updated tent",
+            Quantity = 7,
+            Price = 110m,
+            Rates = new List<ItemRateRequestDto>
+            {
+                new() { MinDays = 1, DailyRate = 22m, IsActive = true }
+            }
+        };
+        var updated = new ItemResponseDto
+        {
+            Id = 10,
+            Name = "Tent Updated",
+            Rates = new List<ItemRateResponseDto>
+            {
+                new() { MinDays = 1, DailyRate = 22m, IsActive = true }
+            }
+        };
+        _itemService.UpdateAsync(updateDto).Returns(updated);
+
+        // Act
+        var result = await _controller.UpdateItemAsync(10, updateDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((object)apiResponse?.Data!).Should().BeNull();
+        ((string)apiResponse?.Message!).Should().Be("Item updated successfully");
+        updateDto.Id.Should().Be(10);
+        await _itemService.Received(1).UpdateAsync(updateDto);
+    }
+
+    [Fact]
+    public async Task DeleteItemAsync_ReturnsOkWithApiResponse()
+    {
+        // Arrange
+        _itemService.DeleteAsync(1).Returns(Task.CompletedTask);
 
         // Act
         var result = await _controller.DeleteItemAsync(1);
 
         // Assert
-        result.Should().BeOfType<NoContentResult>();
-        await _itemService.Received(1).DeleteItemAsync(1);
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((object)apiResponse?.Data!).Should().BeNull();
+        ((string)apiResponse?.Message!).Should().Be("Item deleted successfully");
+        await _itemService.Received(1).DeleteAsync(1);
     }
 }

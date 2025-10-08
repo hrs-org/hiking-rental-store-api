@@ -15,6 +15,11 @@ public class AppDbContext : DbContext
     public DbSet<UserVerification> UserVerifications { get; set; } = default!;
     public DbSet<Item> Items { get; set; } = default!;
 
+    public DbSet<ItemRate> ItemRates { get; set; } = default!;
+    public DbSet<Package> Packages { get; set; } = default!;
+    public DbSet<PackageItem> PackageItems { get; set; } = default!;
+    public DbSet<PackageRate> PackageRates { get; set; } = default!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -23,5 +28,8 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new UserSessionConfiguration());
         modelBuilder.ApplyConfiguration(new UserVerificationConfiguration());
         modelBuilder.ApplyConfiguration(new ItemConfiguration());
+        modelBuilder.ApplyConfiguration(new PackageConfiguration());
+        modelBuilder.ApplyConfiguration(new PackageItemConfiguration());
+        modelBuilder.ApplyConfiguration(new PackageRateConfiguration());
     }
 }

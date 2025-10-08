@@ -4,6 +4,7 @@ using HRS.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRS.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251006175021_CreateItemRatesTable")]
+    partial class CreateItemRatesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -115,121 +118,6 @@ namespace HRS.Migrations.Migrations
                     b.ToTable("ItemRates");
                 });
 
-            modelBuilder.Entity("HRS.Domain.Entities.Package", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("BasePrice")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("CreatedById")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("UpdatedById")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("UpdatedById");
-
-                    b.ToTable("Packages");
-                });
-
-            modelBuilder.Entity("HRS.Domain.Entities.PackageItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ItemId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PackageId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(1);
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ItemId");
-
-                    b.HasIndex("PackageId", "ItemId")
-                        .IsUnique();
-
-                    b.ToTable("PackageItems");
-                });
-
-            modelBuilder.Entity("HRS.Domain.Entities.PackageRate", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("CreatedById")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("DailyRate")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(true);
-
-                    b.Property<int>("MinDays")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PackageId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("UpdatedById")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("PackageId");
-
-                    b.HasIndex("UpdatedById");
-
-                    b.ToTable("PackageRates");
-                });
-
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -291,14 +179,14 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 7, 14, 20, 59, 496, DateTimeKind.Utc).AddTicks(5870),
+                            CreatedAt = new DateTime(2025, 10, 6, 17, 50, 21, 115, DateTimeKind.Utc).AddTicks(4560),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$4Uo2uCQbVDlZ0mGygeCZhuQQvYiMUWyTHsu1SN.Nbq3/sGLwUrIUK",
+                            PasswordHash = "$2a$11$H0zz2w.tlbyA3q4eTI4CC.4sgxYkTLISMcE1F0gy74XUkFnWbo9j2",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 10, 7, 14, 20, 59, 496, DateTimeKind.Utc).AddTicks(5870)
+                            UpdatedAt = new DateTime(2025, 10, 6, 17, 50, 21, 115, DateTimeKind.Utc).AddTicks(4560)
                         });
                 });
 
@@ -434,69 +322,6 @@ namespace HRS.Migrations.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
-            modelBuilder.Entity("HRS.Domain.Entities.Package", b =>
-                {
-                    b.HasOne("HRS.Domain.Entities.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HRS.Domain.Entities.User", "UpdatedBy")
-                        .WithMany()
-                        .HasForeignKey("UpdatedById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("UpdatedBy");
-                });
-
-            modelBuilder.Entity("HRS.Domain.Entities.PackageItem", b =>
-                {
-                    b.HasOne("HRS.Domain.Entities.Item", "Item")
-                        .WithMany()
-                        .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HRS.Domain.Entities.Package", "Package")
-                        .WithMany("PackageItems")
-                        .HasForeignKey("PackageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Item");
-
-                    b.Navigation("Package");
-                });
-
-            modelBuilder.Entity("HRS.Domain.Entities.PackageRate", b =>
-                {
-                    b.HasOne("HRS.Domain.Entities.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HRS.Domain.Entities.Package", "Package")
-                        .WithMany("PackageRates")
-                        .HasForeignKey("PackageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("HRS.Domain.Entities.User", "UpdatedBy")
-                        .WithMany()
-                        .HasForeignKey("UpdatedById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("Package");
-
-                    b.Navigation("UpdatedBy");
-                });
-
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>
                 {
                     b.HasOne("HRS.Domain.Entities.User", "CreatedByUser")
@@ -539,13 +364,6 @@ namespace HRS.Migrations.Migrations
                     b.Navigation("Children");
 
                     b.Navigation("Rates");
-                });
-
-            modelBuilder.Entity("HRS.Domain.Entities.Package", b =>
-                {
-                    b.Navigation("PackageItems");
-
-                    b.Navigation("PackageRates");
                 });
 
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>
