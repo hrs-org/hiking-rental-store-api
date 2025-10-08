@@ -29,6 +29,23 @@ public class EmailBuilderService : IEmailBuilderService
         };
     }
 
+    public EmailTemplate BuildPasswordResetEmailTemplate(string email, string resetToken, string firstName)
+    {
+        var frontendUrl = _appConfiguration.FrontendUrl.TrimEnd('/');
+        var resetUrl = $"{frontendUrl}/reset-password?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(resetToken)}";
+
+        return new EmailTemplate
+        {
+            Title = $"Password Reset Request for Hiking Rental Store, {firstName}",
+            Content =
+                "We received a request to reset your password. Click the button below to reset it:",
+            ButtonText = "Reset Password",
+            ButtonUrl = new Uri(resetUrl),
+            AdditionalInfo = "This link will expire in 1 hour.",
+            FooterText = "If you didn't request a password reset, please ignore this email."
+        };
+    }
+
     public string GenerateEmailBody(EmailTemplate emailTemplate)
     {
         return $@"

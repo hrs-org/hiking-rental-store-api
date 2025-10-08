@@ -173,4 +173,94 @@ public class AuthControllerTests
         var apiResponse = okResult.Value as dynamic;
         ((ChangePasswordResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(responseDto, options => options.Excluding(x => x.PasswordChangedAtUtc));
     }
+
+    [Fact]
+    public async Task ForgotPasswordAsync_ReturnsOkWithResponse()
+    {
+        // Arrange
+        var requestDto = new ForgotPasswordRequestDto { Email = "test@hrs.com" };
+        var responseDto = new ForgotPasswordResponseDto { IsSuccess = true, Message = "If the email is registered, a password reset link will be sent." };
+        _authService.ForgotPasswordAsync(requestDto).Returns(responseDto);
+
+        // Act
+        var result = await _controller.ForgotPasswordAsync(requestDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((ForgotPasswordResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(responseDto);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ReturnsOkWithSuccessResponse()
+    {
+        // Arrange
+        var requestDto = new ResetPasswordRequestDto
+        {
+            Email = "test@hrs.com",
+            Token = "reset-token",
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "NewPassword123!"
+        };
+        var responseDto = new ResetPasswordResponseDto { IsSuccess = true, Message = "Password has been reset successfully." };
+        _authService.ResetPasswordAsync(requestDto).Returns(responseDto);
+
+        // Act
+        var result = await _controller.ResetPasswordAsync(requestDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((ResetPasswordResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(responseDto);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ReturnsOkWithFailureResponse_WhenPasswordMismatch()
+    {
+        // Arrange
+        var requestDto = new ResetPasswordRequestDto
+        {
+            Email = "test@hrs.com",
+            Token = "reset-token",
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "DifferentPassword123!"
+        };
+        var responseDto = new ResetPasswordResponseDto { IsSuccess = false, Message = "Passwords do not match." };
+        _authService.ResetPasswordAsync(requestDto).Returns(responseDto);
+
+        // Act
+        var result = await _controller.ResetPasswordAsync(requestDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((ResetPasswordResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(responseDto);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ReturnsOkWithFailureResponse_WhenTokenInvalid()
+    {
+        // Arrange
+        var requestDto = new ResetPasswordRequestDto
+        {
+            Email = "test@hrs.com",
+            Token = "invalid-token",
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "NewPassword123!"
+        };
+        var responseDto = new ResetPasswordResponseDto { IsSuccess = false, Message = "Invalid or expired password reset token." };
+        _authService.ResetPasswordAsync(requestDto).Returns(responseDto);
+
+        // Act
+        var result = await _controller.ResetPasswordAsync(requestDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((ResetPasswordResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(responseDto);
+    }
 }

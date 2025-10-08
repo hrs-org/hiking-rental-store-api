@@ -210,4 +210,182 @@ public class AuthServiceTests
         Assert.Equal(user.Id, result.UserId);
         Assert.True(result.PasswordChangedAtUtc <= DateTime.UtcNow);
     }
+
+    #region ForgotPasswordAsync Tests
+
+    [Fact]
+    public async Task ForgotPasswordAsync_WithValidEmail_ShouldSendResetEmail()
+    {
+        // Arrange
+        var request = new ForgotPasswordRequestDto { Email = "test@example.com" };
+        var user = new User { Id = 1, Email = "test@example.com", FirstName = "John" };
+        var verification = new UserVerification { Token = "reset-token", UserId = user.Id };
+
+        _userRepository.GetByEmailAsync(request.Email).Returns(user);
+        _userVerificationService.CreateAsync(user.Id, "PasswordReset", Arg.Any<TimeSpan>()).Returns(verification);
+        _emailBuilderService.BuildPasswordResetEmailTemplate(user.Email, verification.Token, user.FirstName)
+            .Returns(new EmailTemplate());
+        _emailBuilderService.GenerateEmailBody(Arg.Any<EmailTemplate>()).Returns("<html>Reset email</html>");
+
+        // Act
+        var result = await _service.ForgotPasswordAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal("If the email is registered, a password reset link will be sent.", result.Message);
+        await _emailSenderService.Received(1).SendEmailAsync(user.Email, Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task ForgotPasswordAsync_WithNonExistentEmail_ShouldThrowException()
+    {
+        // Arrange
+        var request = new ForgotPasswordRequestDto { Email = "nonexistent@example.com" };
+        _userRepository.GetByEmailAsync(request.Email).Returns((User?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ForgotPasswordAsync(request));
+        await _emailSenderService.DidNotReceive().SendEmailAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    #endregion
+
+    #region ResetPasswordAsync Tests
+
+    [Fact]
+    public async Task ResetPasswordAsync_WithValidToken_ShouldResetPassword()
+    {
+        // Arrange
+        var request = new ResetPasswordRequestDto
+        {
+            Email = "test@example.com",
+            Token = "valid-token",
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "NewPassword123!"
+        };
+        var user = new User { Id = 1, Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("OldPassword123!") };
+        var verification = new UserVerification { UserId = user.Id, Token = request.Token };
+
+        _userRepository.GetByEmailAsync(request.Email).Returns(user);
+        _userVerificationService.ValidateAndConsumeAsync(request.Token, "PasswordReset").Returns(verification);
+
+        // Act
+        var result = await _service.ResetPasswordAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Password has been reset successfully.", result.Message);
+        await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u => u.Id == user.Id));
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_WithInvalidEmail_ShouldThrowException()
+    {
+        // Arrange
+        var request = new ResetPasswordRequestDto { Email = "invalid@example.com", Token = "token", NewPassword = "Pass123!", ConfirmNewPassword = "Pass123!" };
+        _userRepository.GetByEmailAsync(request.Email).Returns((User?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ResetPasswordAsync(request));
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_WithMismatchedPasswords_ShouldReturnFailure()
+    {
+        // Arrange
+        var request = new ResetPasswordRequestDto
+        {
+            Email = "test@example.com",
+            Token = "token",
+            NewPassword = "Password123!",
+            ConfirmNewPassword = "DifferentPassword123!"
+        };
+        var user = new User { Id = 1, Email = "test@example.com" };
+        _userRepository.GetByEmailAsync(request.Email).Returns(user);
+
+        // Act
+        var result = await _service.ResetPasswordAsync(request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Passwords do not match.", result.Message);
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_WithSameAsCurrentPassword_ShouldReturnFailure()
+    {
+        // Arrange
+        var currentPassword = "SamePassword123!";
+        var request = new ResetPasswordRequestDto
+        {
+            Email = "test@example.com",
+            Token = "token",
+            NewPassword = currentPassword,
+            ConfirmNewPassword = currentPassword
+        };
+        var user = new User { Id = 1, Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword(currentPassword) };
+        _userRepository.GetByEmailAsync(request.Email).Returns(user);
+
+        // Act
+        var result = await _service.ResetPasswordAsync(request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("New password cannot be the same as the current password.", result.Message);
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_WithInvalidToken_ShouldReturnFailure()
+    {
+        // Arrange
+        var request = new ResetPasswordRequestDto
+        {
+            Email = "test@example.com",
+            Token = "invalid-token",
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "NewPassword123!"
+        };
+        var user = new User { Id = 1, Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("OldPassword123!") };
+
+        _userRepository.GetByEmailAsync(request.Email).Returns(user);
+        _userVerificationService.ValidateAndConsumeAsync(request.Token, "PasswordReset").Returns((UserVerification?)null);
+
+        // Act
+        var result = await _service.ResetPasswordAsync(request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Invalid or expired password reset token.", result.Message);
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_WithTokenForDifferentUser_ShouldReturnFailure()
+    {
+        // Arrange
+        var request = new ResetPasswordRequestDto
+        {
+            Email = "test@example.com",
+            Token = "token",
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "NewPassword123!"
+        };
+        var user = new User { Id = 1, Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("OldPassword123!") };
+        var verification = new UserVerification { UserId = 999, Token = request.Token }; // Different user ID
+
+        _userRepository.GetByEmailAsync(request.Email).Returns(user);
+        _userVerificationService.ValidateAndConsumeAsync(request.Token, "PasswordReset").Returns(verification);
+
+        // Act
+        var result = await _service.ResetPasswordAsync(request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Invalid or expired password reset token.", result.Message);
+        await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
+    }
+
+    #endregion
 }
