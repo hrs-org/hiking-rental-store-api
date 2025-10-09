@@ -45,7 +45,6 @@ public class UpdateEmployeeDtoValidator : AbstractValidator<UpdateEmployeeDto>
                 if (existingUser == null) return false;
                 if (existingUser.Email.Equals(email, StringComparison.OrdinalIgnoreCase))
                     return true;
-
                 return await userRepository.IsEmailUniqueAsync(email);
             })
             .WithMessage("Email is already in use. or Wrong Email format");
