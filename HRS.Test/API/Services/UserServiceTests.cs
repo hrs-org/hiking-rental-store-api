@@ -305,4 +305,81 @@ public class UserServiceTests
         await _userRepository.Received(1).AddAsync(user);
         await _userRepository.Received(1).SaveChangesAsync();
     }
+
+    [Fact]
+    public async Task CreateNewEmployee_SetsAuditAndReturnsDto_Simple()
+    {
+        // Arrange
+        var dto = new RegisterEmployeeDetailDto { FirstName = "New", LastName = "Emp", Email = "new@e.com", Role = "Employee" };
+        var user = new User { Id = 10 };
+        var editor = new User { Id = 99, Role = UserRole.Admin };
+        var mappedDto = new UserDto { Id = 10, FirstName = "New", LastName = "Emp", Email = "new@e.com", Role = "Employee" };
+
+        _mapper.Map<User>(dto).Returns(user);
+        _userContextService.GetUserAsync().Returns(editor);
+        _userRepository.AddAsync(Arg.Any<User>()).Returns(Task.CompletedTask);
+        _userRepository.SaveChangesAsync().Returns(Task.FromResult(0));
+        _mapper.Map<UserDto>(user).Returns(mappedDto);
+
+        // stub email so it doesn't affect test
+        _emailBuilderService.BuildEmployeeWelcomeEmailTemplate(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>()).Returns(new EmailTemplate());
+        _emailBuilderService.GenerateEmailBody(Arg.Any<EmailTemplate>()).Returns("body");
+        _emailSenderService.SendEmailAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>()).Returns(Task.FromResult(true));
+
+        // Act
+        var result = await _userService.CreateNewEmployee(dto);
+
+        // Assert
+        Assert.Equal(mappedDto, result);
+        Assert.Equal(editor.Id, user.UpdatedBy);
+        Assert.True(user.IsVerified);
+        Assert.False(string.IsNullOrEmpty(user.PasswordHash));
+        Assert.StartsWith("$2", user.PasswordHash); // BCrypt marker
+        await _userRepository.Received(1).AddAsync(user);
+        await _userRepository.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task CreateNewEmployee_PassesEightCharHexPasswordToBuilder_Simple()
+    {
+        // Arrange
+        var dto = new RegisterEmployeeDetailDto { FirstName = "P", LastName = "T", Email = "p@t.com", Role = "Employee" };
+        var user = new User { Email = dto.Email };
+        var editor = new User { Id = 5, Role = UserRole.Admin };
+        string? captured = null;
+
+        _mapper.Map<User>(dto).Returns(user);
+        _userContextService.GetUserAsync().Returns(editor);
+        _userRepository.AddAsync(Arg.Any<User>()).Returns(Task.CompletedTask);
+        _userRepository.SaveChangesAsync().Returns(Task.FromResult(0));
+        _mapper.Map<UserDto>(user).Returns(new UserDto { FirstName = "P", LastName = "T", Email = "p@t.com", Role = "Employee" });
+
+        _emailBuilderService.BuildEmployeeWelcomeEmailTemplate(
+            Arg.Any<string>(),
+            Arg.Do<string>(p => captured = p),
+            Arg.Any<string>()
+        ).Returns(new EmailTemplate());
+        _emailBuilderService.GenerateEmailBody(Arg.Any<EmailTemplate>()).Returns("body");
+        _emailSenderService.SendEmailAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>()).Returns(Task.FromResult(true));
+
+        // Act
+        await _userService.CreateNewEmployee(dto);
+
+        // Assert
+        Assert.NotNull(captured);
+        Assert.Equal(8, captured!.Length);
+        Assert.Matches("^[0-9a-f]{8}$", captured); // matches Guid.NewGuid().ToString("N")[..8]
+    }
+
+    [Fact]
+    public async Task CreateNewEmployee_Throws_WhenUserContextNull_Simple()
+    {
+        // Arrange
+        var dto = new RegisterEmployeeDetailDto { FirstName = "X", LastName = "Y", Email = "x@y.com", Role = "Employee" };
+        _mapper.Map<User>(dto).Returns(new User());
+        _userContextService.GetUserAsync().Returns((User?)null);
+
+        // Act & Assert: current implementation will access editor.Id and throw NullReferenceException
+        await Assert.ThrowsAsync<NullReferenceException>(() => _userService.CreateNewEmployee(dto));
+    }
 }

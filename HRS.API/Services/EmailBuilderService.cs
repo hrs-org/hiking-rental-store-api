@@ -29,6 +29,26 @@ public class EmailBuilderService : IEmailBuilderService
         };
     }
 
+    public EmailTemplate BuildEmployeeWelcomeEmailTemplate(string email, string password, string firstName)
+    {
+        var frontendUrl = _appConfiguration.FrontendUrl.TrimEnd('/');
+        var loginUrl = $"{frontendUrl}/login";
+
+        return new EmailTemplate
+        {
+            Title = $"Welcome to Hiking Rental Store, {firstName}!",
+            Content = $@"Your employee account has been created successfully.<br/><br/>
+                        <strong>Your login credentials:</strong><br/>
+                        Email: {email}<br/>
+                        Temporary Password: <strong>{password}</strong><br/><br/>
+                        Please use the button below to log in and change your password immediately:",
+            ButtonText = "Login Now",
+            ButtonUrl = new Uri(loginUrl),
+            AdditionalInfo = "For security reasons, please change your password after your first login.",
+            FooterText = "If you didn't expect this email, please contact your administrator."
+        };
+    }
+
     public string GenerateEmailBody(EmailTemplate emailTemplate)
     {
         return $@"
