@@ -121,7 +121,7 @@ public class UserServiceTests
     {
         // Arrange
         _userRepository.GetByIdAsync(1).Returns((User?)null);
-        var dto = new UserDto
+        var dto = new UpdateEmployeeDto
         {
             Id = 1,
             Role = "Employee",
@@ -140,7 +140,7 @@ public class UserServiceTests
         // Arrange
         var employee = new User { Id = 1, Role = UserRole.Customer };
         _userRepository.GetByIdAsync(1).Returns(employee);
-        var dto = new UserDto
+        var dto = new UpdateEmployeeDto
         {
             Id = 1,
             Role = "Employee",
@@ -159,7 +159,7 @@ public class UserServiceTests
         // Arrange
         var employee = new User { Id = 1, Role = UserRole.Employee };
         _userRepository.GetByIdAsync(1).Returns(employee);
-        var dto = new UserDto
+        var dto = new UpdateEmployeeDto
         {
             Id = 1,
             Role = "Invalid Role",
@@ -234,11 +234,11 @@ public class UserServiceTests
     {
         var editor = new User { Id = 99, Role = UserRole.Admin };
         var employee = new User { Id = 1, Role = UserRole.Employee };
-        var dto = new UserDto { Id = 1, Role = "Manager", FirstName = "F", LastName = "L", Email = "e@x.com" };
-
+        var dto = new UpdateEmployeeDto { Id = 1, Role = "Manager", FirstName = "F", LastName = "L", Email = "e@x.com" };
+        var respond = new UserDto { Id = 1, Role = "Manager", FirstName = "F", LastName = "L", Email = "e@x.com" };
         _userContextService.GetUserAsync().Returns(editor);
         _userRepository.GetByIdAsync(dto.Id).Returns(employee);
-        _mapper.Map<UserDto>(Arg.Any<User>()).Returns(dto);
+        _mapper.Map<UserDto>(Arg.Any<User>()).Returns(respond);
 
         var result = await _userService.UpdateEmployee(dto);
 

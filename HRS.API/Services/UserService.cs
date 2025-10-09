@@ -100,7 +100,7 @@ public class UserService : IUserService
         if (employee == null) throw new KeyNotFoundException("User not found.");
         if (employee.Role == UserRole.Customer) throw new InvalidOperationException("Cannot update a customer to an employee.");
 
-        if (dto.Role == "Employee" || dto.Role == "Manager" || dto.Role == "Admin")
+        if (dto.Role == "Employee" || dto.Role == "Manager")
         {
             var role = Enum.Parse<UserRole>(dto.Role);
             employee.FirstName = dto.FirstName;

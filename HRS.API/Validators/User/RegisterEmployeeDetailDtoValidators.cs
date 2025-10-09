@@ -39,7 +39,7 @@ public class UpdateEmployeeDtoValidator : AbstractValidator<UpdateEmployeeDto>
         RuleFor(x => x.Email)
             .NotEmpty()
             .EmailAddress()
-            .MustAsync(async (dto,email, cancellation) =>
+            .MustAsync(async (dto, email, cancellation) =>
             {
                 var existingUser = await userRepository.GetByIdAsync(dto.Id);
                 if (existingUser == null) return false;
