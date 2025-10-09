@@ -93,7 +93,7 @@ public class UserService : IUserService
         return _mapper.Map<List<UserDto>>(employee);
     }
 
-    public async Task<UserDto?> UpdateEmployee(UserDto dto)
+    public async Task<UserDto?> UpdateEmployee(UpdateEmployeeDto dto)
     {
         var editor = await _userContextService.GetUserAsync();
         var employee = await _userRepository.GetByIdAsync(dto.Id);

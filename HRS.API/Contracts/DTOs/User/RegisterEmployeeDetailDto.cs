@@ -7,3 +7,7 @@ public class RegisterEmployeeDetailDto
     public required string Email { get; set; }
     public required string Role { get; set; }
 }
+public class UpdateEmployeeDto : RegisterEmployeeDetailDto
+{
+    public required int Id { get; set; }
+}

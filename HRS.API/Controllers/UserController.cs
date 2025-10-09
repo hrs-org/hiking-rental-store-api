@@ -50,7 +50,7 @@ public class UsersController : ControllerBase
 
     [HttpPut("employees")]
     [Authorize(Roles = "Manager,Admin")]
-    public async Task<ActionResult<UserDto>> UpdateEmployee([FromBody] UserDto dto)
+    public async Task<ActionResult<UserDto>> UpdateEmployee([FromBody] UpdateEmployeeDto dto)
     {
         var updatedEmployee = await _userService.UpdateEmployee(dto);
         if (updatedEmployee == null) return NotFound();
