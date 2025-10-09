@@ -170,6 +170,6 @@ public class AuthService : IAuthService
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.NewPassword);
         await _userRepository.UpdateUserAsync(user);
 
-        return "Password has been reset successfully." ;
+        return "Password has been reset successfully.";
     }
 }
