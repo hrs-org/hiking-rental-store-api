@@ -231,8 +231,7 @@ public class AuthServiceTests
         var result = await _service.ForgotPasswordAsync(request);
 
         // Assert
-        Assert.True(result.IsSuccess);
-        Assert.Equal("If the email is registered, a password reset link will be sent.", result.Message);
+        Assert.Equal("If the email is registered, a password reset link will be sent.", result);
         await _emailSenderService.Received(1).SendEmailAsync(user.Email, Arg.Any<string>(), Arg.Any<string>());
     }
 
@@ -273,8 +272,7 @@ public class AuthServiceTests
         var result = await _service.ResetPasswordAsync(request);
 
         // Assert
-        Assert.True(result.IsSuccess);
-        Assert.Equal("Password has been reset successfully.", result.Message);
+        Assert.Equal("Password has been reset successfully.", result);
         await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u => u.Id == user.Id));
     }
 
@@ -290,7 +288,7 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task ResetPasswordAsync_WithMismatchedPasswords_ShouldReturnFailure()
+    public async Task ResetPasswordAsync_WithMismatchedPasswords_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var request = new ResetPasswordRequestDto
@@ -303,17 +301,13 @@ public class AuthServiceTests
         var user = new User { Id = 1, Email = "test@example.com" };
         _userRepository.GetByEmailAsync(request.Email).Returns(user);
 
-        // Act
-        var result = await _service.ResetPasswordAsync(request);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Passwords do not match.", result.Message);
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ResetPasswordAsync(request));
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 
     [Fact]
-    public async Task ResetPasswordAsync_WithSameAsCurrentPassword_ShouldReturnFailure()
+    public async Task ResetPasswordAsync_WithSameAsCurrentPassword_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var currentPassword = "SamePassword123!";
@@ -327,17 +321,13 @@ public class AuthServiceTests
         var user = new User { Id = 1, Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword(currentPassword) };
         _userRepository.GetByEmailAsync(request.Email).Returns(user);
 
-        // Act
-        var result = await _service.ResetPasswordAsync(request);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("New password cannot be the same as the current password.", result.Message);
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ResetPasswordAsync(request));
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 
     [Fact]
-    public async Task ResetPasswordAsync_WithInvalidToken_ShouldReturnFailure()
+    public async Task ResetPasswordAsync_WithInvalidToken_ShouldThrowException()
     {
         // Arrange
         var request = new ResetPasswordRequestDto
@@ -352,17 +342,13 @@ public class AuthServiceTests
         _userRepository.GetByEmailAsync(request.Email).Returns(user);
         _userVerificationService.ValidateAndConsumeAsync(request.Token, "PasswordReset").Returns((UserVerification?)null);
 
-        // Act
-        var result = await _service.ResetPasswordAsync(request);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Invalid or expired password reset token.", result.Message);
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ResetPasswordAsync(request));
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 
     [Fact]
-    public async Task ResetPasswordAsync_WithTokenForDifferentUser_ShouldReturnFailure()
+    public async Task ResetPasswordAsync_WithTokenForDifferentUser_ShouldThrowException()
     {
         // Arrange
         var request = new ResetPasswordRequestDto
@@ -378,12 +364,8 @@ public class AuthServiceTests
         _userRepository.GetByEmailAsync(request.Email).Returns(user);
         _userVerificationService.ValidateAndConsumeAsync(request.Token, "PasswordReset").Returns(verification);
 
-        // Act
-        var result = await _service.ResetPasswordAsync(request);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Invalid or expired password reset token.", result.Message);
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ResetPasswordAsync(request));
         await _userRepository.DidNotReceive().UpdateUserAsync(Arg.Any<User>());
     }
 

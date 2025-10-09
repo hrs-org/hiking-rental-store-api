@@ -136,7 +136,7 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<ForgotPasswordResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto requestDto)
+    public async Task<string> ForgotPasswordAsync(ForgotPasswordRequestDto requestDto)
     {
         var user = await _userRepository.GetByEmailAsync(requestDto.Email);
         if (user == null)
@@ -148,32 +148,28 @@ public class AuthService : IAuthService
         var body = _emailBuilderService.GenerateEmailBody(emailTemplate);
         await _emailSenderService.SendEmailAsync(user.Email, subject, body);
 
-        return new ForgotPasswordResponseDto
-        {
-            IsSuccess = true,
-            Message = "If the email is registered, a password reset link will be sent."
-        };
+        return "If the email is registered, a password reset link will be sent.";
     }
 
-    public async Task<ResetPasswordResponseDto> ResetPasswordAsync(ResetPasswordRequestDto requestDto)
+    public async Task<string> ResetPasswordAsync(ResetPasswordRequestDto requestDto)
     {
         var user = await _userRepository.GetByEmailAsync(requestDto.Email);
         if (user == null)
             throw new InvalidOperationException("Invalid email or token.");
 
         if (requestDto.NewPassword != requestDto.ConfirmNewPassword)
-            return new ResetPasswordResponseDto { IsSuccess = false, Message = "Passwords do not match." };
+            throw new InvalidOperationException("New password and confirmation do not match.");
 
         if (BCrypt.Net.BCrypt.Verify(requestDto.NewPassword, user.PasswordHash))
-            return new ResetPasswordResponseDto { IsSuccess = false, Message = "New password cannot be the same as the current password." };
+            throw new InvalidOperationException("New password cannot be the same as the current password.");
 
         var verification = await _userVerificationService.ValidateAndConsumeAsync(requestDto.Token, "PasswordReset");
         if (verification == null || verification.UserId != user.Id)
-            return new ResetPasswordResponseDto { IsSuccess = false, Message = "Invalid or expired password reset token." };
+            throw new InvalidOperationException("Invalid or expired password reset token.");
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.NewPassword);
         await _userRepository.UpdateUserAsync(user);
 
-        return new ResetPasswordResponseDto { IsSuccess = true, Message = "Password has been reset successfully." };
+        return "Password has been reset successfully." ;
     }
 }

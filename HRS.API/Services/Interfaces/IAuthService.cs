@@ -10,6 +10,6 @@ public interface IAuthService
     Task<EmailVerificationResponseDto> VerifyEmailAsync(EmailVerificationRequestDto requestDto);
     Task<bool> ResendVerificationEmailAsync(ResendVerificationRequestDto requestDto);
     Task<ChangePasswordResponseDto> ChangePasswordAsync(ChangePasswordRequestDto requestDto);
-    Task<ForgotPasswordResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto requestDto);
-    Task<ResetPasswordResponseDto> ResetPasswordAsync(ResetPasswordRequestDto requestDto);
+    Task<string> ForgotPasswordAsync(ForgotPasswordRequestDto requestDto);
+    Task<string> ResetPasswordAsync(ResetPasswordRequestDto requestDto);
 }
