@@ -8,6 +8,10 @@ public class ItemRequestDto
 
     public string Description { get; set; } = string.Empty;
 
+    public string? Brand { get; set; }
+    public string? ProductNumber { get; set; }
+    public string? ProductType { get; set; }
+
     [Required][Range(0, int.MaxValue)] public required int Quantity { get; set; }
 
     [Required]

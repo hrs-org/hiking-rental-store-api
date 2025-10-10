@@ -12,6 +12,12 @@ public class Item
 
     [MaxLength(500)] public string Description { get; set; } = string.Empty;
 
+    [MaxLength(100)] public string? Brand { get; set; }
+
+    [MaxLength(100)] public string? ProductNumber { get; set; }
+
+    [MaxLength(100)] public string? ProductType { get; set; }
+
     [Required] public int Quantity { get; set; }
 
     [Column(TypeName = "decimal(10,2)")] public decimal Price { get; set; }

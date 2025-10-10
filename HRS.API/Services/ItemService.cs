@@ -224,4 +224,15 @@ public class ItemService : IItemService
         if (toRemove.Count > 0)
             _itemRateRepository.RemoveRange(toRemove);
     }
+
+    public async Task<IEnumerable<ItemResponseDto>> SearchItemsAsync(string? brand, string? name, string? productNumber, string? productType)
+    {
+        var items = await _itemRepository.FindAsync(i =>
+            (string.IsNullOrWhiteSpace(brand) || (!string.IsNullOrEmpty(i.Brand) && i.Brand.Contains(brand))) &&
+            (string.IsNullOrWhiteSpace(name) || (!string.IsNullOrEmpty(i.Name) && i.Name.Contains(name))) &&
+            (string.IsNullOrWhiteSpace(productNumber) || (!string.IsNullOrEmpty(i.ProductNumber) && i.ProductNumber.Contains(productNumber))) &&
+            (string.IsNullOrWhiteSpace(productType) || (!string.IsNullOrEmpty(i.ProductType) && i.ProductType.Contains(productType)))
+        );
+        return _mapper.Map<IEnumerable<ItemResponseDto>>(items);
+    }
 }

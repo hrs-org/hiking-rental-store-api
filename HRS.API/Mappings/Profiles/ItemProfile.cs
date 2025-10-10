@@ -48,6 +48,9 @@ public class ItemProfile : Profile
 
         CreateMap<Item, ItemResponseDto>()
             .ForMember(d => d.Children, opt => opt.MapFrom(s => s.Children))
-            .ForMember(d => d.Rates, opt => opt.MapFrom(s => s.Rates));
+            .ForMember(d => d.Rates, opt => opt.MapFrom(s => s.Rates))
+            .ForMember(d => d.Brand, opt => opt.MapFrom(s => s.Brand))
+            .ForMember(d => d.ProductNumber, opt => opt.MapFrom(s => s.ProductNumber))
+            .ForMember(d => d.ProductType, opt => opt.MapFrom(s => s.ProductType));
     }
 }
