@@ -64,6 +64,31 @@ public class EmailBuilderServiceTests
     }
 
     [Fact]
+    public void BuildEmployeeWelcomeEmailTemplate_WithValidInputs_ReturnsCorrectTemplate()
+    {
+        // Arrange
+        var email = "employee@example.com";
+        var password = "abc123de";
+        var firstName = "Jane";
+
+        _appConfig.FrontendUrl.Returns("http://localhost:4200");
+
+        // Act
+        var result = _emailBuilderService.BuildEmployeeWelcomeEmailTemplate(email, password, firstName);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Title.Should().Be("Welcome to Hiking Rental Store, Jane!");
+        result.Content.Should().Contain(email);
+        result.Content.Should().Contain(password);
+        result.ButtonText.Should().Be("Login Now");
+        result.ButtonUrl.Should().NotBeNull();
+        result.ButtonUrl!.ToString().Should().Be("http://localhost:4200/login");
+        result.AdditionalInfo.Should().Contain("security reasons");
+        result.FooterText.Should().Contain("administrator");
+    }
+
+    [Fact]
     public void BuildPasswordResetEmailTemplate_WithTrailingSlashInUrl_TrimsSlash()
     {
         // Arrange
@@ -99,6 +124,7 @@ public class EmailBuilderServiceTests
         result.ButtonUrl.Should().NotBeNull();
         result.ButtonUrl!.ToString().Should().Contain(Uri.EscapeDataString(email));
         result.ButtonUrl.ToString().Should().Contain(Uri.EscapeDataString(resetToken));
+
     }
 
     [Fact]

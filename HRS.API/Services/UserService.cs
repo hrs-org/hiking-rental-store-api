@@ -93,14 +93,14 @@ public class UserService : IUserService
         return _mapper.Map<List<UserDto>>(employee);
     }
 
-    public async Task<UserDto?> UpdateEmployee(UserDto dto)
+    public async Task<UserDto?> UpdateEmployee(UpdateEmployeeDto dto)
     {
         var editor = await _userContextService.GetUserAsync();
         var employee = await _userRepository.GetByIdAsync(dto.Id);
         if (employee == null) throw new KeyNotFoundException("User not found.");
         if (employee.Role == UserRole.Customer) throw new InvalidOperationException("Cannot update a customer to an employee.");
 
-        if (dto.Role == "Employee" || dto.Role == "Manager" || dto.Role == "Admin")
+        if (dto.Role == "Employee" || dto.Role == "Manager")
         {
             var role = Enum.Parse<UserRole>(dto.Role);
             employee.FirstName = dto.FirstName;
@@ -133,13 +133,24 @@ public class UserService : IUserService
     {
         var user = _mapper.Map<User>(dto);
         var editor = await _userContextService.GetUserAsync();
+        var OriginPassword = Guid.NewGuid().ToString("N")[..8];
         user.CreatedAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
         user.UpdatedBy = editor.Id;
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Employee@123");
+        user.IsVerified = true;
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(OriginPassword);
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
+
+        var subject = "Welcome to Hiking Rental Store - Employee Account Created";
+        var template = _emailBuilderService.BuildEmployeeWelcomeEmailTemplate(
+            user.Email,
+            OriginPassword,
+            user.FirstName
+        );
+        var body = _emailBuilderService.GenerateEmailBody(template);
+        await _emailSenderService.SendEmailAsync(user.Email, subject, body);
 
         //Send email to user with password setup link
         return _mapper.Map<UserDto>(user);
