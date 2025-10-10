@@ -93,14 +93,14 @@ public class UserService : IUserService
         return _mapper.Map<List<UserDto>>(employee);
     }
 
-    public async Task<UserDto?> UpdateEmployee(UserDto dto)
+    public async Task<UserDto?> UpdateEmployee(UpdateEmployeeDto dto)
     {
         var editor = await _userContextService.GetUserAsync();
         var employee = await _userRepository.GetByIdAsync(dto.Id);
         if (employee == null) throw new KeyNotFoundException("User not found.");
         if (employee.Role == UserRole.Customer) throw new InvalidOperationException("Cannot update a customer to an employee.");
 
-        if (dto.Role == "Employee" || dto.Role == "Manager" || dto.Role == "Admin")
+        if (dto.Role == "Employee" || dto.Role == "Manager")
         {
             var role = Enum.Parse<UserRole>(dto.Role);
             employee.FirstName = dto.FirstName;

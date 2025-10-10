@@ -87,8 +87,9 @@ public class UsersControllerTests
     [Fact]
     public async Task UpdateEmployee_ShouldReturnOk_WhenUpdated()
     {
-        var dto = new UserDto { Id = 1, FirstName = "A", LastName = "B", Email = "a@b.com", Role = "Employee" };
-        _userService.UpdateEmployee(dto).Returns(dto);
+        var dto = new UpdateEmployeeDto { Id = 1, FirstName = "A", LastName = "B", Email = "a@b.com", Role = "Employee" };
+        var respond = new UserDto { Id = 1, FirstName = "A", LastName = "B", Email = "a@b.com", Role = "Employee" };
+        _userService.UpdateEmployee(dto).Returns(respond);
 
         var result = await _controller.UpdateEmployee(dto);
 
@@ -98,10 +99,10 @@ public class UsersControllerTests
     [Fact]
     public async Task UpdateEmployee_ShouldReturnNotFound_WhenFail()
     {
-        var dto = new UserDto { Id = 1, FirstName = "A", LastName = "B", Email = "a@b.com", Role = "Employee" };
-        _userService.UpdateEmployee(dto).Returns(dto);
-        var updatedto = new UserDto { Id = 3, FirstName = "krit", LastName = "tt", Email = "a@bee.com", Role = "Employee" };
-        // _userService.UpdateEmployee(Arg.Any<UserDto>()).Returns((UserDto?)null);
+        var dto = new UpdateEmployeeDto { Id = 1, FirstName = "A", LastName = "B", Email = "a@b.com", Role = "Employee" };
+        var respond = new UserDto { Id = 1, FirstName = "A", LastName = "B", Email = "a@b.com", Role = "Employee" };
+        _userService.UpdateEmployee(dto).Returns(respond);
+        var updatedto = new UpdateEmployeeDto { Id = 3, FirstName = "krit", LastName = "tt", Email = "a@bee.com", Role = "Employee" };
 
         var result = await _controller.UpdateEmployee(updatedto);
 

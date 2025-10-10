@@ -9,7 +9,7 @@ public interface IUserService
     Task<bool> Register(RegisterDto dto);
     Task<bool> DeleteUser(int id);
     Task<List<UserDto>> GetEmployees();
-    Task<UserDto?> UpdateEmployee(UserDto dto);
+    Task<UserDto?> UpdateEmployee(UpdateEmployeeDto dto);
     Task<bool> DeleteEmployee(int id);
     Task<UserDto> CreateNewEmployee(RegisterEmployeeDetailDto dto);
 }
