@@ -133,12 +133,12 @@ public class UserService : IUserService
     {
         var user = _mapper.Map<User>(dto);
         var editor = await _userContextService.GetUserAsync();
-        var originpassword = Guid.NewGuid().ToString("N")[..8];
+        var OriginPassword = Guid.NewGuid().ToString("N")[..8];
         user.CreatedAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
         user.UpdatedBy = editor.Id;
         user.IsVerified = true;
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(originpassword);
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(OriginPassword);
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
@@ -146,7 +146,7 @@ public class UserService : IUserService
         var subject = "Welcome to Hiking Rental Store - Employee Account Created";
         var template = _emailBuilderService.BuildEmployeeWelcomeEmailTemplate(
             user.Email,
-            originpassword,
+            OriginPassword,
             user.FirstName
         );
         var body = _emailBuilderService.GenerateEmailBody(template);
