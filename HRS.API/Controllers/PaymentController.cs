@@ -6,10 +6,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HRS.API.Controllers;
 
+public class CheckoutPriceRequest
+{
+    public string Productname { get; set; } = string.Empty;
+    public double Amount { get; set; }
+}
 [ApiController]
 [Route("api/payments")]
 public class PaymentController : ControllerBase
 {
+
     private readonly IPaymentService _paymentService;
 
     public PaymentController(IPaymentService paymentService)
@@ -33,13 +39,13 @@ public class PaymentController : ControllerBase
     }
 
     [HttpPost("checkoutPrice")]
-    public async Task<ActionResult> CreateCheckoutSessionwithPrice(string Productname, double amount)
+    public async Task<ActionResult> CreateCheckoutSessionwithPrice([FromBody] CheckoutPriceRequest request)
     {
 
-        var session = await _paymentService.CreatePaymentCheckOutWithOnlyPrice(Productname, amount);
-        string url = session.Url;
+        var session = await _paymentService.CreatePaymentCheckOutWithOnlyPrice(request.Productname, request.Amount);
+        // string url = session.Url;
 
-        return Ok(url);
+        return Ok(ApiResponse<string>.OkResponse(session.ClientSecret));
     }
 
 }

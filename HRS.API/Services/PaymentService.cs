@@ -70,8 +70,8 @@ public class PaymentService : IPaymentService
 
     var options = new Stripe.Checkout.SessionCreateOptions
     {
-        SuccessUrl = "https://example.com/success",
-        CancelUrl = "https://example.com/cancel",
+        // SuccessUrl = "https://example.com/success",
+        // CancelUrl = "https://example.com/cancel",
         LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
         {
             new Stripe.Checkout.SessionLineItemOptions
@@ -90,6 +90,8 @@ public class PaymentService : IPaymentService
         },
         Mode = "payment",
         CustomerEmail = user.Email,
+        UiMode = "embedded",
+        ReturnUrl = _appConfiguration.ReturnPaymentURL
     };
 
     var service = new Stripe.Checkout.SessionService();
