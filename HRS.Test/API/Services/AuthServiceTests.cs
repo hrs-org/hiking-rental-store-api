@@ -228,10 +228,9 @@ public class AuthServiceTests
         _emailBuilderService.GenerateEmailBody(Arg.Any<EmailTemplate>()).Returns("<html>Reset email</html>");
 
         // Act
-        var result = await _service.ForgotPasswordAsync(request);
+        await _service.ForgotPasswordAsync(request);
 
         // Assert
-        Assert.Equal("If the email is registered, a password reset link will be sent.", result);
         await _emailSenderService.Received(1).SendEmailAsync(user.Email, Arg.Any<string>(), Arg.Any<string>());
     }
 
@@ -269,10 +268,9 @@ public class AuthServiceTests
         _userVerificationService.ValidateAndConsumeAsync(request.Token, "PasswordReset").Returns(verification);
 
         // Act
-        var result = await _service.ResetPasswordAsync(request);
+        await _service.ResetPasswordAsync(request);
 
         // Assert
-        Assert.Equal("Password has been reset successfully.", result);
         await _userRepository.Received(1).UpdateUserAsync(Arg.Is<User>(u => u.Id == user.Id));
     }
 

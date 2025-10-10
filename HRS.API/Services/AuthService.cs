@@ -136,7 +136,7 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<string> ForgotPasswordAsync(ForgotPasswordRequestDto requestDto)
+    public async Task ForgotPasswordAsync(ForgotPasswordRequestDto requestDto)
     {
         var user = await _userRepository.GetByEmailAsync(requestDto.Email);
         if (user == null)
@@ -147,11 +147,9 @@ public class AuthService : IAuthService
         var emailTemplate = _emailBuilderService.BuildPasswordResetEmailTemplate(user.Email, verification.Token, user.FirstName);
         var body = _emailBuilderService.GenerateEmailBody(emailTemplate);
         await _emailSenderService.SendEmailAsync(user.Email, subject, body);
-
-        return "If the email is registered, a password reset link will be sent.";
     }
 
-    public async Task<string> ResetPasswordAsync(ResetPasswordRequestDto requestDto)
+    public async Task ResetPasswordAsync(ResetPasswordRequestDto requestDto)
     {
         var user = await _userRepository.GetByEmailAsync(requestDto.Email);
         if (user == null)
@@ -169,7 +167,5 @@ public class AuthService : IAuthService
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.NewPassword);
         await _userRepository.UpdateUserAsync(user);
-
-        return "Password has been reset successfully.";
     }
 }

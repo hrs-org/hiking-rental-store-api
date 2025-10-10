@@ -181,7 +181,7 @@ public class AuthControllerTests
         // Arrange
         var requestDto = new ForgotPasswordRequestDto { Email = "test@hrs.com" };
         var message = "If the email is registered, a password reset link will be sent.";
-        _authService.ForgotPasswordAsync(requestDto).Returns(message);
+        _authService.ForgotPasswordAsync(requestDto).Returns(Task.CompletedTask);
 
         // Act
         var result = await _controller.ForgotPasswordAsync(requestDto);
@@ -191,19 +191,7 @@ public class AuthControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult!.Value as dynamic;
 
-        // Controller may place the service string into Data or into Message.
-        var data = (object?)apiResponse?.Data;
         var respMessage = (string?)apiResponse?.Message;
-
-        if (data is string ds)
-        {
-            ds.Should().Be(message);
-        }
-        else
-        {
-            data.Should().BeNull();
-        }
-
         respMessage.Should().Be(message);
     }
 
@@ -218,8 +206,7 @@ public class AuthControllerTests
             NewPassword = "NewPassword123!",
             ConfirmNewPassword = "NewPassword123!"
         };
-        var message = "Password has been reset successfully.";
-        _authService.ResetPasswordAsync(requestDto).Returns(message);
+        _authService.ResetPasswordAsync(requestDto).Returns(Task.CompletedTask);
 
         // Act
         var result = await _controller.ResetPasswordAsync(requestDto);
@@ -229,18 +216,10 @@ public class AuthControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult!.Value as dynamic;
 
-        var dataObj = apiResponse?.Data;
         var respMessage = (string?)apiResponse?.Message;
 
-        string? dataStr = dataObj?.ToString();
-
-        // Accept either Data or Message containing the success phrase (tolerant to punctuation)
-        (dataStr?.IndexOf("Password has been reset", StringComparison.OrdinalIgnoreCase) >= 0 ||
-        respMessage?.IndexOf("Password has been reset", StringComparison.OrdinalIgnoreCase) >= 0)
-            .Should().BeTrue("response should contain the success phrase in either Data or Message");
-
-        // optional: ensure one of them equals exactly or contains expected substring
-        // FluentAssertions will report useful failure info if assertion fails
+        respMessage?.IndexOf("Password has been reset", StringComparison.OrdinalIgnoreCase)
+            .Should().BeGreaterThanOrEqualTo(0, "response message should contain the success phrase");
     }
 
     [Fact]
