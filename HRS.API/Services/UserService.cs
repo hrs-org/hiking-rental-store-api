@@ -133,13 +133,24 @@ public class UserService : IUserService
     {
         var user = _mapper.Map<User>(dto);
         var editor = await _userContextService.GetUserAsync();
+        var OriginPassword = Guid.NewGuid().ToString("N")[..8];
         user.CreatedAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
         user.UpdatedBy = editor.Id;
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Employee@123");
+        user.IsVerified = true;
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(OriginPassword);
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
+
+        var subject = "Welcome to Hiking Rental Store - Employee Account Created";
+        var template = _emailBuilderService.BuildEmployeeWelcomeEmailTemplate(
+            user.Email,
+            OriginPassword,
+            user.FirstName
+        );
+        var body = _emailBuilderService.GenerateEmailBody(template);
+        await _emailSenderService.SendEmailAsync(user.Email, subject, body);
 
         //Send email to user with password setup link
         return _mapper.Map<UserDto>(user);
