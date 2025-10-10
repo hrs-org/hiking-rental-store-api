@@ -291,14 +291,14 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 9, 2, 2, 5, 994, DateTimeKind.Utc).AddTicks(8029),
+                            CreatedAt = new DateTime(2025, 10, 7, 14, 20, 59, 496, DateTimeKind.Utc).AddTicks(5870),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$bKNV992AiCKni0hy6nkWk.dEEe/RLQXUpTtAJdaEaSmLlGTnGuHcq",
+                            PasswordHash = "$2a$11$4Uo2uCQbVDlZ0mGygeCZhuQQvYiMUWyTHsu1SN.Nbq3/sGLwUrIUK",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 10, 9, 2, 2, 5, 994, DateTimeKind.Utc).AddTicks(8029)
+                            UpdatedAt = new DateTime(2025, 10, 7, 14, 20, 59, 496, DateTimeKind.Utc).AddTicks(5870)
                         });
                 });
 
