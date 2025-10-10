@@ -38,6 +38,32 @@ public class EmailBuilderServiceTests
     }
 
     [Fact]
+    public void BuildPasswordResetEmailTemplate_WithValidInputs_ReturnsCorrectTemplate()
+    {
+        // Arrange
+        var email = "test@example.com";
+        var resetToken = "reset-token-123";
+        var firstName = "John";
+
+        _appConfig.FrontendUrl.Returns("http://localhost:4200");
+
+        // Act
+        var result = _emailBuilderService.BuildPasswordResetEmailTemplate(email, resetToken, firstName);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Title.Should().Be("Password Reset Request for Hiking Rental Store, John");
+        result.Content.Should().Contain("reset your password");
+        result.ButtonText.Should().Be("Reset Password");
+        result.ButtonUrl.Should().NotBeNull();
+        result.ButtonUrl!.ToString().Should().Contain("http://localhost:4200/reset-password");
+        result.ButtonUrl.ToString().Should().Contain($"email={Uri.EscapeDataString(email)}");
+        result.ButtonUrl.ToString().Should().Contain($"token={Uri.EscapeDataString(resetToken)}");
+        result.AdditionalInfo.Should().Contain("1 hour");
+        result.FooterText.Should().Contain("didn't request a password reset");
+    }
+
+    [Fact]
     public void BuildEmployeeWelcomeEmailTemplate_WithValidInputs_ReturnsCorrectTemplate()
     {
         // Arrange
@@ -60,6 +86,45 @@ public class EmailBuilderServiceTests
         result.ButtonUrl!.ToString().Should().Be("http://localhost:4200/login");
         result.AdditionalInfo.Should().Contain("security reasons");
         result.FooterText.Should().Contain("administrator");
+    }
+
+    [Fact]
+    public void BuildPasswordResetEmailTemplate_WithTrailingSlashInUrl_TrimsSlash()
+    {
+        // Arrange
+        var email = "user@example.com";
+        var resetToken = "reset-token";
+        var firstName = "Jane";
+
+        _appConfig.FrontendUrl.Returns("http://localhost:4200/");
+
+        // Act
+        var result = _emailBuilderService.BuildPasswordResetEmailTemplate(email, resetToken, firstName);
+
+        // Assert
+        result.ButtonUrl.Should().NotBeNull();
+        result.ButtonUrl!.ToString().Should().NotContain("//reset-password");
+        result.ButtonUrl.ToString().Should().Contain("http://localhost:4200/reset-password");
+    }
+
+    [Fact]
+    public void BuildPasswordResetEmailTemplate_WithSpecialCharactersInEmail_EncodesCorrectly()
+    {
+        // Arrange
+        var email = "user+test@example.com";
+        var resetToken = "token@#$%";
+        var firstName = "Bob";
+
+        _appConfig.FrontendUrl.Returns("http://localhost:4200");
+
+        // Act
+        var result = _emailBuilderService.BuildPasswordResetEmailTemplate(email, resetToken, firstName);
+
+        // Assert
+        result.ButtonUrl.Should().NotBeNull();
+        result.ButtonUrl!.ToString().Should().Contain(Uri.EscapeDataString(email));
+        result.ButtonUrl.ToString().Should().Contain(Uri.EscapeDataString(resetToken));
+
     }
 
     [Fact]

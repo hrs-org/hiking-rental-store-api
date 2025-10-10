@@ -135,4 +135,37 @@ public class AuthService : IAuthService
             PasswordChangedAtUtc = DateTime.UtcNow
         };
     }
+
+    public async Task ForgotPasswordAsync(ForgotPasswordRequestDto requestDto)
+    {
+        var user = await _userRepository.GetByEmailAsync(requestDto.Email);
+        if (user == null)
+            throw new InvalidOperationException("If the email is registered, a password reset link will be sent.");
+        var verification = await _userVerificationService.CreateAsync(user.Id, "PasswordReset", TimeSpan.FromHours(1));
+
+        var subject = "Reset Your Password - Hiking Rental Store";
+        var emailTemplate = _emailBuilderService.BuildPasswordResetEmailTemplate(user.Email, verification.Token, user.FirstName);
+        var body = _emailBuilderService.GenerateEmailBody(emailTemplate);
+        await _emailSenderService.SendEmailAsync(user.Email, subject, body);
+    }
+
+    public async Task ResetPasswordAsync(ResetPasswordRequestDto requestDto)
+    {
+        var user = await _userRepository.GetByEmailAsync(requestDto.Email);
+        if (user == null)
+            throw new InvalidOperationException("Invalid email or token.");
+
+        if (requestDto.NewPassword != requestDto.ConfirmNewPassword)
+            throw new InvalidOperationException("New password and confirmation do not match.");
+
+        if (BCrypt.Net.BCrypt.Verify(requestDto.NewPassword, user.PasswordHash))
+            throw new InvalidOperationException("New password cannot be the same as the current password.");
+
+        var verification = await _userVerificationService.ValidateAndConsumeAsync(requestDto.Token, "PasswordReset");
+        if (verification == null || verification.UserId != user.Id)
+            throw new InvalidOperationException("Invalid or expired password reset token.");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.NewPassword);
+        await _userRepository.UpdateUserAsync(user);
+    }
 }

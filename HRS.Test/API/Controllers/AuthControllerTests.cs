@@ -7,6 +7,7 @@ using HRS.Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace HRS.Test.API.Controllers;
 
@@ -172,5 +173,86 @@ public class AuthControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((ChangePasswordResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(responseDto, options => options.Excluding(x => x.PasswordChangedAtUtc));
+    }
+
+    [Fact]
+    public async Task ForgotPasswordAsync_ReturnsOkWithResponse()
+    {
+        // Arrange
+        var requestDto = new ForgotPasswordRequestDto { Email = "test@hrs.com" };
+        var message = "If the email is registered, a password reset link will be sent.";
+        _authService.ForgotPasswordAsync(requestDto).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _controller.ForgotPasswordAsync(requestDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult!.Value as dynamic;
+
+        var respMessage = (string?)apiResponse?.Message;
+        respMessage.Should().Be(message);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ReturnsOkWithSuccessResponse()
+    {
+        // Arrange
+        var requestDto = new ResetPasswordRequestDto
+        {
+            Email = "test@hrs.com",
+            Token = "reset-token",
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "NewPassword123!"
+        };
+        _authService.ResetPasswordAsync(requestDto).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _controller.ResetPasswordAsync(requestDto);
+
+        // Assert
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult!.Value as dynamic;
+
+        var respMessage = (string?)apiResponse?.Message;
+
+        respMessage?.IndexOf("Password has been reset", StringComparison.OrdinalIgnoreCase)
+            .Should().BeGreaterThanOrEqualTo(0, "response message should contain the success phrase");
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_Throws_WhenPasswordMismatch()
+    {
+        // Arrange
+        var requestDto = new ResetPasswordRequestDto
+        {
+            Email = "test@hrs.com",
+            Token = "reset-token",
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "DifferentPassword123!"
+        };
+        _authService.ResetPasswordAsync(requestDto).Throws(new ArgumentException("New password and confirmation do not match."));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => _controller.ResetPasswordAsync(requestDto));
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_Throws_WhenTokenInvalid()
+    {
+        // Arrange
+        var requestDto = new ResetPasswordRequestDto
+        {
+            Email = "test@hrs.com",
+            Token = "invalid-token",
+            NewPassword = "NewPassword123!",
+            ConfirmNewPassword = "NewPassword123!"
+        };
+        _authService.ResetPasswordAsync(requestDto).Throws(new InvalidOperationException("Invalid or expired password reset token."));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _controller.ResetPasswordAsync(requestDto));
     }
 }
