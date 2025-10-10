@@ -388,4 +388,70 @@ public class ItemServiceTests
         result.Description.Should().Be("NewDesc");
         result.Price.Should().Be(20);
     }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithBrandOnly_ReturnsMatchingItems()
+    {
+        // Arrange
+        var items = new List<Item> { new() { Id = 1, Brand = "Nike", Name = "Shoe" } };
+        _itemRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<System.Func<Item, bool>>>()).Returns(items);
+        _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto> { new() { Id = 1, Brand = "Nike" } });
+
+        // Act
+        var result = await _service.SearchItemsAsync("Nike", null, null, null);
+
+        // Assert
+        result.Should().ContainSingle(i => i.Brand == "Nike");
+    }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithAllParams_ReturnsMatchingItems()
+    {
+        // Arrange
+        var items = new List<Item> { new() { Id = 2, Brand = "Adidas", Name = "Bag", ProductNumber = "123", ProductType = "Backpack" } };
+        _itemRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<System.Func<Item, bool>>>()).Returns(items);
+        _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto> { new() { Id = 2, Brand = "Adidas", Name = "Bag", ProductNumber = "123", ProductType = "Backpack" } });
+
+        // Act
+        var result = await _service.SearchItemsAsync("Adidas", "Bag", "123", "Backpack");
+
+        // Assert
+        result.Should().ContainSingle(i => i.Brand == "Adidas" && i.Name == "Bag" && i.ProductNumber == "123" && i.ProductType == "Backpack");
+    }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithNoParams_ReturnsAllItems()
+    {
+        // Arrange
+        var items = new List<Item> {
+            new() { Id = 1, Brand = "Nike", Name = "Shoe" },
+            new() { Id = 2, Brand = "Adidas", Name = "Bag" }
+        };
+        _itemRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<System.Func<Item, bool>>>()).Returns(items);
+        _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto> {
+            new() { Id = 1, Brand = "Nike", Name = "Shoe" },
+            new() { Id = 2, Brand = "Adidas", Name = "Bag" }
+        });
+
+        // Act
+        var result = await _service.SearchItemsAsync(null, null, null, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithNoResults_ReturnsEmpty()
+    {
+        // Arrange
+        var items = new List<Item>();
+        _itemRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<System.Func<Item, bool>>>()).Returns(items);
+        _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto>());
+
+        // Act
+        var result = await _service.SearchItemsAsync("NotExist", null, null, null);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
 }

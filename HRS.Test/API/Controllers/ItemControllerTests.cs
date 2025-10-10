@@ -168,4 +168,76 @@ public class ItemControllerTests
         ((string)apiResponse?.Message!).Should().Be("Item deleted successfully");
         await _itemService.Received(1).DeleteAsync(1);
     }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithBrandOnly_ReturnsOkWithResults()
+    {
+        // Arrange
+        var dtos = new List<ItemResponseDto> { new() { Id = 1, Brand = "Nike" } };
+        _itemService.SearchItemsAsync("Nike", null, null, null).Returns(dtos);
+
+        // Act
+        var result = await _controller.SearchItemsAsync("Nike", null, null, null);
+
+        // Assert
+        var okResult = result.Result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((List<ItemResponseDto>)apiResponse?.Data!).Should().BeEquivalentTo(dtos);
+    }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithAllParams_ReturnsOkWithResults()
+    {
+        // Arrange
+        var dtos = new List<ItemResponseDto> { new() { Id = 2, Brand = "Adidas", Name = "Bag", ProductNumber = "123", ProductType = "Backpack" } };
+        _itemService.SearchItemsAsync("Adidas", "Bag", "123", "Backpack").Returns(dtos);
+
+        // Act
+        var result = await _controller.SearchItemsAsync("Adidas", "Bag", "123", "Backpack");
+
+        // Assert
+        var okResult = result.Result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((List<ItemResponseDto>)apiResponse?.Data!).Should().BeEquivalentTo(dtos);
+    }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithNoParams_ReturnsOkWithAllResults()
+    {
+        // Arrange
+        var dtos = new List<ItemResponseDto>
+        {
+            new() { Id = 1, Brand = "Nike", Name = "Shoe" },
+            new() { Id = 2, Brand = "Adidas", Name = "Bag" }
+        };
+        _itemService.SearchItemsAsync(null, null, null, null).Returns(dtos);
+
+        // Act
+        var result = await _controller.SearchItemsAsync(null, null, null, null);
+
+        // Assert
+        var okResult = result.Result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((List<ItemResponseDto>)apiResponse?.Data!).Should().BeEquivalentTo(dtos);
+    }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithNoResults_ReturnsOkWithEmptyList()
+    {
+        // Arrange
+        var dtos = new List<ItemResponseDto>();
+        _itemService.SearchItemsAsync("NotExist", null, null, null).Returns(dtos);
+
+        // Act
+        var result = await _controller.SearchItemsAsync("NotExist", null, null, null);
+
+        // Assert
+        var okResult = result.Result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((List<ItemResponseDto>)apiResponse?.Data!).Should().BeEmpty();
+    }
 }
