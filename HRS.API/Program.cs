@@ -36,6 +36,7 @@ builder.Services.AddScoped<IItemRateRepository, ItemRateRepository>();
 builder.Services.AddScoped<IPackageRepository, PackageRepository>();
 builder.Services.AddScoped<IPackageRateRepository, PackageRateRepository>();
 builder.Services.AddScoped<IAppConfiguration, AppConfiguration>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddHttpContextAccessor();
 
 // Add services to the container.
