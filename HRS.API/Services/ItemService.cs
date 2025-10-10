@@ -3,7 +3,7 @@ using HRS.API.Contracts.DTOs.Item;
 using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Interfaces;
-using Microsoft.EntityFrameworkCore; 
+using Microsoft.EntityFrameworkCore;
 
 namespace HRS.API.Services;
 
