@@ -65,10 +65,9 @@ public class ItemController : ControllerBase
 
     [HttpGet("search")]
     [AllowAnonymous]
-    public async Task<ActionResult<List<ItemResponseDto>>> SearchItemsAsync([
-        FromQuery] string? brand, [FromQuery] string? name, [FromQuery] string? productNumber, [FromQuery] string? productType)
+    public async Task<ActionResult<List<ItemResponseDto>>> SearchItemsAsync([FromQuery] string? keyword)
     {
-        var res = await _itemService.SearchItemsAsync(brand, name, productNumber, productType);
+        var res = await _itemService.SearchItemsAsync(keyword);
         return Ok(ApiResponse<List<ItemResponseDto>>.OkResponse(res.ToList()));
     }
 }

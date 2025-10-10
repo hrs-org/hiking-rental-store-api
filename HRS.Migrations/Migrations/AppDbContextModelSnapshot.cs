@@ -30,10 +30,6 @@ namespace HRS.Migrations.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Brand")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -55,14 +51,6 @@ namespace HRS.Migrations.Migrations
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("ProductNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("ProductType")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");

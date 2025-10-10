@@ -10,5 +10,5 @@ public interface IItemService
     Task<ItemResponseDto> UpdateAsync(UpdateItemRequestDto dto);
     Task DeleteAsync(int id);
     Task<decimal> GetItemRateAsync(int itemId, int rentalDays);
-    Task<IEnumerable<ItemResponseDto>> SearchItemsAsync(string? brand, string? name, string? productNumber, string? productType);
+    Task<IEnumerable<ItemResponseDto>> SearchItemsAsync(string? keyword);
 }

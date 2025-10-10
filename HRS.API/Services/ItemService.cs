@@ -3,6 +3,7 @@ using HRS.API.Contracts.DTOs.Item;
 using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore; // 新增引用
 
 namespace HRS.API.Services;
 
@@ -225,13 +226,10 @@ public class ItemService : IItemService
             _itemRateRepository.RemoveRange(toRemove);
     }
 
-    public async Task<IEnumerable<ItemResponseDto>> SearchItemsAsync(string? brand, string? name, string? productNumber, string? productType)
+    public async Task<IEnumerable<ItemResponseDto>> SearchItemsAsync(string? keyword)
     {
-        var items = await _itemRepository.FindAsync(i =>
-            (string.IsNullOrWhiteSpace(brand) || (!string.IsNullOrEmpty(i.Brand) && i.Brand.Contains(brand))) &&
-            (string.IsNullOrWhiteSpace(name) || (!string.IsNullOrEmpty(i.Name) && i.Name.Contains(name))) &&
-            (string.IsNullOrWhiteSpace(productNumber) || (!string.IsNullOrEmpty(i.ProductNumber) && i.ProductNumber.Contains(productNumber))) &&
-            (string.IsNullOrWhiteSpace(productType) || (!string.IsNullOrEmpty(i.ProductType) && i.ProductType.Contains(productType)))
+        var items = await _itemRepository.FindAsync(
+            i => string.IsNullOrWhiteSpace(keyword) || EF.Functions.Like(i.Name, $"%{keyword}%")
         );
         return _mapper.Map<IEnumerable<ItemResponseDto>>(items);
     }

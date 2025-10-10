@@ -170,14 +170,14 @@ public class ItemControllerTests
     }
 
     [Fact]
-    public async Task SearchItemsAsync_WithBrandOnly_ReturnsOkWithResults()
+    public async Task SearchItemsAsync_WithKeyword_ReturnsOkWithResults()
     {
         // Arrange
-        var dtos = new List<ItemResponseDto> { new() { Id = 1, Brand = "Nike" } };
-        _itemService.SearchItemsAsync("Nike", null, null, null).Returns(dtos);
+        var dtos = new List<ItemResponseDto> { new() { Id = 1, Name = "Trekking Pole" } };
+        _itemService.SearchItemsAsync("Trekking Pole").Returns(dtos);
 
         // Act
-        var result = await _controller.SearchItemsAsync("Nike", null, null, null);
+        var result = await _controller.SearchItemsAsync("Trekking Pole");
 
         // Assert
         var okResult = result.Result as OkObjectResult;
@@ -187,35 +187,18 @@ public class ItemControllerTests
     }
 
     [Fact]
-    public async Task SearchItemsAsync_WithAllParams_ReturnsOkWithResults()
-    {
-        // Arrange
-        var dtos = new List<ItemResponseDto> { new() { Id = 2, Brand = "Adidas", Name = "Bag", ProductNumber = "123", ProductType = "Backpack" } };
-        _itemService.SearchItemsAsync("Adidas", "Bag", "123", "Backpack").Returns(dtos);
-
-        // Act
-        var result = await _controller.SearchItemsAsync("Adidas", "Bag", "123", "Backpack");
-
-        // Assert
-        var okResult = result.Result as OkObjectResult;
-        okResult.Should().NotBeNull();
-        var apiResponse = okResult.Value as dynamic;
-        ((List<ItemResponseDto>)apiResponse?.Data!).Should().BeEquivalentTo(dtos);
-    }
-
-    [Fact]
-    public async Task SearchItemsAsync_WithNoParams_ReturnsOkWithAllResults()
+    public async Task SearchItemsAsync_WithNoKeyword_ReturnsOkWithAllResults()
     {
         // Arrange
         var dtos = new List<ItemResponseDto>
         {
-            new() { Id = 1, Brand = "Nike", Name = "Shoe" },
-            new() { Id = 2, Brand = "Adidas", Name = "Bag" }
+            new() { Id = 1, Name = "Trekking Pole" },
+            new() { Id = 2, Name = "Tent" }
         };
-        _itemService.SearchItemsAsync(null, null, null, null).Returns(dtos);
+        _itemService.SearchItemsAsync(null).Returns(dtos);
 
         // Act
-        var result = await _controller.SearchItemsAsync(null, null, null, null);
+        var result = await _controller.SearchItemsAsync(null);
 
         // Assert
         var okResult = result.Result as OkObjectResult;
@@ -229,10 +212,10 @@ public class ItemControllerTests
     {
         // Arrange
         var dtos = new List<ItemResponseDto>();
-        _itemService.SearchItemsAsync("NotExist", null, null, null).Returns(dtos);
+        _itemService.SearchItemsAsync("NonExistentGear").Returns(dtos);
 
         // Act
-        var result = await _controller.SearchItemsAsync("NotExist", null, null, null);
+        var result = await _controller.SearchItemsAsync("NonExistentGear");
 
         // Assert
         var okResult = result.Result as OkObjectResult;
