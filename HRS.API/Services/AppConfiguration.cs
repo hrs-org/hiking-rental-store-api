@@ -22,6 +22,9 @@ public class AppConfiguration : IAppConfiguration
     public string JwtKey { get; set; } = string.Empty;
     public string JwtIssuer { get; set; } = string.Empty;
     public string JwtAudience { get; set; } = string.Empty;
+    public string StripeApi { get; set; } = string.Empty;
+
+
 
     private void Setup()
     {
@@ -34,5 +37,6 @@ public class AppConfiguration : IAppConfiguration
         JwtKey = _configuration["Jwt:Key"] ?? "";
         JwtIssuer = _configuration["Jwt:Issuer"] ?? "";
         JwtAudience = _configuration["Jwt:Audience"] ?? "";
+        StripeApi = _configuration["Payment:Secretkey"] ?? "";
     }
 }

@@ -18,19 +18,27 @@ public class PaymentController : ControllerBase
     }
 
     [HttpPost("order")]
-    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> CreateOrder(string Productname, double amount)
     {
         var result = await _paymentService.CreatePaymentOrder(Productname, amount);
         return Ok(result);
     }
 
-    [HttpPost("checkout")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult> CreateCheckoutSession(string orderID)
+    [HttpPost("checkoutOrder")]
+    public async Task<ActionResult> CreateCheckoutSessionwithOrder(string orderID)
     {
 
-        var url = await _paymentService.CreatePaymentCheckOut(orderID);
+        var url = await _paymentService.CreatePaymentCheckOutWithPaymentOrder(orderID);
+        return Ok(url);
+    }
+
+    [HttpPost("checkoutPrice")]
+    public async Task<ActionResult> CreateCheckoutSessionwithPrice(string Productname, double amount)
+    {
+
+        var session = await _paymentService.CreatePaymentCheckOutWithOnlyPrice(Productname, amount);
+        string url = session.Url;
+
         return Ok(url);
     }
 
