@@ -210,6 +210,10 @@ public class ItemServiceTests
             {
                 new() { Id = 2, Name = "ChildUpdated", Description = "desc2", Quantity = 2, Price = 6 },
                 new() { Name = "NewChild", Description = "desc3", Quantity = 3, Price = 7 }
+            },
+            Rates = new List<ItemRateRequestDto>
+            {
+                new() { MinDays = 1, DailyRate = 10, IsActive = true }
             }
         };
         var user = new User { Id = 99 };
@@ -387,5 +391,57 @@ public class ItemServiceTests
         result.Name.Should().Be("New");
         result.Description.Should().Be("NewDesc");
         result.Price.Should().Be(20);
+    }
+
+    [Fact]
+    public async Task UpdateItemAsync_WhenRatesIsNull_ThrowsArgumentException()
+    {
+        // Arrange
+        var user = new User { Id = 1 };
+        var existing = new Item { Id = 1, Name = "Old", Description = "OldDesc", Quantity = 1, Price = 10, CreatedBy = user };
+        var dto = new UpdateItemRequestDto
+        {
+            Id = 1,
+            Name = "New",
+            Description = "NewDesc",
+            Quantity = 2,
+            Price = 20,
+            Rates = null
+        };
+        _itemRepository.GetByIdWithChildrenAsync(1).Returns(existing);
+        _userContextService.GetUserAsync().Returns(user);
+
+        // Act
+        var act = async () => await _service.UpdateAsync(dto);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("At least one rate must be provided for the item when updating an item.*");
+    }
+
+    [Fact]
+    public async Task UpdateItemAsync_WhenRatesIsEmpty_ThrowsArgumentException()
+    {
+        // Arrange
+        var user = new User { Id = 1 };
+        var existing = new Item { Id = 1, Name = "Old", Description = "OldDesc", Quantity = 1, Price = 10, CreatedBy = user };
+        var dto = new UpdateItemRequestDto
+        {
+            Id = 1,
+            Name = "New",
+            Description = "NewDesc",
+            Quantity = 2,
+            Price = 20,
+            Rates = new List<ItemRateRequestDto>()
+        };
+        _itemRepository.GetByIdWithChildrenAsync(1).Returns(existing);
+        _userContextService.GetUserAsync().Returns(user);
+
+        // Act
+        var act = async () => await _service.UpdateAsync(dto);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("At least one rate must be provided for the item when updating an item.*");
     }
 }

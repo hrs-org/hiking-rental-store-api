@@ -89,7 +89,8 @@ public class ItemService : IItemService
 
     public async Task<ItemResponseDto> UpdateAsync(UpdateItemRequestDto dto)
     {
-        if (!dto.Id.HasValue) throw new KeyNotFoundException(ItemNotFound);
+        if (!dto.Id.HasValue || dto.Id == 0)
+            throw new KeyNotFoundException(ItemNotFound);
 
         var user = await _userContextService.GetUserAsync();
 
@@ -99,6 +100,9 @@ public class ItemService : IItemService
         {
             var item = await _itemRepository.GetByIdWithChildrenAsync(dto.Id.Value)
                        ?? throw new KeyNotFoundException(ItemNotFound);
+
+            if (dto.Rates == null || dto.Rates.Count == 0)
+                throw new ArgumentException("At least one rate must be provided for the item when updating an item.");
 
             item.Name = dto.Name;
             item.Description = dto.Description;
