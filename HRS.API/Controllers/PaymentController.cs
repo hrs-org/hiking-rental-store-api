@@ -58,6 +58,16 @@ public class PaymentController : ControllerBase
         return Ok(ApiResponse<string>.OkResponse(session.ClientSecret));
     }
 
+    [HttpPost("VerifyCheckout")]
+    public async Task<ActionResult> VerifyCheckOutSession(string clientSecret ,string email)
+    {
+        var session = await _paymentService.GetSessionStatusAsync(clientSecret);
+        if (session.CustomerEmail != email) throw new ArgumentException("Wrong Email");
+        var status = session.PaymentStatus;
+        if (status != "succeeded")throw new ArgumentException("Unsucceeded Payment");  //'succeeded', ""unpaid""
+        return Ok(ApiResponse<Stripe.Checkout.Session>.OkResponse(session));
+    }
+
 }
 
 

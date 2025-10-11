@@ -8,5 +8,6 @@ public interface IPaymentService
     Task<string> CreatePaymentCheckOutWithPaymentOrder(string Productid);
     Task<Stripe.Checkout.Session> CreatePaymentCheckOutWithOnlyPrice(string productName, double amount);
     Task<Stripe.Checkout.Session> CreatePaymentCheckOutInCart();
+    Task<Stripe.Checkout.Session> GetSessionStatusAsync(string clientSecret);
 
 }

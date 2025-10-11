@@ -101,19 +101,19 @@ public class PaymentService : IPaymentService
     }
 
     public async Task<Stripe.Checkout.Session> CreatePaymentCheckOutInCart()
-{
+    {
         StripeConfiguration.ApiKey = _appConfiguration.StripeApi;
         var user = await _userContextService.GetUserAsync();
         string ID = user.Id.ToString();
-        int orderID = RandomNumberGenerator.GetInt32(1000000,9999999);       // MockUP
+        int orderID = RandomNumberGenerator.GetInt32(1000000, 9999999);       // MockUP
         double orderPrice = RandomNumberGenerator.GetInt32(100);   // MockUP
-        string ordername = "OrderID:"+ orderID.ToString() + "-User:" + ID;
+        string ordername = "OrderID:" + orderID.ToString() + "-User:" + ID;
 
-    var options = new Stripe.Checkout.SessionCreateOptions
-    {
-        // SuccessUrl = "https://example.com/success",
-        // CancelUrl = "https://example.com/cancel",
-        LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
+        var options = new Stripe.Checkout.SessionCreateOptions
+        {
+            // SuccessUrl = "https://example.com/success",
+            // CancelUrl = "https://example.com/cancel",
+            LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
         {
             new Stripe.Checkout.SessionLineItemOptions
             {
@@ -129,14 +129,36 @@ public class PaymentService : IPaymentService
                 Quantity = 1,
             },
         },
-        Mode = "payment",
-        CustomerEmail = user.Email,
-        UiMode = "embedded",
-        ReturnUrl = _appConfiguration.ReturnPaymentURL
-    };
+            Mode = "payment",
+            CustomerEmail = user.Email,
+            UiMode = "embedded",
+            ReturnUrl = _appConfiguration.ReturnPaymentURL,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(35),
+        };
 
-    var service = new Stripe.Checkout.SessionService();
+        var service = new Stripe.Checkout.SessionService();
         var session = await service.CreateAsync(options);
-    return session;
-}
+
+        return session;
+    }
+ public async Task<Stripe.Checkout.Session> GetSessionStatusAsync(string clientSecret)
+    {
+        if (string.IsNullOrEmpty(clientSecret))
+            throw new ArgumentException("clientSecret is required");
+
+        // client_secret format: cs_test_xxx_sessionId_secret_yyy
+
+        var parts = clientSecret.Split('_');
+        if (parts.Length < 4)
+            throw new ArgumentException("Invalid clientSecret format");
+
+        // sessionId = cs_test_xxx_sessionId
+        string sessionId = string.Join("_", parts[0], parts[1], parts[2]);
+
+
+        var service = new Stripe.Checkout.SessionService();
+        var session = await service.GetAsync(sessionId);
+        return session;
+
+    }
 }
