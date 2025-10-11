@@ -5,6 +5,7 @@ using Stripe;
 using Stripe.Checkout;
 
 using HRS.API.Services.Interfaces;
+using System.Security.Cryptography;  // Remove if not use mockup value
 
 namespace HRS.API.Services;
 
@@ -62,11 +63,51 @@ public class PaymentService : IPaymentService
     }
 
     public async Task<Stripe.Checkout.Session> CreatePaymentCheckOutWithOnlyPrice(string productName, double amount)
+    {
+        StripeConfiguration.ApiKey = _appConfiguration.StripeApi;
+        var user = await _userContextService.GetUserAsync();
+        string ID = user.Id.ToString();
+        string ordername = productName + "-User:" + ID + "-OrderID:..";
+
+        var options = new Stripe.Checkout.SessionCreateOptions
+        {
+            // SuccessUrl = "https://example.com/success",
+            // CancelUrl = "https://example.com/cancel",
+            LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
+        {
+            new Stripe.Checkout.SessionLineItemOptions
+            {
+                PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
+                {
+                    UnitAmount = (long)(amount * 100),
+                    Currency = "SGD",
+                    ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
+                    {
+                        Name = ordername,
+                    },
+                },
+                Quantity = 1,
+            },
+        },
+            Mode = "payment",
+            CustomerEmail = user.Email,
+            UiMode = "embedded",
+            ReturnUrl = _appConfiguration.ReturnPaymentURL
+        };
+
+        var service = new Stripe.Checkout.SessionService();
+        var session = await service.CreateAsync(options);
+        return session;
+    }
+
+    public async Task<Stripe.Checkout.Session> CreatePaymentCheckOutInCart()
 {
         StripeConfiguration.ApiKey = _appConfiguration.StripeApi;
         var user = await _userContextService.GetUserAsync();
         string ID = user.Id.ToString();
-        string ordername = productName + "-User:" + ID+ "-OrderID:..";
+        int orderID = RandomNumberGenerator.GetInt32(1000000,9999999);       // MockUP
+        double orderPrice = RandomNumberGenerator.GetInt32(100);   // MockUP
+        string ordername = "OrderID:"+ orderID.ToString() + "-User:" + ID;
 
     var options = new Stripe.Checkout.SessionCreateOptions
     {
@@ -78,7 +119,7 @@ public class PaymentService : IPaymentService
             {
                 PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
                 {
-                    UnitAmount = (long)(amount * 100),
+                    UnitAmount = (long)(orderPrice * 100),
                     Currency = "SGD",
                     ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
                     {

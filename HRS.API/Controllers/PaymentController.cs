@@ -23,14 +23,18 @@ public class PaymentController : ControllerBase
         _paymentService = paymentService;
     }
 
+    // For Create Product in Stripe
     [HttpPost("order")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> CreateOrder(string Productname, double amount)
     {
         var result = await _paymentService.CreatePaymentOrder(Productname, amount);
         return Ok(result);
     }
 
+    // For Checkout from Porduct in Stripe
     [HttpPost("checkoutOrder")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> CreateCheckoutSessionwithOrder(string orderID)
     {
 
@@ -38,13 +42,19 @@ public class PaymentController : ControllerBase
         return Ok(url);
     }
 
+    // For Checkout with seting price and Ordername
     [HttpPost("checkoutPrice")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> CreateCheckoutSessionwithPrice([FromBody] CheckoutPriceRequest request)
     {
-
         var session = await _paymentService.CreatePaymentCheckOutWithOnlyPrice(request.Productname, request.Amount);
-        // string url = session.Url;
+        return Ok(ApiResponse<string>.OkResponse(session.ClientSecret));
+    }
 
+    [HttpGet("checkoutCart")]
+    public async Task<ActionResult> CreateCheckoutSessionfromCart()
+    {
+        var session = await _paymentService.CreatePaymentCheckOutInCart();
         return Ok(ApiResponse<string>.OkResponse(session.ClientSecret));
     }
 
