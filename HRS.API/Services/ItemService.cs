@@ -3,7 +3,6 @@ using HRS.API.Contracts.DTOs.Item;
 using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace HRS.API.Services;
 
@@ -228,9 +227,7 @@ public class ItemService : IItemService
 
     public async Task<IEnumerable<ItemResponseDto>> SearchItemsAsync(string? keyword)
     {
-        var items = await _itemRepository.FindAsync(
-            i => string.IsNullOrWhiteSpace(keyword) || EF.Functions.Like(i.Name, $"%{keyword}%")
-        );
+        var items = await _itemRepository.SearchAsync(keyword);
         return _mapper.Map<IEnumerable<ItemResponseDto>>(items);
     }
 }

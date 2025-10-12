@@ -394,7 +394,7 @@ public class ItemServiceTests
     {
         // Arrange
         var items = new List<Item> { new() { Id = 1, Name = "Trekking Pole" } };
-        _itemRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<System.Func<Item, bool>>>()).Returns(items);
+        _itemRepository.SearchAsync(Arg.Any<string?>()).Returns(items);
         _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto> { new() { Id = 1, Name = "Trekking Pole" } });
 
         // Act
@@ -413,7 +413,7 @@ public class ItemServiceTests
             new() { Id = 1, Name = "Trekking Pole" },
             new() { Id = 2, Name = "Tent" }
         };
-        _itemRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<System.Func<Item, bool>>>()).Returns(items);
+        _itemRepository.SearchAsync(Arg.Any<string?>()).Returns(items);
         _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto>
         {
             new() { Id = 1, Name = "Trekking Pole" },
@@ -432,7 +432,7 @@ public class ItemServiceTests
     {
         // Arrange
         var items = new List<Item>();
-        _itemRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<System.Func<Item, bool>>>()).Returns(items);
+        _itemRepository.SearchAsync(Arg.Any<string?>()).Returns(items);
         _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto>());
 
         // Act
