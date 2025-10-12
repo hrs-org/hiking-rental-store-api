@@ -49,9 +49,9 @@ public class ItemService : IItemService
             entity.UpdatedById = user.Id;
             entity.UpdatedAt = DateTime.UtcNow;
 
-            if (entity.Children?.Count > 0)
+            if (entity.Children.Count > 0)
             {
-                entity.Quantity = entity.Children.Sum(c => c.Quantity);
+                entity.Quantity = entity.Children.Count > 0 ? entity.Children.Sum(c => c.Quantity) : 0;
                 foreach (var child in entity.Children)
                 {
                     child.CreatedById = user.Id;
@@ -61,7 +61,7 @@ public class ItemService : IItemService
                 }
             }
 
-            if (entity.Rates?.Count > 0)
+            if (entity.Rates.Count > 0)
                 foreach (var rate in entity.Rates)
                 {
                     rate.CreatedById = user.Id;
@@ -106,11 +106,13 @@ public class ItemService : IItemService
             item.UpdatedAt = DateTime.UtcNow;
             item.UpdatedById = user.Id;
 
-            var dtoChildren = dto.Children?.ToDictionary(c => c.Id ?? 0) ?? new Dictionary<int, UpdateItemRequestDto>();
+            var existingChild = dto.Children?.Where(c => c.Id is not null)
+                .ToDictionary(c => c.Id ?? 0) ?? [];
+            var newChildren = dto.Children?.Where(c => c.Id is null).ToList() ?? [];
 
             // Update existing children
             foreach (var child in item.Children.ToList())
-                if (dtoChildren.TryGetValue(child.Id, out var dtoChild))
+                if (existingChild.TryGetValue(child.Id, out var dtoChild))
                 {
                     child.Name = dtoChild.Name;
                     child.Description = dtoChild.Description;
@@ -119,7 +121,7 @@ public class ItemService : IItemService
                     child.UpdatedAt = DateTime.UtcNow;
                     child.UpdatedById = user.Id;
 
-                    dtoChildren.Remove(child.Id);
+                    existingChild.Remove(child.Id);
                 }
                 else
                 {
@@ -127,7 +129,7 @@ public class ItemService : IItemService
                 }
 
             // Add new children
-            foreach (var dtoChild in dtoChildren.Values)
+            foreach (var dtoChild in newChildren)
             {
                 var newChild = new Item
                 {
@@ -146,7 +148,7 @@ public class ItemService : IItemService
             }
 
             // Recalculate parent quantity
-            item.Quantity = item.Children.Sum(c => c.Quantity);
+            item.Quantity = item.Children.Count > 0 ? item.Children.Sum(c => c.Quantity) : 0;
 
             await SyncItemRatesAsync(item, dto.Rates, user.Id);
 
@@ -186,7 +188,7 @@ public class ItemService : IItemService
             return;
 
         // Load existing rates for this item
-        var existingRates = (await _itemRateRepository.GetRatesByItemIdAsync(item.Id)).ToList();
+        var existingRates = (await _itemRateRepository.GetRatesByItemIdAsync(item.Id, false)).ToList();
 
         // Map incoming rates (no IDs, just values)
         foreach (var dto in rates)
