@@ -21,9 +21,7 @@ public class VerifyCheckout
 [Route("api/payments")]
 public class PaymentController : ControllerBase
 {
-
     private readonly IPaymentService _paymentService;
-
     public PaymentController(IPaymentService paymentService)
     {
         _paymentService = paymentService;
@@ -43,7 +41,6 @@ public class PaymentController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult> CreateCheckoutSessionwithOrder(string orderID)
     {
-
         var url = await _paymentService.CreatePaymentCheckOutWithPaymentOrder(orderID);
         return Ok(url);
     }
@@ -66,7 +63,7 @@ public class PaymentController : ControllerBase
     [HttpPost("VerifyCheckout")]
     public async Task<ActionResult> VerifyCheckOutSession([FromBody] VerifyCheckout payload)
     {
-        var session = await _paymentService.VerifyPaymentStatus(payload.clientSecret,payload.email);
+        var session = await _paymentService.VerifyPaymentStatus(payload.clientSecret, payload.email);
         return Ok(ApiResponse<Stripe.Checkout.Session>.OkResponse(session));
     }
 

@@ -22,9 +22,6 @@ public class PaymentService : IPaymentService
         _paymentService = paymentService;
     }
 
-
-
-
     public async Task<Price> CreatePaymentOrder(string Productname, double amount)
     {
         StripeConfiguration.ApiKey = _appConfiguration.StripeApi;
@@ -47,18 +44,16 @@ public class PaymentService : IPaymentService
     {
         StripeConfiguration.ApiKey = _appConfiguration.StripeApi;
         var user = await _userContextService.GetUserAsync();
-
         var options = new Stripe.Checkout.SessionCreateOptions
         {
-
             LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
-    {
-        new Stripe.Checkout.SessionLineItemOptions
         {
-            Price = Productid,
-            Quantity = 1,
+            new Stripe.Checkout.SessionLineItemOptions
+            {
+                Price = Productid,
+                Quantity = 1,
+            },
         },
-    },
             Mode = "payment",
             CustomerEmail = user.Email,
             UiMode = "embedded",
@@ -160,19 +155,18 @@ public class PaymentService : IPaymentService
         // sessionId = cs_test_xxx_sessionId
         string sessionId = string.Join("_", parts[0], parts[1], parts[2]);
 
-
         var service = new Stripe.Checkout.SessionService();
         var session = await service.GetAsync(sessionId);
         return session;
 
     }
 
-    public async Task<Stripe.Checkout.Session> VerifyPaymentStatus(string clientSecret , string email )
+    public async Task<Stripe.Checkout.Session> VerifyPaymentStatus(string clientSecret, string email)
     {
         var session = await _paymentService.GetSessionStatusAsync(clientSecret);
         if (session.CustomerEmail != email) throw new ArgumentException("Wrong Email");
         var status = session.PaymentStatus;
-        if (status != "paid")throw new ArgumentException("Unsucceeded Payment");  //'succeeded', ""unpaid""
+        if (status != "paid") throw new ArgumentException("Unsucceeded Payment");  //'succeeded', ""unpaid""
         return session;
     }
 }

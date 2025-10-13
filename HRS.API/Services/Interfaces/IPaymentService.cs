@@ -10,5 +10,4 @@ public interface IPaymentService
     Task<Stripe.Checkout.Session> CreatePaymentCheckOutInCart();
     Task<Stripe.Checkout.Session> GetSessionStatusAsync(string clientSecret);
     Task<Stripe.Checkout.Session> VerifyPaymentStatus(string clientSecret, string email);
-
 }
