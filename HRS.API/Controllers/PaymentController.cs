@@ -11,6 +11,12 @@ public class CheckoutPriceRequest
     public string Productname { get; set; } = string.Empty;
     public double Amount { get; set; }
 }
+
+public class VerifyCheckout
+{
+    public string clientSecret { get; set; } = string.Empty;
+    public string email { get; set; } = string.Empty;
+}
 [ApiController]
 [Route("api/payments")]
 public class PaymentController : ControllerBase
@@ -59,12 +65,12 @@ public class PaymentController : ControllerBase
     }
 
     [HttpPost("VerifyCheckout")]
-    public async Task<ActionResult> VerifyCheckOutSession(string clientSecret ,string email)
+    public async Task<ActionResult> VerifyCheckOutSession([FromBody] VerifyCheckout payload)
     {
-        var session = await _paymentService.GetSessionStatusAsync(clientSecret);
-        if (session.CustomerEmail != email) throw new ArgumentException("Wrong Email");
+        var session = await _paymentService.GetSessionStatusAsync(payload.clientSecret);
+        if (session.CustomerEmail != payload.email) throw new ArgumentException("Wrong Email");
         var status = session.PaymentStatus;
-        if (status != "succeeded")throw new ArgumentException("Unsucceeded Payment");  //'succeeded', ""unpaid""
+        if (status != "paid")throw new ArgumentException("Unsucceeded Payment");  //'succeeded', ""unpaid""
         return Ok(ApiResponse<Stripe.Checkout.Session>.OkResponse(session));
     }
 
