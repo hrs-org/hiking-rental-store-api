@@ -35,11 +35,11 @@ public class PaymentServiceTests
 
         // Set up fake user
         _userContextService.GetUserAsync().Returns(Task.FromResult(
-            new User { Id = 1, Role = UserRole.Admin , Email = "krit@big.com"}
+            new User { Id = 1, Role = UserRole.Admin, Email = "krit@big.com" }
         ));
 
         // Create the service instance under test
-        _service = new PaymentService(_userContextService, _appConfiguration,_sessionService,_priceService);
+        _service = new PaymentService(_userContextService, _appConfiguration, _sessionService, _priceService);
     }
 
     [Fact]
@@ -118,16 +118,16 @@ public class PaymentServiceTests
             PaymentStatus = "unpaid"
         };
 
-       var fakeSessionService = Substitute.For<SessionService>();
-    fakeSessionService.GetAsync(Arg.Any<string>())
-                      .Returns(Task.FromResult(fakeSession));
+        var fakeSessionService = Substitute.For<SessionService>();
+        fakeSessionService.GetAsync(Arg.Any<string>())
+                          .Returns(Task.FromResult(fakeSession));
 
-    var service = new PaymentService(
-        _userContextService,
-        _appConfiguration,
-        fakeSessionService,
-        _priceService
-    );
+        var service = new PaymentService(
+            _userContextService,
+            _appConfiguration,
+            fakeSessionService,
+            _priceService
+        );
 
         // Act
         var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -137,33 +137,33 @@ public class PaymentServiceTests
     }
 
     [Fact]
-public async Task VerifyPaymentStatus_ShouldReturnSession_WhenValid()
-{
-    // Arrange
-    var fakeSession = new Session
+    public async Task VerifyPaymentStatus_ShouldReturnSession_WhenValid()
     {
-        CustomerEmail = "test@example.com",
-        PaymentStatus = "paid"
-    };
+        // Arrange
+        var fakeSession = new Session
+        {
+            CustomerEmail = "test@example.com",
+            PaymentStatus = "paid"
+        };
 
-    var fakeSessionService = Substitute.For<SessionService>();
-    fakeSessionService.GetAsync(Arg.Any<string>())
-                      .Returns(Task.FromResult(fakeSession));
+        var fakeSessionService = Substitute.For<SessionService>();
+        fakeSessionService.GetAsync(Arg.Any<string>())
+                          .Returns(Task.FromResult(fakeSession));
 
-    var service = new PaymentService(
-        _userContextService,
-        _appConfiguration,
-        fakeSessionService,
-        _priceService
-    );
+        var service = new PaymentService(
+            _userContextService,
+            _appConfiguration,
+            fakeSessionService,
+            _priceService
+        );
 
-    // Act
-    var result = await service.VerifyPaymentStatus("cs_test_123_45678", "test@example.com");
+        // Act
+        var result = await service.VerifyPaymentStatus("cs_test_123_45678", "test@example.com");
 
-    // Assert
-    Assert.NotNull(result);
-    Assert.Equal("paid", result.PaymentStatus);
-}
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("paid", result.PaymentStatus);
+    }
 
     [Fact]
     public async Task CreatePaymentOrder_ShouldReturnPrice()
@@ -224,7 +224,7 @@ public async Task VerifyPaymentStatus_ShouldReturnSession_WhenValid()
         };
         var fakeSessionService = Substitute.For<Stripe.Checkout.SessionService>();
         fakeSessionService.CreateAsync(Arg.Any<Stripe.Checkout.SessionCreateOptions>())
-                  .Returns(Task.FromResult(new Session { Id = "cs_test_123_sessionId",UiMode="embedded", }));
+                  .Returns(Task.FromResult(new Session { Id = "cs_test_123_sessionId", UiMode = "embedded", }));
         var service = new PaymentService(
         _userContextService,
         _appConfiguration,
@@ -251,9 +251,9 @@ public async Task VerifyPaymentStatus_ShouldReturnSession_WhenValid()
         fakeSessionService.CreateAsync(Arg.Any<Stripe.Checkout.SessionCreateOptions>())
                   .Returns(Task.FromResult(new Session
                   {
-                    Id = "cs_test_123_sessionId",
-                    UiMode = "embedded",
-                    CustomerEmail = "krit@big.com",
+                      Id = "cs_test_123_sessionId",
+                      UiMode = "embedded",
+                      CustomerEmail = "krit@big.com",
                   }));
 
         var service = new PaymentService(
