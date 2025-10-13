@@ -13,13 +13,21 @@ public class PaymentService : IPaymentService
 {
     private readonly IUserContextService _userContextService;
     private readonly IAppConfiguration _appConfiguration;
-    private readonly IPaymentService _paymentService;
+    private readonly SessionService _sessionService;
+    private readonly PriceService _priceService;
 
-    public PaymentService(IUserContextService userContextService, IAppConfiguration appConfiguration, IPaymentService paymentService)
+    public PaymentService(
+        IUserContextService userContextService,
+        IAppConfiguration appConfiguration,
+        SessionService? sessionService = null,
+        PriceService? priceService = null)
     {
         _userContextService = userContextService;
         _appConfiguration = appConfiguration;
-        _paymentService = paymentService;
+
+        // Use the provided service for testing, fallback to real service for production
+        _sessionService = sessionService ?? new SessionService();
+        _priceService = priceService ?? new PriceService();
     }
 
     public async Task<Price> CreatePaymentOrder(string Productname, double amount)
@@ -35,8 +43,8 @@ public class PaymentService : IPaymentService
             UnitAmount = unitAmount,
             ProductData = new PriceProductDataOptions { Name = ordername }
         };
-        var service = new PriceService();
-        Price price = await service.CreateAsync(options);
+        // var service = new PriceService();
+        Price price = await _priceService.CreateAsync(options);
         return price;
     }
 
@@ -60,8 +68,8 @@ public class PaymentService : IPaymentService
             ReturnUrl = _appConfiguration.ReturnPaymentURL,
             ExpiresAt = DateTime.UtcNow.AddMinutes(35),
         };
-        var service = new Stripe.Checkout.SessionService();
-        Stripe.Checkout.Session session = await service.CreateAsync(options);
+        // var service = new Stripe.Checkout.SessionService();
+        Stripe.Checkout.Session session = await _sessionService.CreateAsync(options);
         return session;
     }
 
@@ -97,8 +105,8 @@ public class PaymentService : IPaymentService
             ExpiresAt = DateTime.UtcNow.AddMinutes(35),
         };
 
-        var service = new Stripe.Checkout.SessionService();
-        var session = await service.CreateAsync(options);
+        // var service = new Stripe.Checkout.SessionService();
+        var session = await _sessionService.CreateAsync(options);
         return session;
     }
 
@@ -137,12 +145,13 @@ public class PaymentService : IPaymentService
         };
 
         var service = new Stripe.Checkout.SessionService();
-        var session = await service.CreateAsync(options);
+        var session = await _sessionService.CreateAsync(options);
 
         return session;
     }
     public async Task<Stripe.Checkout.Session> GetSessionStatusAsync(string clientSecret)
     {
+        StripeConfiguration.ApiKey = _appConfiguration.StripeApi;
         if (string.IsNullOrEmpty(clientSecret))
             throw new ArgumentException("clientSecret is required");
 
@@ -155,15 +164,15 @@ public class PaymentService : IPaymentService
         // sessionId = cs_test_xxx_sessionId
         string sessionId = string.Join("_", parts[0], parts[1], parts[2]);
 
-        var service = new Stripe.Checkout.SessionService();
-        var session = await service.GetAsync(sessionId);
+        // var service = new Stripe.Checkout.SessionService();
+        var session = await _sessionService.GetAsync(sessionId);
         return session;
 
     }
 
     public async Task<Stripe.Checkout.Session> VerifyPaymentStatus(string clientSecret, string email)
     {
-        var session = await _paymentService.GetSessionStatusAsync(clientSecret);
+        var session = await GetSessionStatusAsync(clientSecret);
         if (session.CustomerEmail != email) throw new ArgumentException("Wrong Email");
         var status = session.PaymentStatus;
         if (status != "paid") throw new ArgumentException("Unsucceeded Payment");  //'succeeded', ""unpaid""
