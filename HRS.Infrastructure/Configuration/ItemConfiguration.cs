@@ -14,6 +14,8 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.HasIndex(i => i.Name);
+
         builder.HasOne(i => i.Parent)
             .WithMany(i => i.Children)
             .HasForeignKey(i => i.ParentId)

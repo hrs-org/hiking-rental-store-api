@@ -26,4 +26,11 @@ public class ItemRepository : CrudRepository<Item>, IItemRepository
             .Include(i => i.Rates)
             .FirstOrDefaultAsync(i => i.Id == id);
     }
+
+    public async Task<IEnumerable<Item>> SearchAsync(string? keyword)
+    {
+        return await _db.Items
+            .Where(i => string.IsNullOrWhiteSpace(keyword) || EF.Functions.Like(i.Name, $"%{keyword}%"))
+            .ToListAsync();
+    }
 }

@@ -388,4 +388,57 @@ public class ItemServiceTests
         result.Description.Should().Be("NewDesc");
         result.Price.Should().Be(20);
     }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithKeyword_ReturnsMatchingItems()
+    {
+        // Arrange
+        var items = new List<Item> { new() { Id = 1, Name = "Trekking Pole" } };
+        _itemRepository.SearchAsync(Arg.Any<string?>()).Returns(items);
+        _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto> { new() { Id = 1, Name = "Trekking Pole" } });
+
+        // Act
+        var result = await _service.SearchItemsAsync("Trekking Pole");
+
+        // Assert
+        result.Should().ContainSingle(i => i.Name == "Trekking Pole");
+    }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithNoKeyword_ReturnsAllItems()
+    {
+        // Arrange
+        var items = new List<Item>
+        {
+            new() { Id = 1, Name = "Trekking Pole" },
+            new() { Id = 2, Name = "Tent" }
+        };
+        _itemRepository.SearchAsync(Arg.Any<string?>()).Returns(items);
+        _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto>
+        {
+            new() { Id = 1, Name = "Trekking Pole" },
+            new() { Id = 2, Name = "Tent" }
+        });
+
+        // Act
+        var result = await _service.SearchItemsAsync(null);
+
+        // Assert
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task SearchItemsAsync_WithNoResults_ReturnsEmpty()
+    {
+        // Arrange
+        var items = new List<Item>();
+        _itemRepository.SearchAsync(Arg.Any<string?>()).Returns(items);
+        _mapper.Map<IEnumerable<ItemResponseDto>>(items).Returns(new List<ItemResponseDto>());
+
+        // Act
+        var result = await _service.SearchItemsAsync("NonExistentGear");
+
+        // Assert
+        result.Should().BeEmpty();
+    }
 }

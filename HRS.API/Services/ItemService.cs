@@ -226,4 +226,10 @@ public class ItemService : IItemService
         if (toRemove.Count > 0)
             _itemRateRepository.RemoveRange(toRemove);
     }
+
+    public async Task<IEnumerable<ItemResponseDto>> SearchItemsAsync(string? keyword)
+    {
+        var items = await _itemRepository.SearchAsync(keyword);
+        return _mapper.Map<IEnumerable<ItemResponseDto>>(items);
+    }
 }
