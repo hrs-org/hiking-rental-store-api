@@ -8,7 +8,7 @@ namespace HRS.API.Controllers;
 
 public class CheckoutPriceRequest
 {
-    public string Productname { get; set; } = string.Empty;
+    public int orderID { get; set; }
     public double Amount { get; set; }
 }
 
@@ -50,10 +50,9 @@ public class PaymentController : ControllerBase
 
     // For Checkout with seting price and Ordername
     [HttpPost("checkoutPrice")]
-    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> CreateCheckoutSessionwithPrice([FromBody] CheckoutPriceRequest request)
     {
-        var session = await _paymentService.CreatePaymentCheckOutWithOnlyPrice(request.Productname, request.Amount);
+        var session = await _paymentService.CreatePaymentCheckOutWithOrderIDandPrice(request.orderID, request.Amount);
         return Ok(ApiResponse<string>.OkResponse(session.ClientSecret));
     }
 
@@ -67,10 +66,7 @@ public class PaymentController : ControllerBase
     [HttpPost("VerifyCheckout")]
     public async Task<ActionResult> VerifyCheckOutSession([FromBody] VerifyCheckout payload)
     {
-        var session = await _paymentService.GetSessionStatusAsync(payload.clientSecret);
-        if (session.CustomerEmail != payload.email) throw new ArgumentException("Wrong Email");
-        var status = session.PaymentStatus;
-        if (status != "paid")throw new ArgumentException("Unsucceeded Payment");  //'succeeded', ""unpaid""
+        var session = await _paymentService.VerifyPaymentStatus(payload.clientSecret,payload.email);
         return Ok(ApiResponse<Stripe.Checkout.Session>.OkResponse(session));
     }
 

@@ -13,13 +13,17 @@ public class PaymentService : IPaymentService
 {
     private readonly IUserContextService _userContextService;
     private readonly IAppConfiguration _appConfiguration;
+    private readonly IPaymentService _paymentService;
 
-
-    public PaymentService(IUserContextService userContextService,IAppConfiguration appConfiguration)
+    public PaymentService(IUserContextService userContextService, IAppConfiguration appConfiguration, IPaymentService paymentService)
     {
         _userContextService = userContextService;
         _appConfiguration = appConfiguration;
+        _paymentService = paymentService;
     }
+
+
+
 
     public async Task<Price> CreatePaymentOrder(string Productname, double amount)
     {
@@ -39,13 +43,14 @@ public class PaymentService : IPaymentService
         return price;
     }
 
-    public async Task<string> CreatePaymentCheckOutWithPaymentOrder(string Productid)
+    public async Task<Stripe.Checkout.Session> CreatePaymentCheckOutWithPaymentOrder(string Productid)
     {
         StripeConfiguration.ApiKey = _appConfiguration.StripeApi;
+        var user = await _userContextService.GetUserAsync();
 
         var options = new Stripe.Checkout.SessionCreateOptions
         {
-            SuccessUrl = "https://example.com/success",
+
             LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
     {
         new Stripe.Checkout.SessionLineItemOptions
@@ -55,24 +60,25 @@ public class PaymentService : IPaymentService
         },
     },
             Mode = "payment",
+            CustomerEmail = user.Email,
+            UiMode = "embedded",
+            ReturnUrl = _appConfiguration.ReturnPaymentURL,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(35),
         };
         var service = new Stripe.Checkout.SessionService();
         Stripe.Checkout.Session session = await service.CreateAsync(options);
-        // Console.WriteLine(session);
-        return session.Url;
+        return session;
     }
 
-    public async Task<Stripe.Checkout.Session> CreatePaymentCheckOutWithOnlyPrice(string productName, double amount)
+    public async Task<Stripe.Checkout.Session> CreatePaymentCheckOutWithOrderIDandPrice(int orderID, double amount)
     {
         StripeConfiguration.ApiKey = _appConfiguration.StripeApi;
         var user = await _userContextService.GetUserAsync();
         string ID = user.Id.ToString();
-        string ordername = productName + "-User:" + ID + "-OrderID:..";
+        string ordername = "OrderID:" + orderID.ToString() + "-User:" + ID;
 
         var options = new Stripe.Checkout.SessionCreateOptions
         {
-            // SuccessUrl = "https://example.com/success",
-            // CancelUrl = "https://example.com/cancel",
             LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
         {
             new Stripe.Checkout.SessionLineItemOptions
@@ -92,7 +98,8 @@ public class PaymentService : IPaymentService
             Mode = "payment",
             CustomerEmail = user.Email,
             UiMode = "embedded",
-            ReturnUrl = _appConfiguration.ReturnPaymentURL
+            ReturnUrl = _appConfiguration.ReturnPaymentURL,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(35),
         };
 
         var service = new Stripe.Checkout.SessionService();
@@ -111,8 +118,6 @@ public class PaymentService : IPaymentService
 
         var options = new Stripe.Checkout.SessionCreateOptions
         {
-            // SuccessUrl = "https://example.com/success",
-            // CancelUrl = "https://example.com/cancel",
             LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
         {
             new Stripe.Checkout.SessionLineItemOptions
@@ -141,7 +146,7 @@ public class PaymentService : IPaymentService
 
         return session;
     }
- public async Task<Stripe.Checkout.Session> GetSessionStatusAsync(string clientSecret)
+    public async Task<Stripe.Checkout.Session> GetSessionStatusAsync(string clientSecret)
     {
         if (string.IsNullOrEmpty(clientSecret))
             throw new ArgumentException("clientSecret is required");
@@ -160,5 +165,14 @@ public class PaymentService : IPaymentService
         var session = await service.GetAsync(sessionId);
         return session;
 
+    }
+
+    public async Task<Stripe.Checkout.Session> VerifyPaymentStatus(string clientSecret , string email )
+    {
+        var session = await _paymentService.GetSessionStatusAsync(clientSecret);
+        if (session.CustomerEmail != email) throw new ArgumentException("Wrong Email");
+        var status = session.PaymentStatus;
+        if (status != "paid")throw new ArgumentException("Unsucceeded Payment");  //'succeeded', ""unpaid""
+        return session;
     }
 }
