@@ -1,9 +1,6 @@
-using System.Threading.Tasks;
 using HRS.API.Services;
-using HRS.API.Services.Interfaces;
-using HRS.Domain.Interfaces;
+using Microsoft.Extensions.Configuration;
 using NSubstitute;
-using Xunit;
 
 namespace HRS.Test.API.Services;
 
@@ -13,13 +10,13 @@ public class AppConfigurationTests
     public void Setup_ShouldReadConfigurationValues()
     {
         // Arrange
-        var config = Substitute.For<Microsoft.Extensions.Configuration.IConfiguration>();
+        var config = Substitute.For<IConfiguration>();
         config["Email:SmtpHost"].Returns("smtp.test.com");
         config["Email:SmtpPort"].Returns("587");
         config["Email:SmtpUsername"].Returns("user");
         config["Email:SmtpPassword"].Returns("pass");
         config["Email:FromEmail"].Returns("from@test.com");
-        config["Email:FrontendUrl"].Returns("http://frontend");
+        config["FrontendUrl"].Returns("http://frontend");
         config["Jwt:Key"].Returns("jwtkeyjwtkeyjwtkeyjwtkeyjwtkeyjwtkeyjwtkeyjwtkey");
         config["Jwt:Issuer"].Returns("issuer");
         config["Jwt:Audience"].Returns("audience");

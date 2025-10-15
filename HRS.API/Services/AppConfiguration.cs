@@ -22,6 +22,8 @@ public class AppConfiguration : IAppConfiguration
     public string JwtKey { get; set; } = string.Empty;
     public string JwtIssuer { get; set; } = string.Empty;
     public string JwtAudience { get; set; } = string.Empty;
+    public string StripeApiKey { get; set; } = string.Empty;
+    public string PaymentReturnPath { get; set; } = string.Empty;
 
     private void Setup()
     {
@@ -30,9 +32,11 @@ public class AppConfiguration : IAppConfiguration
         SmtpUsername = _configuration["Email:SmtpUsername"] ?? "";
         SmtpPassword = _configuration["Email:SmtpPassword"] ?? "";
         FromEmail = _configuration["Email:FromEmail"] ?? "";
-        FrontendUrl = _configuration["Email:FrontendUrl"] ?? "";
+        FrontendUrl = _configuration["FrontendUrl"] ?? "";
         JwtKey = _configuration["Jwt:Key"] ?? "";
         JwtIssuer = _configuration["Jwt:Issuer"] ?? "";
         JwtAudience = _configuration["Jwt:Audience"] ?? "";
+        StripeApiKey = _configuration["Payment:Stripe:ApiKey"] ?? "";
+        PaymentReturnPath = FrontendUrl + (_configuration["Payment:ReturnPath"] ?? "");
     }
 }

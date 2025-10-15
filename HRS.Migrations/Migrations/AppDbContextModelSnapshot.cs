@@ -74,6 +74,58 @@ namespace HRS.Migrations.Migrations
                     b.ToTable("Items");
                 });
 
+            modelBuilder.Entity("HRS.Domain.Entities.ItemMaintenance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("QuantityFixed")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<int?>("RentalOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("RentalOrderId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("ItemMaintenances");
+                });
+
             modelBuilder.Entity("HRS.Domain.Entities.ItemRate", b =>
                 {
                     b.Property<int>("Id")
@@ -232,6 +284,319 @@ namespace HRS.Migrations.Migrations
                     b.ToTable("PackageRates");
                 });
 
+            modelBuilder.Entity("HRS.Domain.Entities.Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PaymentType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("RentalOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("StripePaymentIntentId")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("StripeSessionId")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("RentalOrderId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("Payments", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("ApprovedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("ClosedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("GuestEmail")
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("GuestName")
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("GuestPhone")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<bool>("HasIssues")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("ItemsGoodCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemsIssueCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ReturnRemarks")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ReturnedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("ReturnedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StripeSessionId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("Channel");
+
+                    b.HasIndex("ClosedById");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("ReturnedById");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("StripeSessionId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("RentalOrders", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ConditionRemarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<decimal>("DailyRateSnapshot")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("DamagedQty")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GoodQty")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ItemNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<int?>("ItemRateId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LostQty")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RentalOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RepairQty")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("ItemRateId");
+
+                    b.HasIndex("RentalOrderId");
+
+                    b.ToTable("RentalOrderItems", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrderPackage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("DailyRateSnapshot")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int?>("PackageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PackageNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<int?>("PackageRateId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RentalOrderId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PackageId");
+
+                    b.HasIndex("PackageRateId");
+
+                    b.HasIndex("RentalOrderId");
+
+                    b.ToTable("RentalOrderPackages", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrderPackageItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DamagedQty")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GoodQty")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ItemNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<int>("LostQty")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuantityPerPackageSnapshot")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RentalOrderPackageId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RepairQty")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("RentalOrderPackageId");
+
+                    b.ToTable("RentalOrderPackageItems", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -293,14 +658,14 @@ namespace HRS.Migrations.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 12, 4, 23, 0, 692, DateTimeKind.Utc).AddTicks(1837),
+                            CreatedAt = new DateTime(2025, 10, 15, 6, 9, 39, 423, DateTimeKind.Utc).AddTicks(770),
                             Email = "admin@hrs.com",
                             FirstName = "System",
                             IsVerified = true,
                             LastName = "Admin",
-                            PasswordHash = "$2a$11$eUTWAWacQ9IXwHMbu9fm4.VMPVFK6HNjFs2vqA8poZSuHcsY3FoUK",
+                            PasswordHash = "$2a$11$vCt0yqV9Ch71ywbiJKUFpOoREGNnTQpYE0gI5777E/HxQBzszZmIu",
                             Role = "Admin",
-                            UpdatedAt = new DateTime(2025, 10, 12, 4, 23, 0, 692, DateTimeKind.Utc).AddTicks(1837)
+                            UpdatedAt = new DateTime(2025, 10, 15, 6, 9, 39, 423, DateTimeKind.Utc).AddTicks(770)
                         });
                 });
 
@@ -411,6 +776,37 @@ namespace HRS.Migrations.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("HRS.Domain.Entities.ItemMaintenance", b =>
+                {
+                    b.HasOne("HRS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HRS.Domain.Entities.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HRS.Domain.Entities.RentalOrder", "RentalOrder")
+                        .WithMany()
+                        .HasForeignKey("RentalOrderId");
+
+                    b.HasOne("HRS.Domain.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Item");
+
+                    b.Navigation("RentalOrder");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("HRS.Domain.Entities.ItemRate", b =>
                 {
                     b.HasOne("HRS.Domain.Entities.User", "CreatedBy")
@@ -499,6 +895,144 @@ namespace HRS.Migrations.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("HRS.Domain.Entities.Payment", b =>
+                {
+                    b.HasOne("HRS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HRS.Domain.Entities.RentalOrder", "RentalOrder")
+                        .WithMany("Payments")
+                        .HasForeignKey("RentalOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HRS.Domain.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("RentalOrder");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrder", b =>
+                {
+                    b.HasOne("HRS.Domain.Entities.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HRS.Domain.Entities.User", "ClosedBy")
+                        .WithMany()
+                        .HasForeignKey("ClosedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HRS.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HRS.Domain.Entities.User", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HRS.Domain.Entities.User", "ReturnedBy")
+                        .WithMany()
+                        .HasForeignKey("ReturnedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HRS.Domain.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("ClosedBy");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("ReturnedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrderItem", b =>
+                {
+                    b.HasOne("HRS.Domain.Entities.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HRS.Domain.Entities.ItemRate", "ItemRate")
+                        .WithMany()
+                        .HasForeignKey("ItemRateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HRS.Domain.Entities.RentalOrder", "RentalOrder")
+                        .WithMany("RentalOrderItems")
+                        .HasForeignKey("RentalOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("ItemRate");
+
+                    b.Navigation("RentalOrder");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrderPackage", b =>
+                {
+                    b.HasOne("HRS.Domain.Entities.Package", "Package")
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HRS.Domain.Entities.PackageRate", "PackageRate")
+                        .WithMany()
+                        .HasForeignKey("PackageRateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HRS.Domain.Entities.RentalOrder", "RentalOrder")
+                        .WithMany("RentalOrderPackages")
+                        .HasForeignKey("RentalOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Package");
+
+                    b.Navigation("PackageRate");
+
+                    b.Navigation("RentalOrder");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrderPackageItem", b =>
+                {
+                    b.HasOne("HRS.Domain.Entities.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HRS.Domain.Entities.RentalOrderPackage", "RentalOrderPackage")
+                        .WithMany("Items")
+                        .HasForeignKey("RentalOrderPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("RentalOrderPackage");
+                });
+
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>
                 {
                     b.HasOne("HRS.Domain.Entities.User", "CreatedByUser")
@@ -548,6 +1082,20 @@ namespace HRS.Migrations.Migrations
                     b.Navigation("PackageItems");
 
                     b.Navigation("PackageRates");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrder", b =>
+                {
+                    b.Navigation("Payments");
+
+                    b.Navigation("RentalOrderItems");
+
+                    b.Navigation("RentalOrderPackages");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Entities.RentalOrderPackage", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("HRS.Domain.Entities.User", b =>

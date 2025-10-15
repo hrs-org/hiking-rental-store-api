@@ -29,6 +29,7 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
+        <PackageReference Include="Stripe.net" Version="49.0.0"/>
     </ItemGroup>
 
     <ItemGroup>

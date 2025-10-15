@@ -54,8 +54,10 @@ public class PackageRateRequestDtoValidator : AbstractValidator<PackageRateReque
     public PackageRateRequestDtoValidator()
     {
         RuleFor(x => x.MinDays)
+            .NotEmpty().WithMessage("MinDays is required")
             .GreaterThan(0).WithMessage("MinDays must be greater than 0");
         RuleFor(x => x.DailyRate)
-            .GreaterThanOrEqualTo(0).WithMessage("DailyRate must be non-negative");
+            .NotEmpty().WithMessage("DailyRate is required")
+            .GreaterThan(0).WithMessage("DailyRate must be positive");
     }
 }

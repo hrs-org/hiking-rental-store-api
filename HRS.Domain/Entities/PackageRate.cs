@@ -10,7 +10,7 @@ public class PackageRate
 
     [Required] public int PackageId { get; set; }
 
-    [ForeignKey(nameof(PackageId))] public Package Package { get; set; } = null!;
+    [ForeignKey(nameof(PackageId))] public Package? Package { get; set; }
 
     [Required][Range(1, int.MaxValue)] public int MinDays { get; set; }
 
@@ -20,12 +20,14 @@ public class PackageRate
 
     [Required] public bool IsActive { get; set; } = true;
 
-    [Required] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     public int CreatedById { get; set; }
-    [ForeignKey(nameof(CreatedById))] public User CreatedBy { get; set; } = null!;
+
+    [ForeignKey(nameof(CreatedById))] public User? CreatedBy { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public int? UpdatedById { get; set; }
+
     [ForeignKey(nameof(UpdatedById))] public User? UpdatedBy { get; set; }
 
     public DateTime? UpdatedAt { get; set; }

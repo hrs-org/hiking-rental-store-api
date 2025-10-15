@@ -19,6 +19,12 @@ public class AppDbContext : DbContext
     public DbSet<Package> Packages { get; set; } = default!;
     public DbSet<PackageItem> PackageItems { get; set; } = default!;
     public DbSet<PackageRate> PackageRates { get; set; } = default!;
+    public DbSet<RentalOrder> RentalOrders { get; set; } = default!;
+    public DbSet<RentalOrderItem> RentalOrderItems { get; set; } = default!;
+    public DbSet<RentalOrderPackage> RentalOrderPackages { get; set; } = default!;
+    public DbSet<RentalOrderPackageItem> RentalOrderPackageItems { get; set; } = default!;
+    public DbSet<ItemMaintenance> ItemMaintenances { get; set; } = default!;
+    public DbSet<Payment> Payments { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,5 +37,10 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new PackageConfiguration());
         modelBuilder.ApplyConfiguration(new PackageItemConfiguration());
         modelBuilder.ApplyConfiguration(new PackageRateConfiguration());
+        modelBuilder.ApplyConfiguration(new RentalOrderConfiguration());
+        modelBuilder.ApplyConfiguration(new RentalOrderItemConfiguration());
+        modelBuilder.ApplyConfiguration(new RentalOrderPackageConfiguration());
+        modelBuilder.ApplyConfiguration(new RentalOrderPackageItemConfiguration());
+        modelBuilder.ApplyConfiguration(new PaymentConfiguration());
     }
 }
