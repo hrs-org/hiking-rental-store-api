@@ -12,7 +12,7 @@ public class ItemRate
 
     [ForeignKey(nameof(ItemId))] public Item Item { get; set; } = null!;
 
-    [Required] [Range(1, int.MaxValue)] public int MinDays { get; set; }
+    [Required][Range(1, int.MaxValue)] public int MinDays { get; set; }
 
     [Required]
     [Range(0.0, double.MaxValue)]

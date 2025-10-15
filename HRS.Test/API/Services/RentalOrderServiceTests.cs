@@ -49,9 +49,9 @@ public class RentalOrderServiceTests
         var dto = new RentalOrderResponseDto
         {
             Id = 1,
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _rentalOrderRepository.GetByIdWithDetailsAsync(1).Returns(order);
         _mapper.Map<RentalOrderResponseDto>(order).Returns(dto);
@@ -120,7 +120,7 @@ public class RentalOrderServiceTests
         var order = new RentalOrder { Id = 1, Status = RentalStatus.Booked };
         _userContextService.GetUserAsync().Returns(user);
         _rentalOrderRepository.GetByStripeSessionIdAsync("sess_123").Returns(order);
-        _paymentRepository.GetByRentalOrderIdAsync(Arg.Any<int>()).Returns(null as Payment);
+        _paymentRepository.GetByRentalOrderIdAsync(Arg.Any<int>()).Returns(null! as Payment);
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ApprovePaymentAsync("sess_123", 1000));
     }
 
@@ -134,16 +134,16 @@ public class RentalOrderServiceTests
             new()
             {
                 Id = 1,
-                Status = null,
-                Channel = null,
-                PaymentType = null
+                Status = null!,
+                Channel = null!,
+                PaymentType = null!
             },
             new()
             {
                 Id = 2,
-                Status = null,
-                Channel = null,
-                PaymentType = null
+                Status = null!,
+                Channel = null!,
+                PaymentType = null!
             }
         };
         _rentalOrderRepository.GetByStatusesWithDetailsAsync(statuses).Returns(orders);
@@ -186,7 +186,7 @@ public class RentalOrderServiceTests
             Packages = new List<RentalOrderPackageRequestDto> { new() { PackageId = 1, Quantity = 2 } }
         };
         var pkg = new Package
-            { Id = 1, Name = "Pkg", PackageItems = new List<PackageItem> { new() { ItemId = 2, Quantity = 2, Item = new Item { Id = 2, Name = "Item2" } } } };
+        { Id = 1, Name = "Pkg", PackageItems = new List<PackageItem> { new() { ItemId = 2, Quantity = 2, Item = new Item { Id = 2, Name = "Item2" } } } };
         _userContextService.GetUserAsync().Returns(new User { Id = 1 });
         _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
         _packageRepository.GetByIdWithItemsAsync(1).Returns(pkg);
@@ -338,9 +338,9 @@ public class RentalOrderServiceTests
         var entity = new RentalOrder();
         var responseDto = new RentalOrderResponseDto
         {
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _userContextService.GetUserAsync().Returns(user);
         _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
@@ -373,9 +373,9 @@ public class RentalOrderServiceTests
         var entity = new RentalOrder { PaymentType = OrderPaymentType.Cash, Channel = OrderChannel.POS, Id = 123 };
         var responseDto = new RentalOrderResponseDto
         {
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _userContextService.GetUserAsync().Returns(user);
         _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
@@ -407,13 +407,13 @@ public class RentalOrderServiceTests
         _paymentRepository.GetByRentalOrderIdAsync(order.Id).Returns((Payment)null!);
         var responseDto = new RentalOrderResponseDto
         {
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
 
-        var result = await _service.ApprovePaymentAsync("sess_abc", 12345);
+        await _service.ApprovePaymentAsync("sess_abc", 12345);
 
         order.Status.Should().Be(expectedStatus);
         order.UpdatedById.Should().Be(user.Id);
@@ -443,15 +443,15 @@ public class RentalOrderServiceTests
         };
         var responseDto = new RentalOrderResponseDto
         {
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _userContextService.GetUserAsync().Returns(user);
         _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
         _rentalOrderRepository.GetByIdWithDetailsAsync(50).Returns(order);
         _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
-        var result = await _service.ReturnAsync(50, dto);
+        await _service.ReturnAsync(50, dto);
         order.Status.Should().Be(RentalStatus.Returned);
         order.ReturnedById.Should().Be(user.Id);
         order.ReturnedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
@@ -522,15 +522,15 @@ public class RentalOrderServiceTests
         var order = new RentalOrder { Id = 10, Status = RentalStatus.Pending };
         var responseDto = new RentalOrderResponseDto
         {
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _userContextService.GetUserAsync().Returns(user);
         _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
         _rentalOrderRepository.GetByIdWithDetailsAsync(10).Returns(order);
         _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
-        var result = await _service.ApproveAsync(10);
+        await _service.ApproveAsync(10);
         order.Status.Should().Be(RentalStatus.Booked);
         order.ApprovedById.Should().Be(user.Id);
         order.ApprovedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
@@ -558,15 +558,15 @@ public class RentalOrderServiceTests
         var order = new RentalOrder { Id = 20, Status = RentalStatus.Pending };
         var responseDto = new RentalOrderResponseDto
         {
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _userContextService.GetUserAsync().Returns(user);
         _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
         _rentalOrderRepository.GetByIdWithDetailsAsync(20).Returns(order);
         _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
-        var result = await _service.CancelAsync(20);
+        await _service.CancelAsync(20);
         order.Status.Should().Be(RentalStatus.Cancelled);
         order.ApprovedById.Should().Be(user.Id);
         order.ApprovedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
@@ -594,15 +594,15 @@ public class RentalOrderServiceTests
         var order = new RentalOrder { Id = 30, Status = RentalStatus.Booked };
         var responseDto = new RentalOrderResponseDto
         {
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _userContextService.GetUserAsync().Returns(user);
         _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
         _rentalOrderRepository.GetByIdWithDetailsAsync(30).Returns(order);
         _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
-        var result = await _service.MarkAsRentedAsync(30);
+        await _service.MarkAsRentedAsync(30);
         order.Status.Should().Be(RentalStatus.Rented);
         order.UpdatedById.Should().Be(user.Id);
         order.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
@@ -628,14 +628,14 @@ public class RentalOrderServiceTests
         var order = new RentalOrder { Id = 40, Status = RentalStatus.Returned };
         var responseDto = new RentalOrderResponseDto
         {
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _userContextService.GetUserAsync().Returns(user);
         _rentalOrderRepository.GetByIdWithDetailsAsync(40).Returns(order);
         _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
-        var result = await _service.CloseAsync(40);
+        await _service.CloseAsync(40);
         order.Status.Should().Be(RentalStatus.Completed);
         order.ClosedById.Should().Be(user.Id);
         order.ClosedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));

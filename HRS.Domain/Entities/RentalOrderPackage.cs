@@ -17,7 +17,7 @@ public class RentalOrderPackage
     public int? PackageRateId { get; set; }
     [ForeignKey(nameof(PackageRateId))] public PackageRate? PackageRate { get; set; }
 
-    [Required] [MaxLength(150)] public string PackageNameSnapshot { get; set; } = null!;
+    [Required][MaxLength(150)] public string PackageNameSnapshot { get; set; } = null!;
     [Column(TypeName = "decimal(10,2)")] public decimal DailyRateSnapshot { get; set; }
 
     [Required] public int Quantity { get; set; }

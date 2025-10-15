@@ -7,7 +7,7 @@ namespace HRS.API.Contracts.DTOs.RentalOrder;
 public class RentalOrderItemRequestDto
 {
     [Required] public int ItemId { get; set; }
-    [Required] [Range(1, int.MaxValue)] public int Quantity { get; set; }
+    [Required][Range(1, int.MaxValue)] public int Quantity { get; set; }
 }
 
 public class RentalOrderPackageItemRequestDto
@@ -19,7 +19,7 @@ public class RentalOrderPackageItemRequestDto
 public class RentalOrderPackageRequestDto
 {
     [Required] public int PackageId { get; set; }
-    [Required] [Range(1, int.MaxValue)] public int Quantity { get; set; }
+    [Required][Range(1, int.MaxValue)] public int Quantity { get; set; }
     public ICollection<RentalOrderPackageItemRequestDto>? SelectedItems { get; set; }
 }
 

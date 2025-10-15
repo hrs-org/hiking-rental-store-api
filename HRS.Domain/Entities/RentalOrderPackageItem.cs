@@ -16,7 +16,7 @@ public class RentalOrderPackageItem
     public int? ItemId { get; set; } // nullable FK
     [ForeignKey(nameof(ItemId))] public Item? Item { get; set; }
 
-    [Required] [MaxLength(150)] public string ItemNameSnapshot { get; set; } = null!;
+    [Required][MaxLength(150)] public string ItemNameSnapshot { get; set; } = null!;
     [Required] public int QuantityPerPackageSnapshot { get; set; }
 
     public int GoodQty { get; set; }

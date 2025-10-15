@@ -33,7 +33,10 @@ public class RentalOrderRepositoryTests
         var rentalOrderPackageItem = new RentalOrderPackageItem { Id = 1, ItemNameSnapshot = "Item 1", Item = item };
         var rentalOrderPackage = new RentalOrderPackage
         {
-            Id = 1, PackageNameSnapshot = "Package1", Package = package, PackageRate = packageRate,
+            Id = 1,
+            PackageNameSnapshot = "Package1",
+            Package = package,
+            PackageRate = packageRate,
             Items = new List<RentalOrderPackageItem> { rentalOrderPackageItem }
         };
         var order = new RentalOrder

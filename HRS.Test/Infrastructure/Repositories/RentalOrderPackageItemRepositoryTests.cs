@@ -33,11 +33,11 @@ public class RentalOrderPackageItemRepositoryTests
         var pkg2 = new RentalOrderPackage { Id = 2, PackageNameSnapshot = "Package2", RentalOrder = order2, Quantity = 1 };
         var pkg3 = new RentalOrderPackage { Id = 3, PackageNameSnapshot = "Package3", RentalOrder = order3, Quantity = 5 };
         var itemPkg1 = new RentalOrderPackageItem
-            { Id = 1, ItemNameSnapshot = "Item1", ItemId = itemId, RentalOrderPackage = pkg1, QuantityPerPackageSnapshot = 3 };
+        { Id = 1, ItemNameSnapshot = "Item1", ItemId = itemId, RentalOrderPackage = pkg1, QuantityPerPackageSnapshot = 3 };
         var itemPkg2 = new RentalOrderPackageItem
-            { Id = 2, ItemNameSnapshot = "Item2", ItemId = itemId, RentalOrderPackage = pkg2, QuantityPerPackageSnapshot = 4 };
+        { Id = 2, ItemNameSnapshot = "Item2", ItemId = itemId, RentalOrderPackage = pkg2, QuantityPerPackageSnapshot = 4 };
         var itemPkg3 = new RentalOrderPackageItem
-            { Id = 3, ItemNameSnapshot = "Item3", ItemId = itemId, RentalOrderPackage = pkg3, QuantityPerPackageSnapshot = 10 };
+        { Id = 3, ItemNameSnapshot = "Item3", ItemId = itemId, RentalOrderPackage = pkg3, QuantityPerPackageSnapshot = 10 };
         dbContext.RentalOrders.AddRange(order1, order2, order3);
         dbContext.RentalOrderPackages.AddRange(pkg1, pkg2, pkg3);
         dbContext.RentalOrderPackageItems.AddRange(itemPkg1, itemPkg2, itemPkg3);

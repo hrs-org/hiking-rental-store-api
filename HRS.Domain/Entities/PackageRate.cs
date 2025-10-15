@@ -12,7 +12,7 @@ public class PackageRate
 
     [ForeignKey(nameof(PackageId))] public Package? Package { get; set; }
 
-    [Required] [Range(1, int.MaxValue)] public int MinDays { get; set; }
+    [Required][Range(1, int.MaxValue)] public int MinDays { get; set; }
 
     [Required]
     [Range(0.0, double.MaxValue)]

@@ -25,9 +25,9 @@ public class RentalOrderControllerTests
         var order = new RentalOrderResponseDto
         {
             Id = 1,
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _service.GetAsync(1).Returns(order);
         var result = await _controller.GetById(1);
@@ -52,12 +52,14 @@ public class RentalOrderControllerTests
     [Fact]
     public async Task GetAllBookings_ReturnsOkWithList()
     {
-        var bookings = new List<RentalOrderResponseDto> { new()
+        var bookings = new List<RentalOrderResponseDto>
+        {
+            new()
             {
                 Id = 1,
-                Status = null,
-                Channel = null,
-                PaymentType = null
+                Status = null!,
+                Channel = null!,
+                PaymentType = null!
             }
         };
         _service.GetByStasusesAsync(Arg.Any<RentalStatus[]>()).Returns(bookings);
@@ -71,12 +73,14 @@ public class RentalOrderControllerTests
     [Fact]
     public async Task GetAllRents_ReturnsOkWithList()
     {
-        var rents = new List<RentalOrderResponseDto> { new()
+        var rents = new List<RentalOrderResponseDto>
+        {
+            new()
             {
                 Id = 2,
-                Status = null,
-                Channel = null,
-                PaymentType = null
+                Status = null!,
+                Channel = null!,
+                PaymentType = null!
             }
         };
         _service.GetByStasusesAsync(Arg.Any<RentalStatus[]>()).Returns(rents);
@@ -94,9 +98,9 @@ public class RentalOrderControllerTests
         var response = new RentalOrderResponseDto
         {
             Id = 1,
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _service.CreateAsync(dto).Returns(response);
         var result = await _controller.Create(dto);
@@ -104,7 +108,7 @@ public class RentalOrderControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
-        ((string)apiResponse?.Message!).Should().Be("Order created successfully");
+        ((string)apiResponse.Message!).Should().Be("Order created successfully");
     }
 
     [Fact]
@@ -113,9 +117,9 @@ public class RentalOrderControllerTests
         var response = new RentalOrderResponseDto
         {
             Id = 1,
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _service.ApproveAsync(1).Returns(response);
         var result = await _controller.ApprovePayment(1);
@@ -123,7 +127,7 @@ public class RentalOrderControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
-        ((string)apiResponse?.Message!).Should().Be("Order approved successfully");
+        ((string)apiResponse.Message!).Should().Be("Order approved successfully");
     }
 
     [Fact]
@@ -132,9 +136,9 @@ public class RentalOrderControllerTests
         var response = new RentalOrderResponseDto
         {
             Id = 1,
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _service.ApproveAsync(1).Returns(response);
         var result = await _controller.Approve(1);
@@ -142,7 +146,7 @@ public class RentalOrderControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
-        ((string)apiResponse?.Message!).Should().Be("Order approved successfully");
+        ((string)apiResponse.Message!).Should().Be("Order approved successfully");
     }
 
     [Fact]
@@ -151,9 +155,9 @@ public class RentalOrderControllerTests
         var response = new RentalOrderResponseDto
         {
             Id = 1,
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _service.ApproveAsync(1).Returns(response);
         var result = await _controller.CancelOrder(1);
@@ -161,7 +165,7 @@ public class RentalOrderControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
-        ((string)apiResponse?.Message!).Should().Be("Order approved successfully");
+        ((string)apiResponse.Message!).Should().Be("Order approved successfully");
     }
 
     [Fact]
@@ -170,9 +174,9 @@ public class RentalOrderControllerTests
         var response = new RentalOrderResponseDto
         {
             Id = 1,
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _service.MarkAsRentedAsync(1).Returns(response);
         var result = await _controller.MarkAsRented(1);
@@ -180,7 +184,7 @@ public class RentalOrderControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
-        ((string)apiResponse?.Message!).Should().Be("Order marked as rented successfully");
+        ((string)apiResponse.Message!).Should().Be("Order marked as rented successfully");
     }
 
     [Fact]
@@ -190,9 +194,9 @@ public class RentalOrderControllerTests
         var response = new RentalOrderResponseDto
         {
             Id = 1,
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _service.ReturnAsync(1, dto).Returns(response);
         var result = await _controller.Return(1, dto);
@@ -200,7 +204,7 @@ public class RentalOrderControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
-        ((string)apiResponse?.Message!).Should().Be("Order returned successfully");
+        ((string)apiResponse.Message!).Should().Be("Order returned successfully");
     }
 
     [Fact]
@@ -209,9 +213,9 @@ public class RentalOrderControllerTests
         var response = new RentalOrderResponseDto
         {
             Id = 1,
-            Status = null,
-            Channel = null,
-            PaymentType = null
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
         };
         _service.CloseAsync(1).Returns(response);
         var result = await _controller.Close(1);
@@ -219,6 +223,6 @@ public class RentalOrderControllerTests
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
-        ((string)apiResponse?.Message!).Should().Be("Order closed successfully");
+        ((string)apiResponse.Message!).Should().Be("Order closed successfully");
     }
 }
