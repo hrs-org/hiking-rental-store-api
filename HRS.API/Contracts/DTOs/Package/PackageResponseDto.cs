@@ -9,6 +9,7 @@ public class PackageItemResponseDto
 
 public class PackageRateResponseDto
 {
+    public int Id { get; set; }
     public int MinDays { get; set; }
     public decimal DailyRate { get; set; }
     public bool IsActive { get; set; }

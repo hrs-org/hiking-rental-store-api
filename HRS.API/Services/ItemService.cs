@@ -183,11 +183,16 @@ public class ItemService : IItemService
 
     private async Task SyncItemRatesAsync(Item item, ICollection<ItemRateRequestDto>? rates, int userId)
     {
-        if (rates == null || rates.Count == 0)
-            return;
-
         // Load existing rates for this item
         var existingRates = (await _itemRateRepository.GetRatesByItemIdAsync(item.Id, false)).ToList();
+
+        if (rates == null || rates.Count == 0)
+        {
+            // If no incoming rates, remove all existing rates
+            if (existingRates.Count > 0)
+                _itemRateRepository.RemoveRange(existingRates);
+            return;
+        }
 
         // Map incoming rates (no IDs, just values)
         foreach (var dto in rates)
