@@ -65,6 +65,8 @@ namespace HRS.Migrations.Migrations
 
                     b.HasIndex("CreatedById");
 
+                    b.HasIndex("Name");
+
                     b.HasIndex("ParentId");
 
                     b.HasIndex("UpdatedById");

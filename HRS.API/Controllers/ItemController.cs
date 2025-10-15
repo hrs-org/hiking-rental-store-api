@@ -62,4 +62,12 @@ public class ItemController : ControllerBase
         await _itemService.DeleteAsync(id);
         return Ok(ApiResponse<object>.OkResponse(null, "Item deleted successfully"));
     }
+
+    [HttpGet("search")]
+    [AllowAnonymous]
+    public async Task<ActionResult<List<ItemResponseDto>>> SearchItemsAsync([FromQuery] string? keyword)
+    {
+        var res = await _itemService.SearchItemsAsync(keyword);
+        return Ok(ApiResponse<List<ItemResponseDto>>.OkResponse(res.ToList()));
+    }
 }

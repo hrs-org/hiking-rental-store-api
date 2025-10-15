@@ -50,4 +50,11 @@ public class ItemRepository : CrudRepository<Item>, IItemRepository
         _db.Items.Remove(entity);
         await _db.SaveChangesAsync();
     }
+    
+    public async Task<IEnumerable<Item>> SearchAsync(string? keyword)
+    {
+        return await _db.Items
+            .Where(i => string.IsNullOrWhiteSpace(keyword) || EF.Functions.Like(i.Name, $"%{keyword}%"))
+            .ToListAsync();
+    }
 }

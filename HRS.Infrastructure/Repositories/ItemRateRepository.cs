@@ -10,10 +10,10 @@ public class ItemRateRepository : CrudRepository<ItemRate>, IItemRateRepository
     {
     }
 
-    public async Task<IEnumerable<ItemRate>> GetRatesByItemIdAsync(int itemId)
+    public async Task<IEnumerable<ItemRate>> GetRatesByItemIdAsync(int itemId, bool activeOnly = true)
     {
         return await _db.ItemRates
-            .Where(r => r.ItemId == itemId && r.IsActive)
+            .Where(r => r.ItemId == itemId && (!activeOnly || r.IsActive))
             .OrderBy(r => r.MinDays)
             .ToListAsync();
     }
