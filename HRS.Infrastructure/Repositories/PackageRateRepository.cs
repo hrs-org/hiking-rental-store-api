@@ -17,4 +17,12 @@ public class PackageRateRepository : CrudRepository<PackageRate>, IPackageRateRe
             .OrderBy(r => r.MinDays)
             .ToListAsync();
     }
+
+    public async Task<PackageRate?> GetApplicableRateAsync(int packageId, int rentalDays)
+    {
+        return await _db.PackageRates
+            .Where(r => r.PackageId == packageId && r.IsActive && r.MinDays <= rentalDays)
+            .OrderByDescending(r => r.MinDays)
+            .FirstOrDefaultAsync();
+    }
 }

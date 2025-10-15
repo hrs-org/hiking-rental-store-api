@@ -12,7 +12,7 @@ public class ItemRate
 
     [ForeignKey(nameof(ItemId))] public Item Item { get; set; } = null!;
 
-    [Required][Range(1, int.MaxValue)] public int MinDays { get; set; }
+    [Required] [Range(1, int.MaxValue)] public int MinDays { get; set; }
 
     [Required]
     [Range(0.0, double.MaxValue)]
@@ -20,12 +20,14 @@ public class ItemRate
 
     [Required] public bool IsActive { get; set; } = true;
 
-    [Required] public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     public int CreatedById { get; set; }
-    [ForeignKey(nameof(CreatedById))] public User CreatedBy { get; set; } = null!;
+
+    [ForeignKey(nameof(CreatedById))] public User? CreatedBy { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public int? UpdatedById { get; set; }
+
     [ForeignKey(nameof(UpdatedById))] public User? UpdatedBy { get; set; }
 
     public DateTime? UpdatedAt { get; set; }

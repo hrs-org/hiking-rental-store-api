@@ -167,8 +167,7 @@ public class ItemService : IItemService
     public async Task DeleteAsync(int id)
     {
         var item = await _itemRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException(ItemNotFound);
-        _itemRepository.Remove(item);
-        await _itemRepository.SaveChangesAsync();
+        await _itemRepository.RemoveItem(item);
     }
 
     public async Task<decimal> GetItemRateAsync(int itemId, int rentalDays)

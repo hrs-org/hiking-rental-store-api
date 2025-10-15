@@ -257,8 +257,7 @@ public class ItemServiceTests
         await _service.DeleteAsync(1);
 
         // Assert
-        _itemRepository.Received(1).Remove(item);
-        await _itemRepository.Received(1).SaveChangesAsync();
+        await _itemRepository.Received(1).RemoveItem(item);
     }
 
     [Fact]

@@ -96,4 +96,33 @@ public class PackageRepositoryTests
         // Assert
         Assert.Null(result);
     }
+
+    [Fact]
+    public async Task GetByIdWithItemsAsync_ReturnsPackageWithItems()
+    {
+        // Arrange
+        var dbName = $"PackageRepo_GetByIdWithItems_{Guid.NewGuid()}";
+        using var dbContext = CreateDbContext(dbName);
+        var repo = new PackageRepository(dbContext);
+        var item = new Item { Id = 3, Name = "Item3", Description = "Desc", Quantity = 1, Price = 10 };
+        var package = new Package
+        {
+            Id = 3,
+            Name = "Package3",
+            PackageItems = new List<PackageItem> { new() { Id = 3, ItemId = 3, Item = item, Quantity = 4 } }
+        };
+        dbContext.Items.Add(item);
+        dbContext.Packages.Add(package);
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await repo.GetByIdWithItemsAsync(3);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Package3", result.Name);
+        Assert.Single(result.PackageItems);
+        Assert.Equal(3, result.PackageItems.First().ItemId);
+        Assert.Equal("Item3", result.PackageItems.First().Item.Name);
+    }
 }

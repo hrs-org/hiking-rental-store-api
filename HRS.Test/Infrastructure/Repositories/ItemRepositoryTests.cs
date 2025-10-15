@@ -1,4 +1,5 @@
 using HRS.Domain.Entities;
+using HRS.Domain.Enums;
 using HRS.Infrastructure;
 using HRS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -73,5 +74,70 @@ public class ItemRepositoryTests
         var result = await repository.GetByIdWithChildrenAsync(999);
         // Assert
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetByIdWithParentAsync_ReturnsItemWithParentAndRates()
+    {
+        var dbName = $"ItemRepositoryTestsDb_{nameof(GetByIdWithParentAsync_ReturnsItemWithParentAndRates)}_{Guid.NewGuid()}";
+        using var dbContext = CreateDbContext(dbName);
+        var repository = new ItemRepository(dbContext);
+        var user = new User { Id = 1, Email = "test@mail.com", FirstName = "Test", LastName = "User", PasswordHash = "pw" };
+        var parent = new Item { Id = 100, Name = "Parent", Description = "Parent", Quantity = 1, Price = 1, CreatedBy = user };
+        var child = new Item { Id = 101, Name = "Child", Description = "Child", Quantity = 2, Price = 2, ParentId = 100, CreatedBy = user };
+        var rate = new ItemRate { Id = 1, ItemId = 101, MinDays = 1, DailyRate = 10, IsActive = true };
+        child.Parent = parent;
+        child.Rates = new List<ItemRate> { rate };
+        dbContext.Users.Add(user);
+        dbContext.Items.AddRange(parent, child);
+        dbContext.ItemRates.Add(rate);
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await repository.GetByIdWithParentAsync(101);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(101, result.Id);
+        Assert.NotNull(result.Parent);
+        Assert.Equal(100, result.Parent.Id);
+        Assert.Single(result.Rates);
+        Assert.Equal(1, result.Rates.First().Id);
+    }
+
+    [Fact]
+    public async Task RemoveItem_RemovesItem_WhenNoActiveOrders()
+    {
+        var dbName = $"ItemRepositoryTestsDb_{nameof(RemoveItem_RemovesItem_WhenNoActiveOrders)}_{Guid.NewGuid()}";
+        using var dbContext = CreateDbContext(dbName);
+        var repository = new ItemRepository(dbContext);
+        var item = new Item { Id = 1, Name = "Test", Description = "Test", Quantity = 1, Price = 1 };
+        dbContext.Items.Add(item);
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        await repository.RemoveItem(item);
+
+        // Assert
+        Assert.False(dbContext.Items.Any(i => i.Id == 1));
+    }
+
+    [Fact]
+    public async Task RemoveItem_Throws_WhenHasActiveOrders()
+    {
+        var dbName = $"ItemRepositoryTestsDb_{nameof(RemoveItem_Throws_WhenHasActiveOrders)}_{Guid.NewGuid()}";
+        using var dbContext = CreateDbContext(dbName);
+        var repository = new ItemRepository(dbContext);
+        var item = new Item { Id = 2, Name = "Test2", Description = "Test2", Quantity = 1, Price = 1 };
+        var order = new RentalOrder { Id = 1, Status = RentalStatus.Booked };
+        var orderItem = new RentalOrderItem { Id = 1, ItemNameSnapshot = "Test2", ItemId = 2, RentalOrder = order };
+        dbContext.Items.Add(item);
+        dbContext.RentalOrders.Add(order);
+        dbContext.RentalOrderItems.Add(orderItem);
+        await dbContext.SaveChangesAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => repository.RemoveItem(item));
+        Assert.True(dbContext.Items.Any(i => i.Id == 2));
     }
 }
