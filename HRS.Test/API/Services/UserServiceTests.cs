@@ -377,7 +377,7 @@ public class UserServiceTests
         // Arrange
         var dto = new RegisterEmployeeDetailDto { FirstName = "X", LastName = "Y", Email = "x@y.com", Role = "Employee" };
         _mapper.Map<User>(dto).Returns(new User());
-        _userContextService.GetUserAsync().Returns((User?)null);
+        _userContextService.GetUserAsync()!.Returns((User?)null);
 
         // Act & Assert: current implementation will access editor.Id and throw NullReferenceException
         await Assert.ThrowsAsync<NullReferenceException>(() => _userService.CreateNewEmployee(dto));
