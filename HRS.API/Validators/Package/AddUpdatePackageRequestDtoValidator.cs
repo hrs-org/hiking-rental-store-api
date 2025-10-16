@@ -43,8 +43,10 @@ public class PackageItemRequestDtoValidator : AbstractValidator<PackageItemReque
     public PackageItemRequestDtoValidator()
     {
         RuleFor(x => x.ItemId)
+            .NotEmpty().WithMessage("ItemId is required")
             .GreaterThan(0).WithMessage("ItemId must be greater than 0");
         RuleFor(x => x.Quantity)
+            .NotEmpty().WithMessage("Quantity is required")
             .GreaterThan(0).WithMessage("Quantity must be greater than 0");
     }
 }

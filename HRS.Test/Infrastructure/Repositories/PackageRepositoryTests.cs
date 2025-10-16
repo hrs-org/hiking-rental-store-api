@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using HRS.Domain.Entities;
 using HRS.Infrastructure;
 using HRS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Xunit;
 
 namespace HRS.Test.Infrastructure.Repositories;
 
@@ -123,6 +118,6 @@ public class PackageRepositoryTests
         Assert.Equal("Package3", result.Name);
         Assert.Single(result.PackageItems);
         Assert.Equal(3, result.PackageItems.First().ItemId);
-        Assert.Equal("Item3", result.PackageItems.First().Item.Name);
+        Assert.Equal("Item3", result.PackageItems.First().Item?.Name);
     }
 }
