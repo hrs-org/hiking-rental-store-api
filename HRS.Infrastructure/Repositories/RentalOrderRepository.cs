@@ -51,10 +51,7 @@ public class RentalOrderRepository : CrudRepository<RentalOrder>, IRentalOrderRe
     {
         return await _dbSet
             .Where(ro => ro.CustomerId == customerId)
-            .Include(o => o.Status)
             .Include(o => o.Customer)
-            .Include(o => o.StartDate)
-            .Include(o => o.EndDate)
             .Include(o => o.RentalOrderItems)
             .ThenInclude(i => i.Item)
             .Include(o => o.RentalOrderItems)
@@ -71,4 +68,11 @@ public class RentalOrderRepository : CrudRepository<RentalOrder>, IRentalOrderRe
 
     public async Task<RentalOrder?> GetByStripeSessionIdAsync(string sessionId) =>
         await _db.RentalOrders.FirstOrDefaultAsync(ro => ro.StripeSessionId == sessionId);
+
+    public async Task<IEnumerable<RentalOrder>> GetPendingPaymentOrdersOlderThanAsync(DateTime olderThan)
+    {
+        return await _dbSet
+            .Where(ro => (ro.Status == RentalStatus.PendingPayment) && ro.CreatedAt < olderThan)
+            .ToListAsync();
+    }
 }
