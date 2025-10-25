@@ -66,6 +66,12 @@ public class RentalOrderService : IRentalOrderService
         return _mapper.Map<IEnumerable<RentalOrderResponseDto>>(orders);
     }
 
+    public async Task<IEnumerable<RentalOrderResponseDto>> GetByCustomer(int customerId)
+    {
+        var orders = await _rentalOrderRepository.GetByCustomerIdAsync(customerId);
+        return _mapper.Map<IEnumerable<RentalOrderResponseDto>>(orders);
+    }
+
     public async Task<RentalOrderResponseDto> CreateAsync(CreateRentalOrderRequestDto dto)
     {
         var user = await _userContextService.GetUserAsync();
