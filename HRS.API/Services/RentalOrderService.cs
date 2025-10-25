@@ -341,8 +341,8 @@ public class RentalOrderService : IRentalOrderService
             var order = await _rentalOrderRepository.GetByIdWithDetailsAsync(id)
                         ?? throw new KeyNotFoundException(OrderNotFound);
 
-            if (order.Status != RentalStatus.Pending)
-                throw new InvalidOperationException("Only pending orders can be approved.");
+            if (order.Status != RentalStatus.Pending && order.Status != RentalStatus.PendingPayment)
+                throw new InvalidOperationException("Only pending orders can be cancelled.");
 
             order.Status = RentalStatus.Cancelled;
             order.ApprovedById = user.Id;
