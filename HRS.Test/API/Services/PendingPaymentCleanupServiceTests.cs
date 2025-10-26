@@ -10,7 +10,7 @@ using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using Xunit;
 
 namespace HRS.Test.API.Services;
@@ -20,39 +20,39 @@ public class PendingPaymentCleanupServiceTests
     [Fact]
     public async Task ExecuteAsync_RemovesExpiredPendingPaymentOrders()
     {
+        // Arrange
         var expiredOrder = new RentalOrder
         {
             Status = RentalStatus.PendingPayment,
             CreatedAt = DateTime.UtcNow.AddMinutes(-2)
         };
-
         var orders = new List<RentalOrder> { expiredOrder };
 
-        var rentalOrderRepoMock = new Mock<IRentalOrderRepository>();
-        rentalOrderRepoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<RentalOrder, bool>>>()))
-            .ReturnsAsync((Expression<Func<RentalOrder, bool>> predicate) => orders.AsQueryable().Where(predicate.Compile()));
-        rentalOrderRepoMock.Setup(r => r.RemoveRange(It.IsAny<IEnumerable<RentalOrder>>()))
-            .Verifiable();
-        rentalOrderRepoMock.Setup(r => r.SaveChangesAsync())
-            .ReturnsAsync(0)
-            .Verifiable();
+        var rentalOrderRepo = Substitute.For<IRentalOrderRepository>();
+        rentalOrderRepo.FindAsync(Arg.Any<Expression<Func<RentalOrder, bool>>>())
+            .Returns(callInfo => orders.AsQueryable().Where(callInfo.Arg<Expression<Func<RentalOrder, bool>>>().Compile()));
 
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        var scopeMock = new Mock<IServiceScope>();
-        var loggerMock = new Mock<ILogger<PendingPaymentCleanupService>>();
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        var scope = Substitute.For<IServiceScope>();
+        var logger = Substitute.For<ILogger<PendingPaymentCleanupService>>();
 
-        scopeMock.Setup(s => s.ServiceProvider).Returns(serviceProviderMock.Object);
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(IRentalOrderRepository))).Returns(rentalOrderRepoMock.Object);
-        serviceProviderMock.Setup(sp => sp.CreateScope()).Returns(scopeMock.Object);
+        rentalOrderRepo.When(x => x.RemoveRange(Arg.Any<IEnumerable<RentalOrder>>())).Do(_ => { });
+        rentalOrderRepo.SaveChangesAsync().Returns(0);
 
-        var service = new PendingPaymentCleanupService(serviceProviderMock.Object, loggerMock.Object);
+        scope.ServiceProvider.Returns(serviceProvider);
+        serviceProvider.GetService(typeof(IRentalOrderRepository)).Returns(rentalOrderRepo);
+        serviceProvider.CreateScope().Returns(scope);
+
+        var service = new PendingPaymentCleanupService(serviceProvider, logger);
 
         using var cts = new CancellationTokenSource();
-        cts.CancelAfter(1200);
+        cts.CancelAfter(1200); // 1.2 seconds, enough for one loop
 
+        // Act
         await service.StartAsync(cts.Token);
 
-        rentalOrderRepoMock.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<RentalOrder>>()), Times.AtLeastOnce);
-        rentalOrderRepoMock.Verify(r => r.SaveChangesAsync(), Times.AtLeastOnce);
+        // Assert
+        rentalOrderRepo.Received().RemoveRange(Arg.Is<IEnumerable<RentalOrder>>(x => x.Contains(expiredOrder)));
+        await rentalOrderRepo.Received().SaveChangesAsync();
     }
 }

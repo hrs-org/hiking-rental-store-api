@@ -32,7 +32,8 @@ public class RentalOrderControllerTests
         _service.GetAsync(1).Returns(order);
         var result = await _controller.GetById(1);
         var okResult = result.Result as OkObjectResult;
-        okResult.Should().NotBeNull();
+        if (okResult == null)
+            throw new Exception("Expected OkObjectResult but got null");
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(order);
     }
@@ -236,7 +237,7 @@ public class RentalOrderControllerTests
         await _service.Received(1).DeletePendingPaymentAsync(123);
         var okResult = result as OkObjectResult;
         okResult.Should().NotBeNull();
-        var apiResponse = okResult.Value as dynamic;
+        var apiResponse = okResult!.Value as dynamic;
         ((string)apiResponse.Message!).Should().Be("Pending payment order deleted successfully");
     }
 }
