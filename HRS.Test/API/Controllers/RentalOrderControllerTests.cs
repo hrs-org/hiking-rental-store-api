@@ -225,4 +225,18 @@ public class RentalOrderControllerTests
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
         ((string)apiResponse.Message!).Should().Be("Order closed successfully");
     }
+
+    [Fact]
+    public async Task DeletePendingPayment_CallsServiceAndReturnsOk()
+    {
+        _service.DeletePendingPaymentAsync(Arg.Any<int>()).Returns(Task.CompletedTask);
+
+        var result = await _controller.DeletePendingPayment(123);
+
+        await _service.Received(1).DeletePendingPaymentAsync(123);
+        var okResult = result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((string)apiResponse.Message!).Should().Be("Pending payment order deleted successfully");
+    }
 }

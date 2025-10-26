@@ -693,4 +693,33 @@ public class RentalOrderServiceTests
         _rentalOrderRepository.GetByIdWithDetailsAsync(60).Returns(order);
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ReturnAsync(60, dto));
     }
+
+    [Fact]
+    public async Task DeletePendingPaymentAsync_WhenOrderIsPendingPayment_DeletesOrder()
+    {
+        var order = new RentalOrder { Id = 1, Status = RentalStatus.PendingPayment };
+        _rentalOrderRepository.GetByIdAsync(1).Returns(order);
+
+        await _service.DeletePendingPaymentAsync(1);
+
+        _rentalOrderRepository.Received(1).Remove(order);
+        await _rentalOrderRepository.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task DeletePendingPaymentAsync_WhenOrderNotFound_ThrowsKeyNotFoundException()
+    {
+        _rentalOrderRepository.GetByIdAsync(1).Returns((RentalOrder)null!);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.DeletePendingPaymentAsync(1));
+    }
+
+    [Fact]
+    public async Task DeletePendingPaymentAsync_WhenOrderNotPendingPayment_ThrowsInvalidOperationException()
+    {
+        var order = new RentalOrder { Id = 1, Status = RentalStatus.Booked };
+        _rentalOrderRepository.GetByIdAsync(1).Returns(order);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.DeletePendingPaymentAsync(1));
+    }
 }
