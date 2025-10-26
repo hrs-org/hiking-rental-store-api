@@ -138,6 +138,8 @@ builder.Services.AddCors(options =>
     );
 });
 
+builder.Services.AddHostedService<PendingPaymentCleanupService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -615,4 +615,16 @@ public class RentalOrderService : IRentalOrderService
             }
         }
     }
+
+    public async Task DeletePendingPaymentAsync(int id)
+    {
+        var order = await _rentalOrderRepository.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException(OrderNotFound);
+
+        if (order.Status != RentalStatus.PendingPayment)
+            throw new InvalidOperationException("Only pending payment orders can be deleted.");
+
+        _rentalOrderRepository.Remove(order);
+        await _rentalOrderRepository.SaveChangesAsync();
+    }
 }
