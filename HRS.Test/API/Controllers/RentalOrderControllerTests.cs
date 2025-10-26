@@ -236,8 +236,11 @@ public class RentalOrderControllerTests
 
         await _service.Received(1).DeletePendingPaymentAsync(123);
         var okResult = result as OkObjectResult;
-        okResult.Should().NotBeNull();
-        var apiResponse = okResult!.Value as dynamic;
+        if (okResult is null)
+            throw new Exception("Expected OkObjectResult but got null");
+        var apiResponse = okResult.Value as dynamic;
+        if (apiResponse is null)
+            throw new Exception("Expected apiResponse but got null");
         ((string)apiResponse.Message!).Should().Be("Pending payment order deleted successfully");
     }
 }

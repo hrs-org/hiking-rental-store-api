@@ -41,7 +41,12 @@ public class PendingPaymentCleanupServiceTests
 
         scope.ServiceProvider.Returns(serviceProvider);
         serviceProvider.GetService(typeof(IRentalOrderRepository)).Returns(rentalOrderRepo);
-        serviceProvider.CreateScope().Returns(scope);
+
+        // Mock IServiceScopeFactory
+        var scopeFactory = Substitute.For<IServiceScopeFactory>();
+        scopeFactory.CreateScope().Returns(scope);
+        serviceProvider.GetService(typeof(IServiceScopeFactory)).Returns(scopeFactory);
+        serviceProvider.CreateScope().Returns(scope); // for compatibility if used
 
         var service = new PendingPaymentCleanupService(serviceProvider, logger);
 
