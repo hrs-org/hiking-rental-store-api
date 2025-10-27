@@ -63,7 +63,7 @@ public class ItemMaintenanceService : IItemMaintenanceService
             item.UpdatedById = user.Id;
 
             _itemMaintenanceRepository.Remove(record);
-            
+
             var response = _mapper.Map<ItemMaintenanceResponseDto>(record);
             response.QuantityFixed = request.QuantityFixed;
 
