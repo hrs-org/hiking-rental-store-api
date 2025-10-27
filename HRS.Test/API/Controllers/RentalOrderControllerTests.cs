@@ -159,13 +159,13 @@ public class RentalOrderControllerTests
             Channel = null!,
             PaymentType = null!
         };
-        _service.ApproveAsync(1).Returns(response);
+        _service.CancelAsync(1).Returns(response);
         var result = await _controller.CancelOrder(1);
         var okResult = result.Result as OkObjectResult;
         okResult.Should().NotBeNull();
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
-        ((string)apiResponse.Message!).Should().Be("Order approved successfully");
+        ((string)apiResponse.Message!).Should().Be("Order cancelled successfully");
     }
 
     [Fact]
@@ -224,5 +224,27 @@ public class RentalOrderControllerTests
         var apiResponse = okResult.Value as dynamic;
         ((RentalOrderResponseDto)apiResponse?.Data!).Should().BeEquivalentTo(response);
         ((string)apiResponse.Message!).Should().Be("Order closed successfully");
+    }
+
+    [Fact]
+    public async Task GetByCustomerId_ReturnsOkWithOrders()
+    {
+        // Arrange
+        var customerId = 1;
+        var orders = new List<RentalOrderResponseDto>
+        {
+            new() { Id = 1, Status = "pending", Channel = "online", PaymentType = "credit card"  },
+            new() { Id = 2, Status = "booked", Channel =  "online", PaymentType = "credit card" }
+        };
+        _service.GetByCustomer(customerId).Returns(orders);
+
+        // Act
+        var result = await _controller.GetByCustomerId(customerId);
+
+        // Assert
+        var okResult = result.Result as OkObjectResult;
+        okResult.Should().NotBeNull();
+        var apiResponse = okResult.Value as dynamic;
+        ((IEnumerable<RentalOrderResponseDto>)apiResponse?.Data!).Should().BeEquivalentTo(orders);
     }
 }
