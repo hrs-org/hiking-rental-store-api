@@ -82,7 +82,7 @@ public class RentalOrderController : ControllerBase
     [Authorize(Roles = "Employee,Manager,Admin")]
     public async Task<ActionResult<RentalOrderResponseDto>> CancelOrder(int id)
     {
-        var result = await _rentalOrderService.ApproveAsync(id);
+        var result = await _rentalOrderService.CancelAsync(id);
         return Ok(ApiResponse<RentalOrderResponseDto>.OkResponse(result, "Order approved successfully"));
     }
 
