@@ -10,10 +10,10 @@ public class PackageRateRepository : CrudRepository<PackageRate>, IPackageRateRe
     {
     }
 
-    public async Task<IEnumerable<PackageRate>> GetRatesByPackageIdAsync(int packageId)
+    public async Task<IEnumerable<PackageRate>> GetRatesByPackageIdAsync(int packageId, bool activeOnly = true)
     {
         return await _db.PackageRates
-            .Where(r => r.PackageId == packageId && r.IsActive)
+            .Where(r => r.PackageId == packageId && (!activeOnly || r.IsActive))
             .OrderBy(r => r.MinDays)
             .ToListAsync();
     }
