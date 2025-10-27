@@ -20,14 +20,9 @@ public class ItemRateRepository : CrudRepository<ItemRate>, IItemRateRepository
 
     public async Task<ItemRate?> GetApplicableRateAsync(int itemId, int rentalDays)
     {
-        var applicableRates = await _db.ItemRates
+        return await _db.ItemRates
             .Where(r => r.ItemId == itemId && r.IsActive && r.MinDays <= rentalDays)
             .OrderByDescending(r => r.MinDays)
-            .ToListAsync();
-
-        if (applicableRates.Count > 0)
-            return applicableRates[0];
-
-        return null;
+            .FirstOrDefaultAsync();
     }
 }
