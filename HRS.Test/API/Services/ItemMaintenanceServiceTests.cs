@@ -6,6 +6,7 @@ using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore.Storage;
 using NSubstitute;
 
 namespace HRS.Test.API.Services;
@@ -62,21 +63,32 @@ public class ItemMaintenanceServiceTests
     public async Task MarkAsFixedAsync_WhenValid_UpdatesRecordAndReturnsDto()
     {
         var user = new User { Id = 10 };
-        var record = new ItemMaintenance { Id = 1, Type = ItemMaintenanceType.Repair, Quantity = 5 };
+        var item = new Item { Id = 5, Quantity = 95 };
+        var record = new ItemMaintenance { Id = 1, ItemId = 5, Type = ItemMaintenanceType.Repair, Quantity = 5 };
         var request = new ItemMaintenanceRequestDto { Id = 1, QuantityFixed = 3, Remarks = "Fixed" };
-        var dto = new ItemMaintenanceResponseDto { Id = 1 };
+        var dto = new ItemMaintenanceResponseDto { Id = 1, QuantityFixed = 3 };
+        
         _userContextService.GetUserAsync().Returns(user);
         _itemMaintenanceRepository.GetByIdAsync(1).Returns(record);
+        _itemRepository.GetByIdAsync(5).Returns(item);
         _mapper.Map<ItemMaintenanceResponseDto>(record).Returns(dto);
+        var mockTransaction = Substitute.For<IDbContextTransaction>();
+        _itemMaintenanceRepository.BeginTransactionAsync().Returns(mockTransaction);
 
         var result = await _service.MarkAsFixedAsync(request);
 
-        record.Type.Should().Be(ItemMaintenanceType.Fixed);
-        record.Remarks.Should().Be("Fixed");
-        record.UpdatedById.Should().Be(user.Id);
-        _itemMaintenanceRepository.Received(1).Update(record);
+        await _itemRepository.Received(1).GetByIdAsync(5);
+        
+        item.UpdatedById.Should().Be(user.Id);
+        item.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        
+        _itemMaintenanceRepository.Received(1).Remove(record);
+        
         await _itemMaintenanceRepository.Received(1).SaveChangesAsync();
+        await mockTransaction.Received(1).CommitAsync(Arg.Any<CancellationToken>());
+        
         result.Should().BeEquivalentTo(dto);
+        result.QuantityFixed.Should().Be(3);
     }
 
     [Fact]
@@ -84,6 +96,9 @@ public class ItemMaintenanceServiceTests
     {
         var request = new ItemMaintenanceRequestDto { Id = 1, QuantityFixed = 1 };
         _itemMaintenanceRepository.GetByIdAsync(1).Returns((ItemMaintenance)null!);
+        var mockTransaction = Substitute.For<IDbContextTransaction>();
+        _itemMaintenanceRepository.BeginTransactionAsync().Returns(mockTransaction);
+        
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.MarkAsFixedAsync(request));
     }
 
@@ -91,10 +106,13 @@ public class ItemMaintenanceServiceTests
     public async Task MarkAsFixedAsync_WhenTypeNotRepair_ThrowsInvalidOperationException()
     {
         var user = new User { Id = 10 };
-        var record = new ItemMaintenance { Id = 1, Type = ItemMaintenanceType.Fixed, Quantity = 5 };
+        var record = new ItemMaintenance { Id = 1, Type = ItemMaintenanceType.Broken, Quantity = 5 };
         var request = new ItemMaintenanceRequestDto { Id = 1, QuantityFixed = 1 };
         _userContextService.GetUserAsync().Returns(user);
         _itemMaintenanceRepository.GetByIdAsync(1).Returns(record);
+        var mockTransaction = Substitute.For<IDbContextTransaction>();
+        _itemMaintenanceRepository.BeginTransactionAsync().Returns(mockTransaction);
+        
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.MarkAsFixedAsync(request));
     }
 
@@ -109,6 +127,9 @@ public class ItemMaintenanceServiceTests
         var request = new ItemMaintenanceRequestDto { Id = 1, QuantityFixed = quantityFixed };
         _userContextService.GetUserAsync().Returns(user);
         _itemMaintenanceRepository.GetByIdAsync(1).Returns(record);
+        var mockTransaction = Substitute.For<IDbContextTransaction>();
+        _itemMaintenanceRepository.BeginTransactionAsync().Returns(mockTransaction);
+        
         await Assert.ThrowsAsync<ArgumentException>(() => _service.MarkAsFixedAsync(request));
     }
 }

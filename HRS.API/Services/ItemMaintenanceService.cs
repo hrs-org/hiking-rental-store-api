@@ -43,24 +43,39 @@ public class ItemMaintenanceService : IItemMaintenanceService
     {
         var user = await _userContextService.GetUserAsync();
 
-        var record = await _itemMaintenanceRepository.GetByIdAsync(request.Id)
-                     ?? throw new KeyNotFoundException("Maintenance record not found.");
+        await using var tx = await _itemMaintenanceRepository.BeginTransactionAsync();
 
-        if (record.Type != ItemMaintenanceType.Repair)
-            throw new InvalidOperationException("Only 'Repair' maintenance can be marked as fixed.");
+        try
+        {
+            var record = await _itemMaintenanceRepository.GetByIdAsync(request.Id)
+                         ?? throw new KeyNotFoundException("Maintenance record not found.");
 
-        if (request.QuantityFixed <= 0 || request.QuantityFixed > record.Quantity)
-            throw new ArgumentException("Invalid quantity to fix.");
+            if (record.Type != ItemMaintenanceType.Repair)
+                throw new InvalidOperationException("Only 'Repair' maintenance can be marked as fixed.");
 
-        // Mark as fixed
-        record.Type = ItemMaintenanceType.Fixed;
-        record.Remarks = request.Remarks ?? $"Marked as fixed on {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC";
-        record.UpdatedAt = DateTime.UtcNow;
-        record.UpdatedById = user.Id;
+            if (request.QuantityFixed <= 0 || request.QuantityFixed > record.Quantity)
+                throw new ArgumentException("Invalid quantity to fix.");
 
-        _itemMaintenanceRepository.Update(record);
-        await _itemMaintenanceRepository.SaveChangesAsync();
+            var item = await _itemRepository.GetByIdAsync(record.ItemId)
+                       ?? throw new KeyNotFoundException("Item not found.");
 
-        return _mapper.Map<ItemMaintenanceResponseDto>(record);
+            item.UpdatedAt = DateTime.UtcNow;
+            item.UpdatedById = user.Id;
+
+            _itemMaintenanceRepository.Remove(record);
+            
+            var response = _mapper.Map<ItemMaintenanceResponseDto>(record);
+            response.QuantityFixed = request.QuantityFixed;
+
+            await _itemMaintenanceRepository.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            return response;
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 }
