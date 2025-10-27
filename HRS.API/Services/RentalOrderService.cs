@@ -500,6 +500,20 @@ public class RentalOrderService : IRentalOrderService
         return _mapper.Map<RentalOrderResponseDto>(order);
     }
 
+    private async Task AddItemMaintenanceRecordAsync(int itemId, int orderId, ItemMaintenanceType type, int quantity, int userId, string remarks)
+    {
+        await _itemMaintenanceRepository.AddAsync(new ItemMaintenance
+        {
+            ItemId = itemId,
+            RentalOrderId = orderId,
+            Type = type,
+            Quantity = quantity,
+            CreatedById = userId,
+            CreatedAt = DateTime.UtcNow,
+            Remarks = remarks
+        });
+    }
+
     private async Task HandleMaintenanceAsync(int? itemId, int orderId, object dto, int userId)
     {
         if (itemId == null || itemId <= 0) return;
@@ -536,16 +550,7 @@ public class RentalOrderService : IRentalOrderService
         // --- REPAIR ---
         if (repairQty > 0)
         {
-            await _itemMaintenanceRepository.AddAsync(new ItemMaintenance
-            {
-                ItemId = item.Id,
-                RentalOrderId = orderId,
-                Type = ItemMaintenanceType.Repair,
-                Quantity = repairQty,
-                CreatedById = userId,
-                CreatedAt = DateTime.UtcNow,
-                Remarks = "Auto-generated repair record on return"
-            });
+            await AddItemMaintenanceRecordAsync(item.Id, orderId, ItemMaintenanceType.Repair, repairQty, userId, "Auto-generated repair record on return");
         }
 
         // --- BROKEN AND LOST ---
@@ -554,30 +559,12 @@ public class RentalOrderService : IRentalOrderService
         {
             if (damagedQty > 0)
             {
-                await _itemMaintenanceRepository.AddAsync(new ItemMaintenance
-                {
-                    ItemId = item.Id,
-                    RentalOrderId = orderId,
-                    Type = ItemMaintenanceType.Broken,
-                    Quantity = damagedQty,
-                    CreatedById = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    Remarks = "Auto-generated broken record on return"
-                });
+                await AddItemMaintenanceRecordAsync(item.Id, orderId, ItemMaintenanceType.Broken, damagedQty, userId, "Auto-generated broken record on return");
             }
 
             if (lostQty > 0)
             {
-                await _itemMaintenanceRepository.AddAsync(new ItemMaintenance
-                {
-                    ItemId = item.Id,
-                    RentalOrderId = orderId,
-                    Type = ItemMaintenanceType.Lost,
-                    Quantity = lostQty,
-                    CreatedById = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    Remarks = "Auto-generated lost record on return"
-                });
+                await AddItemMaintenanceRecordAsync(item.Id, orderId, ItemMaintenanceType.Lost, lostQty, userId, "Auto-generated lost record on return");
             }
 
             // Decrease item quantity permanently
