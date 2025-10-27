@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading;
 using System.Threading.Tasks;
 using HRS.API.Services;
 using HRS.Domain.Entities;
@@ -18,7 +17,7 @@ namespace HRS.Test.API.Services;
 public class PendingPaymentCleanupServiceTests
 {
     [Fact]
-    public async Task ExecuteAsync_RemovesExpiredPendingPaymentOrders()
+    public async Task CleanupPendingPayments_RemovesExpiredPendingPaymentOrders()
     {
         // Arrange
         var expiredOrder = new RentalOrder
@@ -26,7 +25,12 @@ public class PendingPaymentCleanupServiceTests
             Status = RentalStatus.PendingPayment,
             CreatedAt = DateTime.UtcNow.AddMinutes(-2)
         };
-        var orders = new List<RentalOrder> { expiredOrder };
+        var notExpiredOrder = new RentalOrder
+        {
+            Status = RentalStatus.PendingPayment,
+            CreatedAt = DateTime.UtcNow
+        };
+        var orders = new List<RentalOrder> { expiredOrder, notExpiredOrder };
 
         var rentalOrderRepo = Substitute.For<IRentalOrderRepository>();
         rentalOrderRepo.FindAsync(Arg.Any<Expression<Func<RentalOrder, bool>>>())
@@ -46,18 +50,14 @@ public class PendingPaymentCleanupServiceTests
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         scopeFactory.CreateScope().Returns(scope);
         serviceProvider.GetService(typeof(IServiceScopeFactory)).Returns(scopeFactory);
-        serviceProvider.CreateScope().Returns(scope); // for compatibility if used
 
         var service = new PendingPaymentCleanupService(serviceProvider, logger);
 
-        using var cts = new CancellationTokenSource();
-        cts.CancelAfter(1200); // 1.2 seconds, enough for one loop
-
         // Act
-        await service.StartAsync(cts.Token);
+        await service.CleanupPendingPayments();
 
         // Assert
-        rentalOrderRepo.Received().RemoveRange(Arg.Is<IEnumerable<RentalOrder>>(x => x.Contains(expiredOrder)));
+        rentalOrderRepo.Received().RemoveRange(Arg.Is<IEnumerable<RentalOrder>>(x => x.Contains(expiredOrder) && !x.Contains(notExpiredOrder)));
         await rentalOrderRepo.Received().SaveChangesAsync();
     }
 }

@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Hangfire;
+using Hangfire.MySql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -138,7 +140,13 @@ builder.Services.AddCors(options =>
     );
 });
 
-builder.Services.AddHostedService<PendingPaymentCleanupService>();
+builder.Services.AddHangfire(config =>
+    config.UseStorage(new MySqlStorage(
+        connectionString,
+        new Hangfire.MySql.MySqlStorageOptions()
+    ))
+);
+builder.Services.AddHangfireServer();
 
 var app = builder.Build();
 
@@ -153,6 +161,14 @@ app.UseCors("AllowWebClient");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseHangfireDashboard();
+
 app.MapControllers();
+
+RecurringJob.AddOrUpdate<PendingPaymentCleanupService>(
+    "PendingPaymentCleanup",
+    service => service.CleanupPendingPayments(),
+    "* * * * * *"
+);
 
 app.Run();

@@ -42,7 +42,11 @@ public class RentalOrderProfile : Profile
             .ForMember(dest => dest.Channel, opt => opt.MapFrom(src => src.Channel.ToString()))
             .ForMember(dest => dest.PaymentType, opt => opt.MapFrom(src => src.PaymentType.ToString()))
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.RentalOrderItems))
-            .ForMember(dest => dest.Packages, opt => opt.MapFrom(src => src.RentalOrderPackages));
+            .ForMember(dest => dest.Packages, opt => opt.MapFrom(src => src.RentalOrderPackages))
+            .ForMember(dest => dest.PendingSeconds,
+                opt => opt.MapFrom(src => src.Status == HRS.Domain.Enums.RentalStatus.PendingPayment
+                    ? (int?)Math.Max(0, (int)(src.CreatedAt.AddMinutes(1) - DateTime.UtcNow).TotalSeconds)
+                    : null));
 
         CreateMap<RentalOrderItem, RentalOrderItemDto>()
             .ForMember(dest => dest.ItemId, opt => opt.MapFrom(src => src.ItemId))
@@ -67,6 +71,10 @@ public class RentalOrderProfile : Profile
             .ForMember(dest => dest.CustomerName,
                 opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FirstName : src.GuestName))
             .ForMember(dest => dest.CustomerPhone,
-                opt => opt.MapFrom(src => src.Customer != null ? "-" : src.GuestPhone));
+                opt => opt.MapFrom(src => src.Customer != null ? "-" : src.GuestPhone))
+            .ForMember(dest => dest.PendingSeconds,
+                opt => opt.MapFrom(src => src.Status == HRS.Domain.Enums.RentalStatus.PendingPayment
+                    ? (int?)Math.Max(0, (int)(src.CreatedAt.AddMinutes(1) - DateTime.UtcNow).TotalSeconds)
+                    : null));
     }
 }

@@ -51,6 +51,7 @@ public class RentalOrderResponseDto
     public DateTime? ApprovedAt { get; set; }
     public DateTime? ReturnedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
+    public int? PendingSeconds { get; set; }
 
     public ICollection<RentalOrderItemDto> Items { get; set; } = [];
     public ICollection<RentalOrderPackageDto> Packages { get; set; } = [];
@@ -74,4 +75,5 @@ public class RentalOrderListDto
     public DateTime? ApprovedAt { get; set; }
     public DateTime? ReturnedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
+    public int? PendingSeconds { get; set; }
 }
