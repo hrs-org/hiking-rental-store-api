@@ -42,7 +42,10 @@ public class ItemMaintenanceProfileTests
         dto.Should().NotBeNull();
         dto.Id.Should().Be(1);
         dto.ItemId.Should().Be(2);
+        dto.RentalOrderId.Should().Be(3);
         dto.Type.Should().Be(ItemMaintenanceType.Broken.ToString());
-        dto.Remarks.Should().BeNull();
+        dto.Quantity.Should().Be(5);
+        dto.QuantityFixed.Should().Be(0);
+        dto.Remarks.Should().Be("Broken zipper");
     }
 }
