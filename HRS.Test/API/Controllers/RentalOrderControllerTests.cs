@@ -159,7 +159,7 @@ public class RentalOrderControllerTests
             Channel = null!,
             PaymentType = null!
         };
-        _service.ApproveAsync(1).Returns(response);
+        _service.CancelAsync(1).Returns(response);
         var result = await _controller.CancelOrder(1);
         var okResult = result.Result as OkObjectResult;
         okResult.Should().NotBeNull();
