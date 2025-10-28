@@ -28,8 +28,13 @@ public class PendingPaymentCleanupServiceTests
         var serviceProvider = Substitute.For<IServiceProvider>();
         var scope = Substitute.For<IServiceScope>();
         scope.ServiceProvider.Returns(serviceProvider);
+
+        // Mock IServiceScopeFactory
+        var scopeFactory = Substitute.For<IServiceScopeFactory>();
+        scopeFactory.CreateScope().Returns(scope);
+        serviceProvider.GetService(typeof(IServiceScopeFactory)).Returns(scopeFactory);
+
         serviceProvider.GetService(typeof(IRentalOrderRepository)).Returns(rentalOrderRepo);
-        serviceProvider.CreateScope().Returns(scope);
 
         var service = new PendingPaymentCleanupService(serviceProvider);
 
