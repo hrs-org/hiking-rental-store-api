@@ -14,6 +14,7 @@ public class CatalogItemNodeDto
     public string ItemName { get; set; } = string.Empty;
     public decimal DailyRate { get; set; }
     public int AvailableQuantity { get; set; }
+    public decimal BasePrice { get; set; }
     public ICollection<CatalogItemNodeDto> Children { get; set; } = [];
 }
 
@@ -32,5 +33,6 @@ public class CatalogPackageItemNodeDto
     public string ItemName { get; set; } = string.Empty;
     public decimal DailyRate { get; set; }
     public int AvailableQuantity { get; set; }
+    public decimal BasePrice { get; set; }
     public ICollection<CatalogItemNodeDto> Children { get; set; } = [];
 }

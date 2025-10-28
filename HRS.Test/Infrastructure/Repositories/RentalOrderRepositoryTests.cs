@@ -63,11 +63,11 @@ public class RentalOrderRepositoryTests
         Assert.Equal(1, result.Id);
         Assert.NotNull(result.RentalOrderItems);
         Assert.NotNull(result.RentalOrderPackages);
-        Assert.Equal(1, result.RentalOrderItems.First().Item.Id);
-        Assert.Equal(1, result.RentalOrderItems.First().ItemRate.Id);
-        Assert.Equal(1, result.RentalOrderPackages.First().Package.Id);
-        Assert.Equal(1, result.RentalOrderPackages.First().PackageRate.Id);
-        Assert.Equal(1, result.RentalOrderPackages.First().Items.First().Item.Id);
+        Assert.Equal(1, result.RentalOrderItems.First().Item?.Id);
+        Assert.Equal(1, result.RentalOrderItems.First().ItemRate?.Id);
+        Assert.Equal(1, result.RentalOrderPackages.First().Package?.Id);
+        Assert.Equal(1, result.RentalOrderPackages.First().PackageRate?.Id);
+        Assert.Equal(1, result.RentalOrderPackages.First().Items.First().Item?.Id);
     }
 
     [Fact]

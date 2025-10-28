@@ -193,7 +193,7 @@ public class PackageServiceTests
 
         // Act
         var method = typeof(PackageService).GetMethod("SyncPackageItemsAsync", BindingFlags.NonPublic | BindingFlags.Static);
-        method.Invoke(null, new object[] { package, items });
+        method?.Invoke(null, new object[] { package, items });
 
         // Assert
         package.PackageItems.Should().HaveCount(2);
