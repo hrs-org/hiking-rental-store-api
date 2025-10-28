@@ -34,5 +34,6 @@ public class CatalogPackageItemNodeDto
     public decimal DailyRate { get; set; }
     public int AvailableQuantity { get; set; }
     public decimal BasePrice { get; set; }
+    public int RentingQuantity { get; set; }
     public ICollection<CatalogItemNodeDto> Children { get; set; } = [];
 }

@@ -147,7 +147,8 @@ public class CatalogService : ICatalogService
                     DailyRate = itemRate,
                     AvailableQuantity = availableForParent,
                     BasePrice = itemBasePrice,
-                    Children = childNodes
+                    Children = childNodes,
+                    RentingQuantity = pkgItem.Quantity
                 });
             }
 
