@@ -53,13 +53,14 @@ public class CatalogService : ICatalogService
         {
             var available = await _availabilityService.GetAvailableQuantityAsync(item.Id, startDate, endDate);
             var dailyRate = await ResolveItemDailyRateAsync(item, rentalDays);
-
+            var basePrice = item.Parent != null ? item.Parent.Price : item.Price;
             return new CatalogItemNodeDto
             {
                 ItemId = item.Id,
                 ItemName = item.Name,
                 AvailableQuantity = available,
                 DailyRate = dailyRate,
+                BasePrice = basePrice,
                 Children = []
             };
         }
@@ -75,13 +76,14 @@ public class CatalogService : ICatalogService
         }
 
         var parentDailyRate = await ResolveItemDailyRateAsync(item, rentalDays);
-
+        var parentBasePrice = item.Parent != null ? item.Parent.Price : item.Price;
         return new CatalogItemNodeDto
         {
             ItemId = item.Id,
             ItemName = item.Name,
             AvailableQuantity = totalAvailable,
             DailyRate = parentDailyRate,
+            BasePrice = parentBasePrice,
             Children = childrenDtos
         };
     }
@@ -117,16 +119,16 @@ public class CatalogService : ICatalogService
                     {
                         var childAvailable = await _availabilityService.GetAvailableQuantityAsync(child.Id, startDate, endDate);
                         var childRate = await ResolveItemDailyRateAsync(child, rentalDays);
-
+                        var childBasePrice = child.Parent != null ? child.Parent.Price : child.Price;
                         childNodes.Add(new CatalogItemNodeDto
                         {
                             ItemId = child.Id,
                             ItemName = child.Name,
                             DailyRate = childRate,
                             AvailableQuantity = childAvailable,
+                            BasePrice = childBasePrice,
                             Children = []
                         });
-
                         availableForParent += childAvailable;
                     }
                 else
@@ -137,13 +139,14 @@ public class CatalogService : ICatalogService
                 minAvailablePackages = Math.Min(minAvailablePackages, possiblePackages);
 
                 var itemRate = await ResolveItemDailyRateAsync(item, rentalDays);
-
+                var itemBasePrice = item.Parent != null ? item.Parent.Price : item.Price;
                 packageItemNodes.Add(new CatalogPackageItemNodeDto
                 {
                     ItemId = item.Id,
                     ItemName = item.Name,
                     DailyRate = itemRate,
                     AvailableQuantity = availableForParent,
+                    BasePrice = itemBasePrice,
                     Children = childNodes
                 });
             }
