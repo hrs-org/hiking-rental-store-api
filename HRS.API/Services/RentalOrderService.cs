@@ -21,6 +21,7 @@ public class RentalOrderService : IRentalOrderService
     private readonly IPaymentRepository _paymentRepository;
     private readonly IRentalOrderRepository _rentalOrderRepository;
     private readonly IUserContextService _userContextService;
+    private readonly IPendingPaymentCleanupService _pendingPaymentCleanupService;
 
     public RentalOrderService(
         IMapper mapper,
@@ -32,7 +33,8 @@ public class RentalOrderService : IRentalOrderService
         IPackageRateRepository packageRateRepository,
         IAvailabilityService availabilityService,
         IItemMaintenanceRepository itemMaintenanceRepository,
-        IPaymentRepository paymentRepository)
+        IPaymentRepository paymentRepository,
+        IPendingPaymentCleanupService pendingPaymentCleanupService)
     {
         _mapper = mapper;
         _userContextService = userContextService;
@@ -44,6 +46,7 @@ public class RentalOrderService : IRentalOrderService
         _availabilityService = availabilityService;
         _itemMaintenanceRepository = itemMaintenanceRepository;
         _paymentRepository = paymentRepository;
+        _pendingPaymentCleanupService = pendingPaymentCleanupService;
     }
 
     public async Task<RentalOrderResponseDto> GetAsync(int id)
@@ -194,6 +197,11 @@ public class RentalOrderService : IRentalOrderService
 
             await _rentalOrderRepository.AddAsync(entity);
             await _rentalOrderRepository.SaveChangesAsync();
+
+            if (entity.Status == RentalStatus.PendingPayment)
+            {
+                await _pendingPaymentCleanupService.RegisterPendingPaymentCleanupAsync(entity.Id);
+            }
 
             if (entity.PaymentType == OrderPaymentType.Cash)
             {
@@ -614,17 +622,5 @@ public class RentalOrderService : IRentalOrderService
                         $"Expected {pkgItem.QuantityPerPackageSnapshot}, got {totalReturned}.");
             }
         }
-    }
-
-    public async Task DeletePendingPaymentAsync(int id)
-    {
-        var order = await _rentalOrderRepository.GetByIdAsync(id)
-            ?? throw new KeyNotFoundException(OrderNotFound);
-
-        if (order.Status != RentalStatus.PendingPayment)
-            throw new InvalidOperationException("Only pending payment orders can be deleted.");
-
-        _rentalOrderRepository.Remove(order);
-        await _rentalOrderRepository.SaveChangesAsync();
     }
 }

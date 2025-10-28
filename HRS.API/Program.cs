@@ -37,6 +37,7 @@ builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IItemMaintenanceService, ItemMaintenanceService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IPendingPaymentCleanupService, PendingPaymentCleanupService>();
 
 builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -164,11 +165,5 @@ app.UseAuthorization();
 app.UseHangfireDashboard();
 
 app.MapControllers();
-
-RecurringJob.AddOrUpdate<PendingPaymentCleanupService>(
-    "PendingPaymentCleanup",
-    service => service.CleanupPendingPayments(),
-    "* * * * * *"
-);
 
 app.Run();

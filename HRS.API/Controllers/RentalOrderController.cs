@@ -109,12 +109,4 @@ public class RentalOrderController : ControllerBase
         var result = await _rentalOrderService.CloseAsync(id);
         return Ok(ApiResponse<RentalOrderResponseDto>.OkResponse(result, "Order closed successfully"));
     }
-
-    [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Employee,Manager,Admin")]
-    public async Task<IActionResult> DeletePendingPayment(int id)
-    {
-        await _rentalOrderService.DeletePendingPaymentAsync(id);
-        return Ok(ApiResponse<string>.OkResponse(null, "Pending payment order deleted successfully"));
-    }
 }

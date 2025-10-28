@@ -1,46 +1,42 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
-using HRS.API.Services.Interfaces;
+using Hangfire;
 using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace HRS.API.Services;
 
-public class PendingPaymentCleanupService
+public interface IPendingPaymentCleanupService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<PendingPaymentCleanupService> _logger;
-    private readonly TimeSpan _pendingTimeout = TimeSpan.FromMinutes(1);
+    Task RegisterPendingPaymentCleanupAsync(int orderId);
+}
 
-    public PendingPaymentCleanupService(IServiceProvider serviceProvider, ILogger<PendingPaymentCleanupService> logger)
+public class PendingPaymentCleanupService : IPendingPaymentCleanupService
+{
+    private const int PendingTimeoutMinutes = 1;
+    private readonly IServiceProvider _serviceProvider;
+
+    public PendingPaymentCleanupService(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        _logger = logger;
     }
 
-    public async Task CleanupPendingPayments()
+    public Task RegisterPendingPaymentCleanupAsync(int orderId)
     {
-        try
+        BackgroundJob.Schedule(() => CleanupOrder(orderId), TimeSpan.FromMinutes(PendingTimeoutMinutes));
+        return Task.CompletedTask;
+    }
+
+    public async Task CleanupOrder(int orderId)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var rentalOrderRepository = scope.ServiceProvider.GetRequiredService<IRentalOrderRepository>();
+        var order = await rentalOrderRepository.GetByIdAsync(orderId);
+        if (order != null && order.Status == RentalStatus.PendingPayment)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var rentalOrderRepository = scope.ServiceProvider.GetRequiredService<IRentalOrderRepository>();
-            var now = DateTime.UtcNow;
-            var orders = await rentalOrderRepository.FindAsync(o => o.Status == RentalStatus.PendingPayment &&
-                o.CreatedAt <= now - _pendingTimeout);
-            var expiredOrders = orders.ToList();
-            if (expiredOrders.Count > 0)
-            {
-                rentalOrderRepository.RemoveRange(expiredOrders);
-                await rentalOrderRepository.SaveChangesAsync();
-                _logger.LogInformation("Deleted {Count} expired pending payment orders.", expiredOrders.Count);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while cleaning up pending payment orders.");
+            rentalOrderRepository.Remove(order);
+            await rentalOrderRepository.SaveChangesAsync();
         }
     }
 }

@@ -16,5 +16,4 @@ public interface IRentalOrderService
     Task<RentalOrderResponseDto> MarkAsRentedAsync(int id);
     Task<RentalOrderResponseDto> ReturnAsync(int id, ReturnRentalOrderRequestDto dto);
     Task<RentalOrderResponseDto> CloseAsync(int id);
-    Task DeletePendingPaymentAsync(int id);
 }

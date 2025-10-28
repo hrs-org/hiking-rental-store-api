@@ -23,8 +23,9 @@ public class RentalOrderServiceTests
     private readonly IPackageRepository _packageRepository = Substitute.For<IPackageRepository>();
     private readonly IPaymentRepository _paymentRepository = Substitute.For<IPaymentRepository>();
     private readonly IRentalOrderRepository _rentalOrderRepository = Substitute.For<IRentalOrderRepository>();
-    private readonly RentalOrderService _service;
     private readonly IUserContextService _userContextService = Substitute.For<IUserContextService>();
+    private readonly IPendingPaymentCleanupService _pendingPaymentCleanupService = Substitute.For<IPendingPaymentCleanupService>();
+    private readonly RentalOrderService _service;
 
     public RentalOrderServiceTests()
     {
@@ -38,7 +39,8 @@ public class RentalOrderServiceTests
             _packageRateRepository,
             _availabilityService,
             _itemMaintenanceRepository,
-            _paymentRepository
+            _paymentRepository,
+            _pendingPaymentCleanupService
         );
     }
 
@@ -692,34 +694,5 @@ public class RentalOrderServiceTests
         _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
         _rentalOrderRepository.GetByIdWithDetailsAsync(60).Returns(order);
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ReturnAsync(60, dto));
-    }
-
-    [Fact]
-    public async Task DeletePendingPaymentAsync_WhenOrderIsPendingPayment_DeletesOrder()
-    {
-        var order = new RentalOrder { Id = 1, Status = RentalStatus.PendingPayment };
-        _rentalOrderRepository.GetByIdAsync(1).Returns(order);
-
-        await _service.DeletePendingPaymentAsync(1);
-
-        _rentalOrderRepository.Received(1).Remove(order);
-        await _rentalOrderRepository.Received(1).SaveChangesAsync();
-    }
-
-    [Fact]
-    public async Task DeletePendingPaymentAsync_WhenOrderNotFound_ThrowsKeyNotFoundException()
-    {
-        _rentalOrderRepository.GetByIdAsync(1).Returns((RentalOrder)null!);
-
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.DeletePendingPaymentAsync(1));
-    }
-
-    [Fact]
-    public async Task DeletePendingPaymentAsync_WhenOrderNotPendingPayment_ThrowsInvalidOperationException()
-    {
-        var order = new RentalOrder { Id = 1, Status = RentalStatus.Booked };
-        _rentalOrderRepository.GetByIdAsync(1).Returns(order);
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.DeletePendingPaymentAsync(1));
     }
 }
