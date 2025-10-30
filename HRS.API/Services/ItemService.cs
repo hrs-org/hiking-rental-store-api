@@ -51,7 +51,7 @@ public class ItemService : IItemService
 
             if (entity.Children.Count > 0)
             {
-                entity.Quantity = entity.Children.Count > 0 ? entity.Children.Sum(c => c.Quantity) : 0;
+                entity.Quantity = entity.Children.Count > 0 ? entity.Children.Sum(c => c.Quantity) : entity.Quantity;
                 foreach (var child in entity.Children)
                 {
                     child.CreatedById = user.Id;
@@ -103,6 +103,7 @@ public class ItemService : IItemService
             item.Name = dto.Name;
             item.Description = dto.Description;
             item.Price = dto.Price;
+            item.Quantity = dto.Quantity;
             item.UpdatedAt = DateTime.UtcNow;
             item.UpdatedById = user.Id;
 
@@ -148,7 +149,7 @@ public class ItemService : IItemService
             }
 
             // Recalculate parent quantity
-            item.Quantity = item.Children.Count > 0 ? item.Children.Sum(c => c.Quantity) : 0;
+            item.Quantity = item.Children.Count > 0 ? item.Children.Sum(c => c.Quantity) : item.Quantity;
 
             await SyncItemRatesAsync(item, dto.Rates, user.Id);
 
@@ -179,6 +180,12 @@ public class ItemService : IItemService
             throw new InvalidOperationException("No applicable rate found for this item");
 
         return rate.DailyRate;
+    }
+
+    public async Task<IEnumerable<ItemResponseDto>> SearchItemsAsync(string? keyword)
+    {
+        var items = await _itemRepository.SearchAsync(keyword);
+        return _mapper.Map<IEnumerable<ItemResponseDto>>(items);
     }
 
     private async Task SyncItemRatesAsync(Item item, ICollection<ItemRateRequestDto>? rates, int userId)
@@ -229,11 +236,5 @@ public class ItemService : IItemService
 
         if (toRemove.Count > 0)
             _itemRateRepository.RemoveRange(toRemove);
-    }
-
-    public async Task<IEnumerable<ItemResponseDto>> SearchItemsAsync(string? keyword)
-    {
-        var items = await _itemRepository.SearchAsync(keyword);
-        return _mapper.Map<IEnumerable<ItemResponseDto>>(items);
     }
 }

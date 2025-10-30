@@ -8,4 +8,6 @@ public interface IRentalOrderRepository : ICrudRepository<RentalOrder>
     Task<RentalOrder?> GetByIdWithDetailsAsync(int id);
     Task<ICollection<RentalOrder>> GetByStatusesWithDetailsAsync(RentalStatus[] statuses);
     Task<RentalOrder?> GetByStripeSessionIdAsync(string sessionId);
+    Task<ICollection<RentalOrder>> GetByCustomerIdAsync(int customerId);
+    Task<IEnumerable<RentalOrder>> GetPendingPaymentOrdersOlderThanAsync(DateTime olderThan);
 }

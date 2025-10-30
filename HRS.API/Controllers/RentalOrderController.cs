@@ -82,8 +82,8 @@ public class RentalOrderController : ControllerBase
     [Authorize(Roles = "Employee,Manager,Admin")]
     public async Task<ActionResult<RentalOrderResponseDto>> CancelOrder(int id)
     {
-        var result = await _rentalOrderService.ApproveAsync(id);
-        return Ok(ApiResponse<RentalOrderResponseDto>.OkResponse(result, "Order approved successfully"));
+        var result = await _rentalOrderService.CancelAsync(id);
+        return Ok(ApiResponse<RentalOrderResponseDto>.OkResponse(result, "Order cancelled successfully"));
     }
 
     [HttpPut("{id:int}/confirm")]
@@ -108,5 +108,12 @@ public class RentalOrderController : ControllerBase
     {
         var result = await _rentalOrderService.CloseAsync(id);
         return Ok(ApiResponse<RentalOrderResponseDto>.OkResponse(result, "Order closed successfully"));
+    }
+    [HttpGet("customer/{id:int}")]
+    [Authorize]
+    public async Task<ActionResult<RentalOrderResponseDto>> GetByCustomerId(int id)
+    {
+        var result = await _rentalOrderService.GetByCustomer(id);
+        return Ok(ApiResponse<List<RentalOrderResponseDto>>.OkResponse(result.ToList()));
     }
 }
