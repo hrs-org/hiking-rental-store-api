@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Hangfire;
+using Hangfire.MySql;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IUserService, UserService>();
@@ -34,6 +36,7 @@ builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IItemMaintenanceService, ItemMaintenanceService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IPendingPaymentCleanupService, PendingPaymentCleanupService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
@@ -138,6 +141,14 @@ builder.Services.AddCors(options =>
     );
 });
 
+builder.Services.AddHangfire(config =>
+    config.UseStorage(new MySqlStorage(
+        connectionString,
+        new Hangfire.MySql.MySqlStorageOptions()
+    ))
+);
+builder.Services.AddHangfireServer();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -150,6 +161,8 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowWebClient");
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseHangfireDashboard();
 
 app.MapControllers();
 

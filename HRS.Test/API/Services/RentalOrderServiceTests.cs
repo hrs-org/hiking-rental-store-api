@@ -23,8 +23,9 @@ public class RentalOrderServiceTests
     private readonly IPackageRepository _packageRepository = Substitute.For<IPackageRepository>();
     private readonly IPaymentRepository _paymentRepository = Substitute.For<IPaymentRepository>();
     private readonly IRentalOrderRepository _rentalOrderRepository = Substitute.For<IRentalOrderRepository>();
-    private readonly RentalOrderService _service;
     private readonly IUserContextService _userContextService = Substitute.For<IUserContextService>();
+    private readonly IPendingPaymentCleanupService _pendingPaymentCleanupService = Substitute.For<IPendingPaymentCleanupService>();
+    private readonly RentalOrderService _service;
 
     public RentalOrderServiceTests()
     {
@@ -38,7 +39,8 @@ public class RentalOrderServiceTests
             _packageRateRepository,
             _availabilityService,
             _itemMaintenanceRepository,
-            _paymentRepository
+            _paymentRepository,
+            _pendingPaymentCleanupService
         );
     }
 

@@ -14,4 +14,5 @@ public interface IAppConfiguration
     public string JwtAudience { get; set; }
     public string StripeApiKey { get; set; }
     public string PaymentReturnPath { get; set; }
+    int PendingPaymentCleanupTimeoutMinutes { get; set; }
 }
