@@ -121,4 +121,55 @@ public class RentalOrderRepositoryTests
         var notFound = await repo.GetByStripeSessionIdAsync("not_found");
         Assert.Null(notFound);
     }
+
+    [Fact]
+    public async Task GetPendingPaymentOrdersOlderThanAsync_ReturnsCorrectOrders()
+    {
+        // Arrange
+        var dbName = $"RentalOrderRepo_GetPendingPaymentOrdersOlderThan_{Guid.NewGuid()}";
+        using var dbContext = CreateDbContext(dbName);
+        var repo = new RentalOrderRepository(dbContext);
+        var olderThan = DateTime.UtcNow.AddDays(-1);
+
+        var order1 = new RentalOrder { Id = 1, Status = RentalStatus.PendingPayment, CreatedAt = DateTime.UtcNow.AddDays(-2) };
+        var order2 = new RentalOrder { Id = 2, Status = RentalStatus.PendingPayment, CreatedAt = DateTime.UtcNow.AddDays(-3) };
+        var order3 = new RentalOrder { Id = 3, Status = RentalStatus.Completed, CreatedAt = DateTime.UtcNow.AddDays(-4) };
+
+        dbContext.RentalOrders.AddRange(order1, order2, order3);
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await repo.GetPendingPaymentOrdersOlderThanAsync(olderThan);
+
+        // Assert
+        Assert.Equal(2, result.Count());
+        Assert.Contains(result, o => o.Id == 1);
+        Assert.Contains(result, o => o.Id == 2);
+    }
+
+    [Fact]
+    public async Task GetByCustomerIdAsync_ReturnsOrdersForCustomer()
+    {
+        // Arrange
+        var dbName = $"RentalOrderRepo_GetByCustomerId_{Guid.NewGuid()}";
+        using var dbContext = CreateDbContext(dbName);
+        var repo = new RentalOrderRepository(dbContext);
+        var customer = new User { Id = 1, FirstName = "Test", LastName = "User", Email = "test@mail.com", PasswordHash = "pw" };
+
+        var order1 = new RentalOrder { Id = 1, CustomerId = 1, Customer = customer };
+        var order2 = new RentalOrder { Id = 2, CustomerId = 1, Customer = customer };
+        var order3 = new RentalOrder { Id = 3, CustomerId = 2 };
+
+        dbContext.Users.Add(customer);
+        dbContext.RentalOrders.AddRange(order1, order2, order3);
+        await dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await repo.GetByCustomerIdAsync(1);
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, o => o.Id == 1);
+        Assert.Contains(result, o => o.Id == 2);
+    }
 }

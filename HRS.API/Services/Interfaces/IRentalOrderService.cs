@@ -8,6 +8,7 @@ public interface IRentalOrderService
     Task<RentalOrderResponseDto> GetAsync(int id);
     Task<IEnumerable<RentalOrderListDto>> GetAllAsync();
     Task<IEnumerable<RentalOrderResponseDto>> GetByStasusesAsync(RentalStatus[] statuses);
+    Task<IEnumerable<RentalOrderResponseDto>> GetByCustomer(int customerId);
     Task<RentalOrderResponseDto> CreateAsync(CreateRentalOrderRequestDto dto);
     Task<RentalOrderResponseDto> ApproveAsync(int id);
     Task<RentalOrderResponseDto> CancelAsync(int id);

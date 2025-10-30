@@ -16,4 +16,11 @@ public class PaymentRepository : CrudRepository<Payment>, IPaymentRepository
             .Where(p => p.RentalOrderId == rentalOrderId)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<List<Payment>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _db.Payments
+            .Where(p => p.PaymentDate >= startDate && p.PaymentDate <= endDate)
+            .ToListAsync();
+    }
 }

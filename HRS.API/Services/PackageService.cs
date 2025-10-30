@@ -148,13 +148,14 @@ public class PackageService : IPackageService
 
     private async Task SyncPackageRatesAsync(Package package, ICollection<PackageRateRequestDto>? rates, int userId)
     {
+        var existingRates = (await _packageRateRepository.GetRatesByPackageIdAsync(package.Id, false)).ToList();
+
         if (rates == null || rates.Count == 0)
         {
             package.PackageRates.Clear();
             return;
         }
 
-        var existingRates = (await _packageRateRepository.GetRatesByPackageIdAsync(package.Id)).ToList();
 
         foreach (var dto in rates)
         {

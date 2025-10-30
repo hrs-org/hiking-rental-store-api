@@ -695,4 +695,266 @@ public class RentalOrderServiceTests
         _rentalOrderRepository.GetByIdWithDetailsAsync(60).Returns(order);
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ReturnAsync(60, dto));
     }
+
+    [Fact]
+    public async Task ReturnAsync_WhenItemHasIssues_AddsMaintenanceRecords()
+    {
+        // Arrange
+        var user = new User { Id = 1 };
+        var order = new RentalOrder
+        {
+            Id = 1,
+            Status = RentalStatus.Rented,
+            RentalOrderItems = new List<RentalOrderItem> { new() { Id = 1, Quantity = 5, ItemId = 1 } }
+        };
+        var dto = new ReturnRentalOrderRequestDto
+        {
+            Items = new List<ReturnItemConditionDto> { new() { RentalOrderItemId = 1, GoodQty = 3, RepairQty = 1, DamagedQty = 1 } }
+        };
+
+        var item = new Item { Id = 1, Quantity = 10 };
+        _itemRepository.GetByIdAsync(1).Returns(item);
+        _itemRepository.When(x => x.Update(Arg.Any<Item>())).Do(callInfo =>
+        {
+            var updatedItem = callInfo.Arg<Item>();
+            updatedItem.Quantity.Should().Be(8);
+        });
+
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.GetByIdWithDetailsAsync(1).Returns(order);
+        _itemRepository.GetByIdAsync(1).Returns(item);
+
+        // Act
+        await _service.ReturnAsync(1, dto);
+
+        // Assert
+        await _itemMaintenanceRepository.Received(2).AddAsync(Arg.Any<ItemMaintenance>());
+        _itemRepository.Received(1).Update(Arg.Is<Item>(i => i.Id == 1 && i.Quantity == 8));
+    }
+
+    [Fact]
+    public async Task ReturnAsync_WhenReturnedQuantitiesMismatch_ThrowsInvalidOperationException()
+    {
+        var user = new User { Id = 1 };
+        var order = new RentalOrder
+        {
+            Id = 1,
+            Status = RentalStatus.Rented,
+            RentalOrderItems = new List<RentalOrderItem> { new() { Id = 1, Quantity = 5, ItemId = 1 } }
+        };
+        var dto = new ReturnRentalOrderRequestDto
+        {
+            Items = new List<ReturnItemConditionDto> { new() { RentalOrderItemId = 1, GoodQty = 3, RepairQty = 1, DamagedQty = 2 } }
+        };
+
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.GetByIdWithDetailsAsync(1).Returns(order);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ReturnAsync(1, dto));
+    }
+
+    [Fact]
+    public async Task ApproveAsync_WhenOrderIsPending_ApprovesOrder_Unique()
+    {
+        var user = new User { Id = 1 };
+        var order = new RentalOrder { Id = 10, Status = RentalStatus.Pending };
+        var responseDto = new RentalOrderResponseDto
+        {
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
+        };
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
+        _rentalOrderRepository.GetByIdWithDetailsAsync(10).Returns(order);
+        _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
+        await _service.ApproveAsync(10);
+        order.Status.Should().Be(RentalStatus.Booked);
+        order.ApprovedById.Should().Be(user.Id);
+        order.ApprovedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        order.UpdatedById.Should().Be(user.Id);
+        order.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        _rentalOrderRepository.Received(1).Update(order);
+        await _rentalOrderRepository.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task ApproveAsync_WhenOrderNotPending_ThrowsInvalidOperationException_Unique()
+    {
+        var user = new User { Id = 1 };
+        var order = new RentalOrder { Id = 10, Status = RentalStatus.Booked };
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
+        _rentalOrderRepository.GetByIdWithDetailsAsync(10).Returns(order);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ApproveAsync(10));
+    }
+
+    [Fact]
+    public async Task CancelAsync_WhenOrderIsPending_CancelsOrder_Unique()
+    {
+        var user = new User { Id = 2 };
+        var order = new RentalOrder { Id = 20, Status = RentalStatus.Pending };
+        var responseDto = new RentalOrderResponseDto
+        {
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
+        };
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
+        _rentalOrderRepository.GetByIdWithDetailsAsync(20).Returns(order);
+        _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
+        await _service.CancelAsync(20);
+        order.Status.Should().Be(RentalStatus.Cancelled);
+        order.ApprovedById.Should().Be(user.Id);
+        order.ApprovedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        order.UpdatedById.Should().Be(user.Id);
+        order.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        _rentalOrderRepository.Received(1).Update(order);
+        await _rentalOrderRepository.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task CancelAsync_WhenOrderNotPending_ThrowsInvalidOperationException_Unique()
+    {
+        var user = new User { Id = 2 };
+        var order = new RentalOrder { Id = 20, Status = RentalStatus.Booked };
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
+        _rentalOrderRepository.GetByIdWithDetailsAsync(20).Returns(order);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CancelAsync(20));
+    }
+
+    [Fact]
+    public async Task MarkAsRentedAsync_WhenOrderIsBooked_MarksAsRented_Unique()
+    {
+        var user = new User { Id = 3 };
+        var order = new RentalOrder { Id = 30, Status = RentalStatus.Booked };
+        var responseDto = new RentalOrderResponseDto
+        {
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
+        };
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
+        _rentalOrderRepository.GetByIdWithDetailsAsync(30).Returns(order);
+        _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
+        await _service.MarkAsRentedAsync(30);
+        order.Status.Should().Be(RentalStatus.Rented);
+        order.UpdatedById.Should().Be(user.Id);
+        order.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        _rentalOrderRepository.Received(1).Update(order);
+        await _rentalOrderRepository.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task MarkAsRentedAsync_WhenOrderNotBooked_ThrowsInvalidOperationException_Unique()
+    {
+        var user = new User { Id = 3 };
+        var order = new RentalOrder { Id = 30, Status = RentalStatus.Pending };
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
+        _rentalOrderRepository.GetByIdWithDetailsAsync(30).Returns(order);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.MarkAsRentedAsync(30));
+    }
+
+    [Fact]
+    public async Task CloseAsync_WhenOrderIsReturned_ClosesOrder_Unique()
+    {
+        var user = new User { Id = 4 };
+        var order = new RentalOrder { Id = 40, Status = RentalStatus.Returned };
+        var responseDto = new RentalOrderResponseDto
+        {
+            Status = null!,
+            Channel = null!,
+            PaymentType = null!
+        };
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.GetByIdWithDetailsAsync(40).Returns(order);
+        _mapper.Map<RentalOrderResponseDto>(order).Returns(responseDto);
+        await _service.CloseAsync(40);
+        order.Status.Should().Be(RentalStatus.Completed);
+        order.ClosedById.Should().Be(user.Id);
+        order.ClosedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        order.UpdatedById.Should().Be(user.Id);
+        order.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        _rentalOrderRepository.Received(1).Update(order);
+        await _rentalOrderRepository.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task CloseAsync_WhenOrderNotReturned_ThrowsInvalidOperationException_Unique()
+    {
+        var user = new User { Id = 4 };
+        var order = new RentalOrder { Id = 40, Status = RentalStatus.Booked };
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.GetByIdWithDetailsAsync(40).Returns(order);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CloseAsync(40));
+    }
+
+    [Fact]
+    public async Task ReturnAsync_WhenPackageItemNotFound_ThrowsKeyNotFoundException_Unique()
+    {
+        var user = new User { Id = 6 };
+        var order = new RentalOrder
+        {
+            Id = 60,
+            Status = RentalStatus.Rented,
+            RentalOrderItems = new List<RentalOrderItem>(),
+            RentalOrderPackages = new List<RentalOrderPackage>
+            {
+                new()
+                {
+                    Id = 100,
+                    Items = new List<RentalOrderPackageItem>()
+                }
+            }
+        };
+        var dto = new ReturnRentalOrderRequestDto
+        {
+            Items = new List<ReturnItemConditionDto>(),
+            Packages = new List<ReturnPackageConditionDto>
+            {
+                new()
+                {
+                    RentalOrderPackageId = 100,
+                    PackageItems = new List<ReturnPackageItemConditionDto>
+                    {
+                        new() { RentalOrderPackageItemId = 999, GoodQty = 1, RepairQty = 0, DamagedQty = 0, LostQty = 0 }
+                    }
+                }
+            }
+        };
+        _userContextService.GetUserAsync().Returns(user);
+        _rentalOrderRepository.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
+        _rentalOrderRepository.GetByIdWithDetailsAsync(60).Returns(order);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ReturnAsync(60, dto));
+    }
+
+    [Fact]
+    public async Task GetByCustomer_WhenCustomerExists_ReturnsMappedDtos()
+    {
+        // Arrange
+        var customerId = 1;
+        var orders = new List<RentalOrder>
+        {
+            new() { Id = 1, CustomerId = customerId },
+            new() { Id = 2, CustomerId = customerId }
+        };
+        var dtos = new List<RentalOrderResponseDto>
+        {
+            new() { Id = 1, Status = "pending", Channel = "online", PaymentType = "credit card" },
+            new() { Id = 2, Status = "booked", Channel = "online", PaymentType = "credit card" }
+        };
+
+        _rentalOrderRepository.GetByCustomerIdAsync(customerId).Returns(orders);
+        _mapper.Map<IEnumerable<RentalOrderResponseDto>>(orders).Returns(dtos);
+
+        // Act
+        var result = await _service.GetByCustomer(customerId);
+
+        // Assert
+        result.Should().BeEquivalentTo(dtos);
+    }
 }

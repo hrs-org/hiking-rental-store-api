@@ -21,7 +21,6 @@ using Hangfire;
 using Hangfire.MySql;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
@@ -38,6 +37,7 @@ builder.Services.AddScoped<IItemMaintenanceService, ItemMaintenanceService>();
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IPendingPaymentCleanupService, PendingPaymentCleanupService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
