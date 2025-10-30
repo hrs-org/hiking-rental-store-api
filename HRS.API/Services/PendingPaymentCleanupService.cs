@@ -4,6 +4,7 @@ using Hangfire;
 using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using HRS.API.Services.Interfaces;
 
 namespace HRS.API.Services;
 
@@ -14,17 +15,20 @@ public interface IPendingPaymentCleanupService
 
 public class PendingPaymentCleanupService : IPendingPaymentCleanupService
 {
-    private const int PendingTimeoutMinutes = 1;
     private readonly IServiceProvider _serviceProvider;
+    private readonly int _pendingTimeoutMinutes;
 
-    public PendingPaymentCleanupService(IServiceProvider serviceProvider)
+    public PendingPaymentCleanupService(
+        IServiceProvider serviceProvider,
+        IAppConfiguration appConfig)
     {
         _serviceProvider = serviceProvider;
+        _pendingTimeoutMinutes = appConfig.PendingPaymentCleanupTimeoutMinutes;
     }
 
     public Task RegisterPendingPaymentCleanupAsync(int orderId)
     {
-        BackgroundJob.Schedule(() => CleanupOrder(orderId), TimeSpan.FromMinutes(PendingTimeoutMinutes));
+        BackgroundJob.Schedule(() => CleanupOrder(orderId), TimeSpan.FromMinutes(_pendingTimeoutMinutes));
         return Task.CompletedTask;
     }
 

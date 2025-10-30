@@ -24,6 +24,7 @@ public class AppConfiguration : IAppConfiguration
     public string JwtAudience { get; set; } = string.Empty;
     public string StripeApiKey { get; set; } = string.Empty;
     public string PaymentReturnPath { get; set; } = string.Empty;
+    public int PendingPaymentCleanupTimeoutMinutes { get; set; } = 1;
 
     private void Setup()
     {
@@ -38,5 +39,6 @@ public class AppConfiguration : IAppConfiguration
         JwtAudience = _configuration["Jwt:Audience"] ?? "";
         StripeApiKey = _configuration["Payment:Stripe:ApiKey"] ?? "";
         PaymentReturnPath = FrontendUrl + (_configuration["Payment:ReturnPath"] ?? "");
+        PendingPaymentCleanupTimeoutMinutes = int.Parse(_configuration["PendingPaymentCleanup:TimeoutMinutes"] ?? "1");
     }
 }

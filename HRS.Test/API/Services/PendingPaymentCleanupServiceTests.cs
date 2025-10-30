@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using HRS.API.Services;
+using HRS.API.Services.Interfaces;
 using HRS.Domain.Entities;
 using HRS.Domain.Enums;
 using HRS.Domain.Interfaces;
@@ -36,7 +37,8 @@ public class PendingPaymentCleanupServiceTests
 
         serviceProvider.GetService(typeof(IRentalOrderRepository)).Returns(rentalOrderRepo);
 
-        var service = new PendingPaymentCleanupService(serviceProvider);
+        var appConfig = Substitute.For<IAppConfiguration>();
+        var service = new PendingPaymentCleanupService(serviceProvider, appConfig);
 
         // Act
         await service.CleanupOrder(order.Id);
