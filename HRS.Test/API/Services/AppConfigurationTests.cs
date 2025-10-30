@@ -20,6 +20,7 @@ public class AppConfigurationTests
         config["Jwt:Key"].Returns("jwtkeyjwtkeyjwtkeyjwtkeyjwtkeyjwtkeyjwtkeyjwtkey");
         config["Jwt:Issuer"].Returns("issuer");
         config["Jwt:Audience"].Returns("audience");
+        config["PendingPaymentCleanup:TimeoutMinutes"].Returns("1");
 
         // Act
         var appConfig = new AppConfiguration(config);
