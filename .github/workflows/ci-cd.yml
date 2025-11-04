@@ -5,8 +5,8 @@ on:
         branches: [develop]
     push:
         branches: [develop]
-    release:
-        types: [published]
+        tags:
+            - "v*.*.*"
 
 permissions:
     contents: read
@@ -286,10 +286,39 @@ jobs:
         needs: [build, test, code-quality, security-scan, lint]
         if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
         environment: staging
+        outputs:
+            version: ${{ steps.version.outputs.version }}
+            image-tag: ${{ steps.version.outputs.image-tag }}
 
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Install Nerdbank.GitVersioning
+              run: dotnet tool install --global nbgv
+
+            - name: Determine version
+              id: version
+              run: |
+                  if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+                    # Tagged release: v1.2.3 → 1.2.3
+                    VERSION=${GITHUB_REF#refs/tags/v}
+                    IMAGE_TAG="$VERSION"
+                    echo "📦 Building RELEASE version: $VERSION"
+                  else
+                    # Development build: use valid SemVer with prerelease tag
+                    SHORT_SHA=$(git rev-parse --short HEAD)
+                    # Get version from nbgv, but use valid SemVer format: 1.0.1-dev.abc123
+                    BASE_VERSION=$(nbgv get-version -v Version | cut -d'.' -f1-3)
+                    VERSION="${BASE_VERSION}-dev.${SHORT_SHA}"
+                    IMAGE_TAG="dev-${SHORT_SHA}"
+                    echo "📦 Building DEV version: $VERSION (image tag: $IMAGE_TAG)"
+                  fi
+
+                  echo "version=$VERSION" >> $GITHUB_OUTPUT
+                  echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
             - name: Download build artifacts
               uses: actions/download-artifact@v4
@@ -313,10 +342,38 @@ jobs:
                   context: .
                   push: true
                   tags: |
+                      ${{ env.DOCKER_USERNAME }}/hrs-api:${{ steps.version.outputs.image-tag }}
                       ${{ env.DOCKER_USERNAME }}/hrs-api:uat-latest
                       ${{ env.DOCKER_USERNAME }}/hrs-api:${{ github.sha }}
+                  labels: |
+                      org.opencontainers.image.version=${{ steps.version.outputs.version }}
+                      org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+                      org.opencontainers.image.revision=${{ github.sha }}
+                      org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
+
+            - name: Create deployment info
+              run: |
+                  mkdir -p artifacts
+                  cat > artifacts/deployment-info.txt <<EOF
+                  VERSION=${{ steps.version.outputs.version }}
+                  IMAGE_TAG=${{ steps.version.outputs.image-tag }}
+                  COMMIT_SHA=${{ github.sha }}
+                  BRANCH=${{ github.ref_name }}
+                  BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+                  TRIGGERED_BY=${{ github.actor }}
+                  EOF
+
+                  echo "📄 Deployment Info:"
+                  cat artifacts/deployment-info.txt
+
+            - name: Upload deployment info
+              uses: actions/upload-artifact@v4
+              with:
+                  name: deployment-info
+                  path: artifacts/deployment-info.txt
+                  retention-days: 30
 
     dast:
         name: DAST Security Scan
@@ -337,10 +394,15 @@ jobs:
                   JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
                   JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
               run: |
+                  # Fix MySQL connection string - remove TrustServerCertificate and add SslMode if needed
+                  MYSQL_CONNECTION_STRING="${CONNECTION_STRING//TrustServerCertificate=true/SslMode=None}"
+                  MYSQL_CONNECTION_STRING="${MYSQL_CONNECTION_STRING//TrustServerCertificate=True/SslMode=None}"
+                  MYSQL_CONNECTION_STRING="${MYSQL_CONNECTION_STRING//trustservercertificate=true/SslMode=None}"
+
                   docker pull $DOCKER_USERNAME/hrs-api:${{ github.sha }}
                   docker run -d -p 5000:8080 --name hrs-api \
                     -e ASPNETCORE_ENVIRONMENT=Staging \
-                    -e ConnectionStrings__DefaultConnection="$CONNECTION_STRING" \
+                    -e ConnectionStrings__DefaultConnection="$MYSQL_CONNECTION_STRING" \
                     -e Jwt__Key="$JWT_KEY" \
                     -e Jwt__Issuer="$JWT_ISSUER" \
                     -e Jwt__Audience="$JWT_AUDIENCE" \
