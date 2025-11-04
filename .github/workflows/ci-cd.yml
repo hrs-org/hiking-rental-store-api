@@ -436,6 +436,7 @@ jobs:
                   docker pull $DOCKER_USERNAME/hrs-api:${{ github.sha }}
                   docker run -d -p 5000:8080 --name hrs-api \
                     -e ASPNETCORE_ENVIRONMENT=Staging \
+                    -e ASPNETCORE_URLS=http://+:8080 \
                     -e ConnectionStrings__DefaultConnection="$MYSQL_CONNECTION_STRING" \
                     -e Jwt__Key="$JWT_KEY" \
                     -e Jwt__Issuer="$JWT_ISSUER" \
@@ -448,7 +449,7 @@ jobs:
                   attempt=0
 
                   while [ $attempt -lt $max_attempts ]; do
-                    if curl -f -s http://localhost:5000/api/health > /dev/null 2>&1; then
+                    if curl -f -s -L http://localhost:5000/api/health > /dev/null 2>&1; then
                       echo "Application is healthy!"
                       break
                     fi
@@ -473,12 +474,12 @@ jobs:
                   docker logs hrs-api
 
                   echo "Testing application health endpoint:"
-                  curl -v http://localhost:5000/api/health
+                  curl -v -L http://localhost:5000/api/health
 
             - name: Verify target is accessible before ZAP scan
               run: |
                   echo "Final verification before ZAP scan..."
-                  if ! curl -f -s http://localhost:5000/api/health > /dev/null; then
+                  if ! curl -f -s -L http://localhost:5000/api/health > /dev/null; then
                     echo "ERROR: Application is not accessible!"
                     docker logs hrs-api
                     exit 1
