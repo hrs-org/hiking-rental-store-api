@@ -386,61 +386,29 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Start MySQL container
-              run: |
-                  docker run -d \
-                    --name hrs-mysql \
-                    -e MYSQL_ROOT_PASSWORD=root_password \
-                    -e MYSQL_DATABASE=hrsdb \
-                    -e MYSQL_USER=testuser \
-                    -e MYSQL_PASSWORD=testpassword \
-                    -p 3306:3306 \
-                    --health-cmd='mysqladmin ping --silent' \
-                    --health-interval=10s \
-                    --health-timeout=5s \
-                    --health-retries=5 \
-                    mysql:8.0
-
-                  # Wait for MySQL to be healthy
-                  echo "Waiting for MySQL to be ready..."
-                  max_attempts=30
-                  attempt=0
-
-                  while [ $attempt -lt $max_attempts ]; do
-                    if docker exec hrs-mysql mysqladmin ping --silent; then
-                      echo "MySQL is ready!"
-                      break
-                    fi
-                    attempt=$((attempt + 1))
-                    echo "Attempt $attempt/$max_attempts: MySQL not ready yet..."
-                    sleep 2
-                  done
-
-                  if [ $attempt -eq $max_attempts ]; then
-                    echo "MySQL failed to start within the timeout period"
-                    docker logs hrs-mysql
-                    exit 1
-                  fi
-
             - name: Pull and run Docker image
               env:
                   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+                  CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
                   JWT_KEY: ${{ secrets.JWT_KEY }}
                   JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
                   JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
               run: |
-                  # Use localhost MySQL connection string for Docker host network
-                  # AllowPublicKeyRetrieval=True is required for MySQL 8.0 caching_sha2_password authentication
-                  MYSQL_CONNECTION_STRING="server=172.17.0.1;port=3306;database=hrsdb;user=testuser;password=testpassword;SslMode=None;AllowPublicKeyRetrieval=True"
-
                   docker pull $DOCKER_USERNAME/hrs-api:${{ github.sha }}
                   docker run -d -p 5000:8080 --name hrs-api \
                     -e ASPNETCORE_ENVIRONMENT=Staging \
                     -e ASPNETCORE_URLS=http://+:8080 \
-                    -e ConnectionStrings__DefaultConnection="$MYSQL_CONNECTION_STRING" \
+                    -e ConnectionStrings__DefaultConnection="$CONNECTION_STRING" \
                     -e Jwt__Key="$JWT_KEY" \
                     -e Jwt__Issuer="$JWT_ISSUER" \
                     -e Jwt__Audience="$JWT_AUDIENCE" \
+                    -e Email__SmtpHost="" \
+                    -e Email__SmtpPort="587" \
+                    -e Email__SmtpUsername="" \
+                    -e Email__SmtpPassword="" \
+                    -e Email__FromEmail="" \
+                    -e Email__FromName="" \
+                    -e Email__FrontendUrl="" \
                     $DOCKER_USERNAME/hrs-api:${{ github.sha }}
 
                   # Wait for application to start with health check retry
@@ -449,7 +417,6 @@ jobs:
                   attempt=0
 
                   while [ $attempt -lt $max_attempts ]; do
-                    # Try to curl the health endpoint and capture the HTTP status code
                     HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/health 2>&1)
                     
                     if [ "$HTTP_STATUS" = "200" ]; then
@@ -468,8 +435,6 @@ jobs:
                     docker ps -a
                     echo "Container logs:"
                     docker logs hrs-api
-                    echo "Final health check attempt:"
-                    curl -v http://localhost:5000/api/health || true
                     exit 1
                   fi
 
@@ -479,21 +444,9 @@ jobs:
                   echo "Checking container logs:"
                   docker logs hrs-api
 
-                  echo "Testing application health endpoint:"
-                  curl -v http://localhost:5000/api/health
-
-            - name: Verify target is accessible before ZAP scan
-              run: |
-                  echo "Final verification before ZAP scan..."
-                  HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/health)
-
-                  if [ "$HTTP_STATUS" != "200" ]; then
-                    echo "ERROR: Application is not accessible! HTTP Status: $HTTP_STATUS"
-                    docker logs hrs-api
-                    exit 1
-                  fi
-
-                  echo "Application is accessible and ready for scanning (HTTP $HTTP_STATUS)"
+                  echo "Testing application endpoints:"
+                  curl -I http://localhost:5000/api/health || echo "Health endpoint check"
+                  curl -I http://localhost:5000/swagger || echo "Swagger check"
 
             - name: OWASP ZAP Baseline Scan
               uses: zaproxy/action-baseline@1e1871e84428617b969d4a1f981a8255630d54b0 # v0.10.0
@@ -516,8 +469,4 @@ jobs:
 
             - name: Stop application
               if: always()
-              run: |
-                  docker stop hrs-api || true
-                  docker stop hrs-mysql || true
-                  docker rm hrs-api || true
-                  docker rm hrs-mysql || true
+              run: docker stop hrs-api
