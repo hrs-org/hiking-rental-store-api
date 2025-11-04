@@ -430,7 +430,8 @@ jobs:
                   JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
               run: |
                   # Use localhost MySQL connection string for Docker host network
-                  MYSQL_CONNECTION_STRING="server=172.17.0.1;port=3306;database=hrsdb;user=testuser;password=testpassword;SslMode=None"
+                  # AllowPublicKeyRetrieval=True is required for MySQL 8.0 caching_sha2_password authentication
+                  MYSQL_CONNECTION_STRING="server=172.17.0.1;port=3306;database=hrsdb;user=testuser;password=testpassword;SslMode=None;AllowPublicKeyRetrieval=True"
 
                   docker pull $DOCKER_USERNAME/hrs-api:${{ github.sha }}
                   docker run -d -p 5000:8080 --name hrs-api \
