@@ -465,22 +465,3 @@ jobs:
               run: |
                   docker stop hrs-api || true
                   docker rm hrs-api || true
-                  target: "http://localhost:5000"
-                  cmd_options: "-a -j -l WARN -T 15 -I"
-              continue-on-error: true
-
-            - name: Upload DAST scan results
-              uses: actions/upload-artifact@v4
-              if: always()
-              with:
-                  name: dast-scan-results
-                  path: |
-                      report_html.html
-                      report_json.json
-                      report_md.md
-                      report_xml.xml
-                  retention-days: 30
-
-            - name: Stop application
-              if: always()
-              run: docker stop hrs-api

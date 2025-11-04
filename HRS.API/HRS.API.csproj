@@ -40,8 +40,4 @@
         <ProjectReference Include="..\HRS.Migrations\HRS.Migrations.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Configuration\" />
-    </ItemGroup>
-
 </Project>
