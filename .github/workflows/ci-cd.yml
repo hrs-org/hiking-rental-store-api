@@ -386,18 +386,51 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
+            - name: Start MySQL container
+              run: |
+                  docker run -d \
+                    --name hrs-mysql \
+                    -e MYSQL_ROOT_PASSWORD=root_password \
+                    -e MYSQL_DATABASE=hrsdb \
+                    -e MYSQL_USER=testuser \
+                    -e MYSQL_PASSWORD=testpassword \
+                    -p 3306:3306 \
+                    --health-cmd='mysqladmin ping --silent' \
+                    --health-interval=10s \
+                    --health-timeout=5s \
+                    --health-retries=5 \
+                    mysql:8.0
+
+                  # Wait for MySQL to be healthy
+                  echo "Waiting for MySQL to be ready..."
+                  max_attempts=30
+                  attempt=0
+
+                  while [ $attempt -lt $max_attempts ]; do
+                    if docker exec hrs-mysql mysqladmin ping --silent; then
+                      echo "MySQL is ready!"
+                      break
+                    fi
+                    attempt=$((attempt + 1))
+                    echo "Attempt $attempt/$max_attempts: MySQL not ready yet..."
+                    sleep 2
+                  done
+
+                  if [ $attempt -eq $max_attempts ]; then
+                    echo "MySQL failed to start within the timeout period"
+                    docker logs hrs-mysql
+                    exit 1
+                  fi
+
             - name: Pull and run Docker image
               env:
                   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-                  CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
                   JWT_KEY: ${{ secrets.JWT_KEY }}
                   JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
                   JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
               run: |
-                  # Fix MySQL connection string - remove TrustServerCertificate and add SslMode if needed
-                  MYSQL_CONNECTION_STRING="${CONNECTION_STRING//TrustServerCertificate=true/SslMode=None}"
-                  MYSQL_CONNECTION_STRING="${MYSQL_CONNECTION_STRING//TrustServerCertificate=True/SslMode=None}"
-                  MYSQL_CONNECTION_STRING="${MYSQL_CONNECTION_STRING//trustservercertificate=true/SslMode=None}"
+                  # Use localhost MySQL connection string for Docker host network
+                  MYSQL_CONNECTION_STRING="server=172.17.0.1;port=3306;database=hrsdb;user=testuser;password=testpassword;SslMode=None"
 
                   docker pull $DOCKER_USERNAME/hrs-api:${{ github.sha }}
                   docker run -d -p 5000:8080 --name hrs-api \
@@ -472,4 +505,8 @@ jobs:
 
             - name: Stop application
               if: always()
-              run: docker stop hrs-api
+              run: |
+                  docker stop hrs-api || true
+                  docker stop hrs-mysql || true
+                  docker rm hrs-api || true
+                  docker rm hrs-mysql || true
