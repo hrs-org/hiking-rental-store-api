@@ -449,12 +449,16 @@ jobs:
                   attempt=0
 
                   while [ $attempt -lt $max_attempts ]; do
-                    if curl -f -s -L http://localhost:5000/api/health > /dev/null 2>&1; then
-                      echo "Application is healthy!"
+                    # Try to curl the health endpoint and capture the HTTP status code
+                    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/health 2>&1)
+                    
+                    if [ "$HTTP_STATUS" = "200" ]; then
+                      echo "Application is healthy! (HTTP $HTTP_STATUS)"
                       break
                     fi
+                    
                     attempt=$((attempt + 1))
-                    echo "Attempt $attempt/$max_attempts: Application not ready yet..."
+                    echo "Attempt $attempt/$max_attempts: HTTP Status: $HTTP_STATUS - Application not ready yet..."
                     sleep 2
                   done
 
@@ -464,6 +468,8 @@ jobs:
                     docker ps -a
                     echo "Container logs:"
                     docker logs hrs-api
+                    echo "Final health check attempt:"
+                    curl -v http://localhost:5000/api/health || true
                     exit 1
                   fi
 
@@ -474,17 +480,20 @@ jobs:
                   docker logs hrs-api
 
                   echo "Testing application health endpoint:"
-                  curl -v -L http://localhost:5000/api/health
+                  curl -v http://localhost:5000/api/health
 
             - name: Verify target is accessible before ZAP scan
               run: |
                   echo "Final verification before ZAP scan..."
-                  if ! curl -f -s -L http://localhost:5000/api/health > /dev/null; then
-                    echo "ERROR: Application is not accessible!"
+                  HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/health)
+
+                  if [ "$HTTP_STATUS" != "200" ]; then
+                    echo "ERROR: Application is not accessible! HTTP Status: $HTTP_STATUS"
                     docker logs hrs-api
                     exit 1
                   fi
-                  echo "Application is accessible and ready for scanning"
+
+                  echo "Application is accessible and ready for scanning (HTTP $HTTP_STATUS)"
 
             - name: OWASP ZAP Baseline Scan
               uses: zaproxy/action-baseline@1e1871e84428617b969d4a1f981a8255630d54b0 # v0.10.0

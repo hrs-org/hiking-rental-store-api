@@ -155,7 +155,11 @@ var app = builder.Build();
 app.UseSwagger();
 if (app.Environment.IsDevelopment()) app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+// Only use HTTPS redirection in Production
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowWebClient");
