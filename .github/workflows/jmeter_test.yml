@@ -22,7 +22,7 @@ on:
                 default: "7"
 
     schedule:
-        - cron: "0 19 * * *"
+        - cron: "0 19 * * *" # 每天 UTC 19:00
 
     push:
         branches: ["develop"]
@@ -34,12 +34,12 @@ env:
     JMETER_VERSION: "5.6.3"
     TEST_PLAN: "tests/jmeter/hrs_test.jmx"
 
-    P90_MS: "23000"
+    P90_MS: "4000"
     ERR_PCT: "0"
 
-    THREADS: ${{ github.event.inputs.threads     || '100' }}
-    RAMP: ${{ github.event.inputs.ramp        || '1'   }}
-    DURATION: ${{ github.event.inputs.duration    || '60'  }}
+    THREADS: ${{ github.event.inputs.threads      || '100' }}
+    RAMP: ${{ github.event.inputs.ramp         || '1'   }}
+    DURATION: ${{ github.event.inputs.duration     || '60'  }}
     WINDOW_DAYS: ${{ github.event.inputs.window_days || '7'   }}
 
 jobs:
@@ -103,19 +103,13 @@ jobs:
             - name: Write split summaries (login & get catalog)
               run: |
                   STATS=$(find artifacts/report -type f -name "statistics.json" | head -n1)
-                  if [ -z "$STATS" ]; then
-                    echo "No statistics.json" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
-
-                  # 统一入口：items/Items 兼容；overall/Overall 兼容
-                  JQ_ITEMS='(.items // .Items // [])'
-                  JQ_OVERALL='(.overall // .Overall)'
+                  if [ -z "$STATS" ] || [ ! -s "$STATS" ]; then
+                    echo "No statistics.json generated" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
 
                   write_one () {
                     local label="$1"
                     local row
-                    row=$(jq -r --arg L "$label" "$JQ_ITEMS[] | select(.label==\$L) | \
-                          [.label,.sampleCount,.meanResTime,.pct1ResTime,.pct2ResTime,.pct3ResTime,.minResTime,.maxResTime,.errorPct,.throughput] \
-                          | @tsv" "$STATS")
+                    row=$(jq -r --arg L "$label" '.items[]? | select(.label==$L) | [.label,.sampleCount,.meanResTime,.pct1ResTime,.pct2ResTime,.pct3ResTime,.minResTime,.maxResTime,.errorPct,.throughput] | @tsv' "$STATS")
                     echo "#### ${label}" >> "$GITHUB_STEP_SUMMARY"
                     if [ -z "$row" ]; then
                       echo "> No data for label: ${label}" >> "$GITHUB_STEP_SUMMARY"
@@ -145,55 +139,6 @@ jobs:
                   write_one "login"
                   write_one "get catalog"
 
-                  # 输出 Overall：若 overall 缺失，用 items 合成
-                  synth_overall=$(jq -r '
-                    def items: (.items // .Items // []);
-                    def tot: (items | map(.sampleCount // 0) | add // 0);
-                    if (.overall // .Overall) != null then
-                      (.overall // .Overall)
-                    else
-                      ( items as $it |
-                        {
-                          sampleCount:  ($it | map(.sampleCount // 0) | add // 0),
-                          meanResTime:  ( if (tot>0) then (($it | map((.meanResTime // 0) * (.sampleCount // 0)) | add) / tot) else 0 end ),
-                          pct1ResTime:  ($it | map(.pct1ResTime // 0) | max // 0),
-                          pct2ResTime:  ($it | map(.pct2ResTime // 0) | max // 0),
-                          pct3ResTime:  ($it | map(.pct3ResTime // 0) | max // 0),
-                          minResTime:   ($it | map(.minResTime // 0)  | min // 0),
-                          maxResTime:   ($it | map(.maxResTime // 0)  | max // 0),
-                          errorPct:     ( if (tot>0) then (($it | map((.errorPct // 0) * (.sampleCount // 0)) | add) / tot) else 0 end ),
-                          throughput:   ($it | map(.throughput // 0)  | add // 0)
-                        })
-                    end
-                  ' "$STATS")
-
-                  os=$(jq -r '.sampleCount'  <<<"$synth_overall")
-                  avg=$(jq -r '.meanResTime'  <<<"$synth_overall")
-                  p90=$(jq -r '.pct1ResTime'  <<<"$synth_overall")
-                  p95=$(jq -r '.pct2ResTime'  <<<"$synth_overall")
-                  p99=$(jq -r '.pct3ResTime'  <<<"$synth_overall")
-                  min=$(jq -r '.minResTime'   <<<"$synth_overall")
-                  max=$(jq -r '.maxResTime'   <<<"$synth_overall")
-                  err=$(jq -r '.errorPct'     <<<"$synth_overall")
-                  thr=$(jq -r '.throughput'   <<<"$synth_overall")
-
-                  {
-                    echo "#### Overall"
-                    echo ""
-                    echo "| Metric | Value |"
-                    echo "|---|---:|"
-                    echo "| Samples | $os |"
-                    echo "| Avg (ms) | $avg |"
-                    echo "| p90 (ms) | $p90 |"
-                    echo "| p95 (ms) | $p95 |"
-                    echo "| p99 (ms) | $p99 |"
-                    echo "| Min (ms) | $min |"
-                    echo "| Max (ms) | $max |"
-                    echo "| Error % | $err |"
-                    echo "| Throughput (req/s) | $thr |"
-                    echo ""
-                  } >> "$GITHUB_STEP_SUMMARY"
-
             - name: Print JMeter errors (top)
               if: always()
               run: |
@@ -204,41 +149,31 @@ jobs:
                     grep -o 'rc="[0-9]\{3\}"' artifacts/results.jtl | sed 's/rc="//;s/"//' | sort | uniq -c | sort -nr || true
                   fi
 
-            - name: Gate on errors & p90 (overall)
+            - name: Gate on errors & p90 (robust)
               run: |
                   STATS=$(find artifacts/report -type f -name "statistics.json" | head -n1)
-                  if [ -z "$STATS" ]; then
+                  if [ -z "$STATS" ] || [ ! -s "$STATS" ]; then
                     echo "::error::statistics.json not found"; ls -R artifacts/report || true; exit 1
                   fi
 
-                  synth_overall=$(jq -r '
-                    def items: (.items // .Items // []);
-                    def tot: (items | map(.sampleCount // 0) | add // 0);
-                    ( .overall // .Overall ) // (
-                      items as $it |
-                      {
-                        sampleCount:  ($it | map(.sampleCount // 0) | add // 0),
-                        meanResTime:  ( if (tot>0) then (($it | map((.meanResTime // 0) * (.sampleCount // 0)) | add) / tot) else 0 end ),
-                        pct1ResTime:  ($it | map(.pct1ResTime // 0) | max // 0),
-                        pct2ResTime:  ($it | map(.pct2ResTime // 0) | max // 0),
-                        pct3ResTime:  ($it | map(.pct3ResTime // 0) | max // 0),
-                        minResTime:   ($it | map(.minResTime // 0)  | min // 0),
-                        maxResTime:   ($it | map(.maxResTime // 0)  | max // 0),
-                        errorPct:     ( if (tot>0) then (($it | map((.errorPct // 0) * (.sampleCount // 0)) | add) / tot) else 0 end ),
-                        throughput:   ($it | map(.throughput // 0)  | add // 0)
-                      }
-                    )
-                  ' "$STATS")
-
-                  MEAN=$(jq -r '.meanResTime' <<<"$synth_overall")
-                  P90=$(jq -r  '.pct1ResTime' <<<"$synth_overall")
-                  ERR=$(jq -r  '.errorPct'    <<<"$synth_overall")
-
-                  echo "overall (final): mean=${MEAN} ms, p90=${P90} ms, errors=${ERR}%"
-
-                  if [ -z "$MEAN" ] || [ -z "$P90" ] || [ -z "$ERR" ] || [ "$MEAN" = "null" ] || [ "$P90" = "null" ] || [ "$ERR" = "null" ]; then
-                    echo "::error::overall numbers missing"; exit 1
+                  HAS_OVERALL=$(jq 'has("overall") or has("Overall")' "$STATS")
+                  if [ "$HAS_OVERALL" = "true" ]; then
+                    MEAN=$(jq '.overall.meanResTime // .Overall.meanResTime' "$STATS")
+                    P90=$(jq  '.overall.pct1ResTime  // .Overall.pct1ResTime'  "$STATS")
+                    ERR=$(jq  '.overall.errorPct     // .Overall.errorPct'     "$STATS")
+                  else
+                    N=$(jq '[.items[]?.sampleCount] | add // 0' "$STATS")
+                    if [ "$N" = "0" ] || [ -z "$N" ]; then
+                      echo "::error::overall section missing in statistics.json and items empty"; exit 1
+                    fi
+                    MEAN=$(jq '(reduce .items[]? as $i (0; . + ($i.sampleCount * $i.meanResTime))) / ([.items[]?.sampleCount] | add)' "$STATS")
+                    P90=$(jq '[.items[]?.pct1ResTime] | max' "$STATS")
+                    ERR=$(jq '(reduce .items[]? as $i (0; . + ($i.errorPct * $i.sampleCount))) / ([.items[]?.sampleCount] | add)' "$STATS")
                   fi
+
+                  echo "overall: mean=${MEAN} ms, p90=${P90} ms, errors=${ERR}%"
+
+                  # 阈值判断
                   if [ "$(echo "$ERR > ${ERR_PCT}" | bc -l)" -eq 1 ]; then
                     echo "::error::Overall error percentage ${ERR}% > ${ERR_PCT}%"; exit 1; fi
                   if [ "$(echo "$P90 > ${P90_MS}" | bc -l)" -eq 1 ]; then
