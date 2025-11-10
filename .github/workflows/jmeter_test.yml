@@ -33,12 +33,14 @@ on:
 env:
     JMETER_VERSION: "5.6.3"
     TEST_PLAN: "tests/jmeter/hrs_test.jmx"
+
     P90_MS: "4000"
     ERR_PCT: "0"
-    THREADS: ${{ github.event.inputs.threads || '100' }}
-    RAMP: ${{ github.event.inputs.ramp    || '1'   }}
-    DURATION: ${{ github.event.inputs.duration || '60' }}
-    WINDOW_DAYS: ${{ github.event.inputs.window_days || '7' }}
+
+    THREADS: ${{ github.event.inputs.threads      || '100' }}
+    RAMP: ${{ github.event.inputs.ramp         || '1'   }}
+    DURATION: ${{ github.event.inputs.duration     || '60'  }}
+    WINDOW_DAYS: ${{ github.event.inputs.window_days  || '7'   }}
 
 jobs:
     jmeter:
@@ -94,23 +96,92 @@ jobs:
                     -Jduration="${DURATION}" \
                     -JstartDate="${START_DATE}" \
                     -JendDate="${END_DATE}" \
+                    -j "artifacts/jmeter.log" \
                     -l "artifacts/results.jtl" \
                     -e -o "artifacts/report"
 
-            - name: Gate on errors & p90
+            - name: Write split summaries (login & get catalog)
+              run: |
+                  STATS=$(find artifacts/report -type f -name "statistics.json" | head -n1)
+                  if [ -z "$STATS" ]; then
+                    echo "No statistics.json" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+
+                  write_one () {
+                    local label="$1"
+                    local row
+                    row=$(jq -r --arg L "$label" '.items[] | select(.label==$L) | [.label,.sampleCount,.meanResTime,.pct1ResTime,.pct2ResTime,.pct3ResTime,.minResTime,.maxResTime,.errorPct,.throughput] | @tsv' "$STATS")
+                    echo "#### ${label}" >> "$GITHUB_STEP_SUMMARY"
+                    if [ -z "$row" ]; then
+                      echo "> No data for label: ${label}" >> "$GITHUB_STEP_SUMMARY"
+                      echo "" >> "$GITHUB_STEP_SUMMARY"
+                      return
+                    fi
+                    IFS=$'\t' read -r _label samples avg p90 p95 p99 min max err thr <<< "$row"
+                    {
+                      echo ""
+                      echo "| Metric | Value |"
+                      echo "|---|---:|"
+                      echo "| Samples | $samples |"
+                      echo "| Avg (ms) | $avg |"
+                      echo "| p90 (ms) | $p90 |"
+                      echo "| p95 (ms) | $p95 |"
+                      echo "| p99 (ms) | $p99 |"
+                      echo "| Min (ms) | $min |"
+                      echo "| Max (ms) | $max |"
+                      echo "| Error % | $err |"
+                      echo "| Throughput (req/s) | $thr |"
+                      echo ""
+                    } >> "$GITHUB_STEP_SUMMARY"
+                  }
+
+                  echo "### JMeter Summary (split by label)" >> "$GITHUB_STEP_SUMMARY"
+                  echo "" >> "$GITHUB_STEP_SUMMARY"
+                  write_one "login"
+                  write_one "get catalog"
+
+                  ov=$(jq -r '.overall | [.sampleCount,.meanResTime,.pct1ResTime,.pct2ResTime,.pct3ResTime,.minResTime,.maxResTime,.errorPct,.throughput] | @tsv' "$STATS")
+                  IFS=$'\t' read -r os avg p90 p95 p99 min max err thr <<< "$ov"
+                  {
+                    echo "#### Overall"
+                    echo ""
+                    echo "| Metric | Value |"
+                    echo "|---|---:|"
+                    echo "| Samples | $os |"
+                    echo "| Avg (ms) | $avg |"
+                    echo "| p90 (ms) | $p90 |"
+                    echo "| p95 (ms) | $p95 |"
+                    echo "| p99 (ms) | $p99 |"
+                    echo "| Min (ms) | $min |"
+                    echo "| Max (ms) | $max |"
+                    echo "| Error % | $err |"
+                    echo "| Throughput (req/s) | $thr |"
+                    echo ""
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Print JMeter errors (top)
+              if: always()
+              run: |
+                  echo "---- tail jmeter.log ----"
+                  tail -n 200 artifacts/jmeter.log || true
+                  echo "---- response code distribution ----"
+                  if [ -f artifacts/results.jtl ]; then
+                    grep -o 'rc="[0-9]\{3\}"' artifacts/results.jtl | sed 's/rc="//;s/"//' | sort | uniq -c | sort -nr || true
+                  fi
+
+            - name: Gate on errors & p90 (overall)
               run: |
                   STATS=$(find artifacts/report -type f -name "statistics.json" | head -n1)
                   if [ -z "$STATS" ]; then
                     echo "::error::statistics.json not found"; ls -R artifacts/report || true; exit 1
                   fi
-                  MEAN=$(jq '.Overall.meanResTime' "$STATS")
-                  P90=$(jq '.Overall.pct1ResTime' "$STATS")
-                  ERR=$(jq '.Overall.errorPct' "$STATS")
-                  echo "mean=${MEAN} ms, p90=${P90} ms, errors=${ERR}%"
+                  MEAN=$(jq '.overall.meanResTime' "$STATS")
+                  P90=$(jq  '.overall.pct1ResTime'  "$STATS")
+                  ERR=$(jq  '.overall.errorPct'     "$STATS")
+                  echo "overall: mean=${MEAN} ms, p90=${P90} ms, errors=${ERR}%"
                   if [ "$(echo "$ERR > ${ERR_PCT}" | bc -l)" -eq 1 ]; then
-                    echo "::error::Error percentage ${ERR}% is higher than allowed ${ERR_PCT}%"; exit 1; fi
+                    echo "::error::Overall error percentage ${ERR}% > ${ERR_PCT}%"; exit 1; fi
                   if [ "$(echo "$P90 > ${P90_MS}" | bc -l)" -eq 1 ]; then
-                    echo "::error::90th percentile ${P90}ms exceeds threshold ${P90_MS}ms"; exit 1; fi
+                    echo "::error::Overall p90 ${P90}ms > ${P90_MS}ms"; exit 1; fi
 
             - name: Upload JMeter report & results
               uses: actions/upload-artifact@v4
