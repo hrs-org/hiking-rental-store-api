@@ -7,15 +7,16 @@
       <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
       <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" enabled="true">
-        <collectionProperty name="Arguments.arguments"/>
+        <collectionProp name="Arguments.arguments"/>
       </elementProp>
       <stringProp name="TestPlan.user_define_classpath"></stringProp>
     </TestPlan>
     <hashTree>
 
+      <!-- HTTP 基础配置：协议和主机名通过 -Jproto / -Jhost 注入 -->
       <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
         <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-          <collectionProperty name="Arguments.arguments"/>
+          <collectionProp name="Arguments.arguments"/>
         </elementProp>
         <stringProp name="HTTPSamplers.arguments"></stringProp>
         <stringProp name="HTTPSamplers.domain">${__P(host,)}</stringProp>
@@ -28,13 +29,15 @@
       </ConfigTestElement>
       <hashTree/>
 
+      <!-- Cookie 管理 -->
       <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="HTTP Cookie Manager" enabled="true">
-        <collectionProperty name="CookieManager.cookies"/>
+        <collectionProp name="CookieManager.cookies"/>
         <boolProp name="CookieManager.clearEachIteration">false</boolProp>
         <boolProp name="CookieManager.controlledByThreadGroup">true</boolProp>
       </CookieManager>
       <hashTree/>
 
+      <!-- 线程组 -->
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread Group" enabled="true">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" enabled="true">
@@ -56,13 +59,13 @@
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="login" enabled="true">
             <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-              <collectionProperty name="Arguments.arguments">
+              <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&quot;email&quot;:&quot;${__P(email)}&quot;,&quot;password&quot;:&quot;${__P(password)}&quot;}</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
-              </collectionProperty>
+              </collectionProp>
             </elementProp>
             <stringProp name="HTTPSampler.domain"></stringProp>
             <stringProp name="HTTPSampler.port"></stringProp>
@@ -77,7 +80,7 @@
           </HTTPSamplerProxy>
           <hashTree>
             <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Headers (login)" enabled="true">
-              <collectionProperty name="HeaderManager.headers">
+              <collectionProp name="HeaderManager.headers">
                 <elementProp name="" elementType="Header">
                   <stringProp name="Header.name">Content-Type</stringProp>
                   <stringProp name="Header.value">application/json; charset=utf-8</stringProp>
@@ -86,7 +89,7 @@
                   <stringProp name="Header.name">Accept</stringProp>
                   <stringProp name="Header.value">application/json</stringProp>
                 </elementProp>
-              </collectionProperty>
+              </collectionProp>
             </HeaderManager>
             <hashTree/>
 
@@ -101,9 +104,9 @@
             <hashTree/>
 
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert login 200" enabled="true">
-              <collectionProperty name="Asserion.test_strings">
-                <stringProp name="51361">200</stringProp>
-              </collectionProperty>
+              <collectionProp name="Assertion.test_strings">
+                <stringProp name="51561">200</stringProp>
+              </collectionProp>
               <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
               <boolProp name="Assertion.assume_success">false</boolProp>
               <intProp name="Assertion.test_type">2</intProp>
@@ -111,9 +114,6 @@
             <hashTree/>
             <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="Assert JWT present" enabled="true">
               <stringProp name="scriptLanguage">groovy</stringProp>
-              <stringProp name="parameters"></stringProp>
-              <stringProp name="filename"></stringProp>
-              <stringProp name="cacheKey"></stringProp>
               <stringProp name="script">if (vars.get(&quot;jwt&quot;) == null || vars.get(&quot;jwt&quot;).trim().isEmpty() || vars.get(&quot;jwt&quot;).equals(&quot;NOTOKEN&quot;)) {
     AssertionResult.setFailure(true)
     AssertionResult.setFailureMessage(&quot;JWT not extracted from login response&quot;)
@@ -124,7 +124,7 @@
         </hashTree>
 
         <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Headers (auth + accept)" enabled="true">
-          <collectionProperty name="HeaderManager.headers">
+          <collectionProp name="HeaderManager.headers">
             <elementProp name="" elementType="Header">
               <stringProp name="Header.name">Authorization</stringProp>
               <stringProp name="Header.value">Bearer ${jwt}</stringProp>
@@ -133,13 +133,13 @@
               <stringProp name="Header.name">Accept</stringProp>
               <stringProp name="Header.value">application/json</stringProp>
             </elementProp>
-          </collectionProperty>
+          </collectionProp>
         </HeaderManager>
         <hashTree/>
 
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="get catalog" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-            <collectionProperty name="Arguments.arguments">
+            <collectionProp name="Arguments.arguments">
               <elementProp name="startDate" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">true</boolProp>
                 <stringProp name="Argument.name">startDate</stringProp>
@@ -152,7 +152,7 @@
                 <stringProp name="Argument.value">${__P(endDate,)}</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
-            </collectionProperty>
+            </collectionProp>
           </elementProp>
           <stringProp name="HTTPSampler.path">/api/catalogs</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
@@ -164,9 +164,9 @@
         </HTTPSamplerProxy>
         <hashTree>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert catalog 200" enabled="true">
-            <collectionProperty name="Asserion.test_strings">
-              <stringProp name="51361">200</stringProp>
-            </collectionProperty>
+            <collectionProp name="Assertion.test_strings">
+              <stringProp name="51561">200</stringProp>
+            </collectionProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
             <boolProp name="Assertion.assume_success">false</boolProp>
             <intProp name="Assertion.test_type">2</intProp>
