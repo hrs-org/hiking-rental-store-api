@@ -13,19 +13,18 @@
     </TestPlan>
     <hashTree>
 
-      <!-- HTTP 基础配置：协议和主机名通过 -Jproto / -Jhost 注入 -->
       <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
         <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
           <collectionProp name="Arguments.arguments"/>
         </elementProp>
-        <stringProp name="HTTPSamplers.arguments"></stringProp>
-        <stringProp name="HTTPSamplers.domain">${__P(host,)}</stringProp>
-        <stringProp name="HTTPSamplers.port"></stringProp>
-        <stringProp name="HTTPSamplers.protocol">${__P(proto,https)}</stringProp>
-        <stringProp name="HTTPSamplers.contentEncoding"></stringProp>
-        <stringProp name="HTTPSamplers.path"></stringProp>
-        <stringProp name="HTTPSamplers.concurrentPool">6</stringProp>
-        <boolProp name="HTTPSamplers.use_keepalive">true</boolProp>
+        <stringProp name="HTTPSampler.arguments"></stringProp>
+        <stringProp name="HTTPSampler.domain">${__P(host,)}</stringProp>
+        <stringProp name="HTTPSampler.port"></stringProp>
+        <stringProp name="HTTPSampler.protocol">${__P(proto,https)}</stringProp>
+        <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+        <stringProp name="HTTPSampler.path"></stringProp>
+        <stringProp name="HTTPSampler.concurrentPool">6</stringProp>
+        <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
       </ConfigTestElement>
       <hashTree/>
 
