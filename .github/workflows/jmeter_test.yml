@@ -37,10 +37,10 @@ env:
     P90_MS: "4000"
     ERR_PCT: "0"
 
-    THREADS: ${{ github.event.inputs.threads      || '100' }}
-    RAMP: ${{ github.event.inputs.ramp         || '1'   }}
-    DURATION: ${{ github.event.inputs.duration     || '60'  }}
-    WINDOW_DAYS: ${{ github.event.inputs.window_days  || '7'   }}
+    THREADS: ${{ github.event.inputs.threads     || '100' }}
+    RAMP: ${{ github.event.inputs.ramp        || '1'   }}
+    DURATION: ${{ github.event.inputs.duration    || '60'  }}
+    WINDOW_DAYS: ${{ github.event.inputs.window_days || '7'   }}
 
 jobs:
     jmeter:
@@ -106,10 +106,15 @@ jobs:
                   if [ -z "$STATS" ]; then
                     echo "No statistics.json" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
 
+                  JQ_ITEMS='(.items // .Items // [])'
+                  JQ_OVERALL='(.overall // .Overall)'
+
                   write_one () {
                     local label="$1"
                     local row
-                    row=$(jq -r --arg L "$label" '.items[] | select(.label==$L) | [.label,.sampleCount,.meanResTime,.pct1ResTime,.pct2ResTime,.pct3ResTime,.minResTime,.maxResTime,.errorPct,.throughput] | @tsv' "$STATS")
+                    row=$(jq -r --arg L "$label" "$JQ_ITEMS[] | select(.label==\$L) | \
+                          [.label,.sampleCount,.meanResTime,.pct1ResTime,.pct2ResTime,.pct3ResTime,.minResTime,.maxResTime,.errorPct,.throughput] \
+                          | @tsv" "$STATS")
                     echo "#### ${label}" >> "$GITHUB_STEP_SUMMARY"
                     if [ -z "$row" ]; then
                       echo "> No data for label: ${label}" >> "$GITHUB_STEP_SUMMARY"
@@ -139,24 +144,33 @@ jobs:
                   write_one "login"
                   write_one "get catalog"
 
-                  ov=$(jq -r '.overall | [.sampleCount,.meanResTime,.pct1ResTime,.pct2ResTime,.pct3ResTime,.minResTime,.maxResTime,.errorPct,.throughput] | @tsv' "$STATS")
-                  IFS=$'\t' read -r os avg p90 p95 p99 min max err thr <<< "$ov"
-                  {
-                    echo "#### Overall"
-                    echo ""
-                    echo "| Metric | Value |"
-                    echo "|---|---:|"
-                    echo "| Samples | $os |"
-                    echo "| Avg (ms) | $avg |"
-                    echo "| p90 (ms) | $p90 |"
-                    echo "| p95 (ms) | $p95 |"
-                    echo "| p99 (ms) | $p99 |"
-                    echo "| Min (ms) | $min |"
-                    echo "| Max (ms) | $max |"
-                    echo "| Error % | $err |"
-                    echo "| Throughput (req/s) | $thr |"
-                    echo ""
-                  } >> "$GITHUB_STEP_SUMMARY"
+                  # Overall
+                  ov=$(jq -r "$JQ_OVERALL | \
+                      [.sampleCount,.meanResTime,.pct1ResTime,.pct2ResTime,.pct3ResTime,.minResTime,.maxResTime,.errorPct,.throughput] | @tsv" "$STATS")
+                  if [ -n "$ov" ] && [ "$ov" != "null" ]; then
+                    IFS=$'\t' read -r os avg p90 p95 p99 min max err thr <<< "$ov"
+                    {
+                      echo "#### Overall"
+                      echo ""
+                      echo "| Metric | Value |"
+                      echo "|---|---:|"
+                      echo "| Samples | $os |"
+                      echo "| Avg (ms) | $avg |"
+                      echo "| p90 (ms) | $p90 |"
+                      echo "| p95 (ms) | $p95 |"
+                      echo "| p99 (ms) | $p99 |"
+                      echo "| Min (ms) | $min |"
+                      echo "| Max (ms) | $max |"
+                      echo "| Error % | $err |"
+                      echo "| Throughput (req/s) | $thr |"
+                      echo ""
+                    } >> "$GITHUB_STEP_SUMMARY"
+                  else
+                    echo "#### Overall" >> "$GITHUB_STEP_SUMMARY"
+                    echo "" >> "$GITHUB_STEP_SUMMARY"
+                    echo "> No overall section in statistics.json" >> "$GITHUB_STEP_SUMMARY"
+                    echo "" >> "$GITHUB_STEP_SUMMARY"
+                  fi
 
             - name: Print JMeter errors (top)
               if: always()
@@ -174,10 +188,16 @@ jobs:
                   if [ -z "$STATS" ]; then
                     echo "::error::statistics.json not found"; ls -R artifacts/report || true; exit 1
                   fi
-                  MEAN=$(jq '.overall.meanResTime' "$STATS")
-                  P90=$(jq  '.overall.pct1ResTime'  "$STATS")
-                  ERR=$(jq  '.overall.errorPct'     "$STATS")
+                  JQ_OVERALL='(.overall // .Overall)'
+                  MEAN=$(jq "$JQ_OVERALL | .meanResTime" "$STATS")
+                  P90=$(jq  "$JQ_OVERALL | .pct1ResTime"  "$STATS")
+                  ERR=$(jq  "$JQ_OVERALL | .errorPct"     "$STATS")
+
                   echo "overall: mean=${MEAN} ms, p90=${P90} ms, errors=${ERR}%"
+
+                  if [ "$MEAN" = "null" ] || [ "$P90" = "null" ] || [ "$ERR" = "null" ]; then
+                    echo "::error::overall section missing in statistics.json"; exit 1
+                  fi
                   if [ "$(echo "$ERR > ${ERR_PCT}" | bc -l)" -eq 1 ]; then
                     echo "::error::Overall error percentage ${ERR}% > ${ERR_PCT}%"; exit 1; fi
                   if [ "$(echo "$P90 > ${P90_MS}" | bc -l)" -eq 1 ]; then
