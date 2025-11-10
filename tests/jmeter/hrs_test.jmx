@@ -94,7 +94,7 @@
 
             <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Extract JWT" enabled="true">
               <stringProp name="JSONPostProcessor.referenceNames">jwt</stringProp>
-              <stringProp name="JSONPostProcessor.jsonPathExprs">$..token</stringProp>
+              <stringProp name="JSONPostProcessor.jsonPathExprs">$.data.token</stringProp>
               <stringProp name="JSONPostProcessor.match_numbers">1</stringProp>
               <stringProp name="JSONPostProcessor.defaultValues">NOTOKEN</stringProp>
               <boolProp name="JSONPostProcessor.compute_concat">false</boolProp>
