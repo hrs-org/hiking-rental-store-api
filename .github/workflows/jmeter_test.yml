@@ -6,7 +6,7 @@ on:
         inputs:
             threads: { description: "Number of virtual users", required: false, default: "100" }
             ramp: { description: "Ramp-up in seconds", required: false, default: "1" }
-            duration: { description: "Duration in seconds", required: false, default: "120" }
+            duration: { description: "Duration in seconds", required: false, default: "180" }
             window_days: { description: "Lookback window in days", required: false, default: "7" }
     schedule:
         - cron: "0 19 * * *"
@@ -24,7 +24,7 @@ env:
 
     THREADS: ${{ github.event.inputs.threads      || '100' }}
     RAMP: ${{ github.event.inputs.ramp         || '1'   }}
-    DURATION: ${{ github.event.inputs.duration     || '120'  }}
+    DURATION: ${{ github.event.inputs.duration     || '180'  }}
     WINDOW_DAYS: ${{ github.event.inputs.window_days  || '7'   }}
 
 jobs:
