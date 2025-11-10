@@ -1,0 +1,117 @@
+name: JMeter Test
+run-name: JMeter • threads=${{ inputs.threads || '100' }} ramp=${{ inputs.ramp || '1' }} dur=${{ inputs.duration || '60' }} days=${{ inputs.window_days || '7' }}
+
+on:
+    workflow_dispatch:
+        inputs:
+            threads:
+                description: "Number of virtual users"
+                required: false
+                default: "100"
+            ramp:
+                description: "Ramp-up in seconds"
+                required: false
+                default: "1"
+            duration:
+                description: "Duration in seconds"
+                required: false
+                default: "60"
+            window_days:
+                description: "Lookback window in days for startDate"
+                required: false
+                default: "7"
+
+    schedule:
+        - cron: "0 19 * * *"
+
+    push:
+        branches: ["develop"]
+
+env:
+    JMETER_VERSION: "5.6.3"
+    TEST_PLAN: "tests/jmeter/hrs_test.jmx"
+    P90_MS: "4000"
+    ERR_PCT: "0"
+    THREADS: ${{ github.event.inputs.threads || '100' }}
+    RAMP: ${{ github.event.inputs.ramp    || '1'   }}
+    DURATION: ${{ github.event.inputs.duration || '60' }}
+    WINDOW_DAYS: ${{ github.event.inputs.window_days || '7' }}
+
+jobs:
+    jmeter:
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+        concurrency:
+            group: jmeter-${{ github.ref }}
+            cancel-in-progress: true
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Set up Java 17
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "17"
+
+            - name: Install JMeter and tools
+              run: |
+                  sudo apt-get update -y
+                  sudo apt-get install -y jq bc
+                  curl -sSL "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz" -o jmeter.tgz
+                  tar -xzf jmeter.tgz
+                  echo "JMETER_HOME=$PWD/apache-jmeter-${JMETER_VERSION}" >> "$GITHUB_ENV"
+                  echo "$PWD/apache-jmeter-${JMETER_VERSION}/bin" >> "$GITHUB_PATH"
+
+            - name: Compute startDate / endDate (UTC ISO-8601)
+              run: |
+                  END=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+                  START=$(date -u -d "-${WINDOW_DAYS} days" +"%Y-%m-%dT%H:%M:%S.000Z")
+                  echo "START_DATE=$START" >> "$GITHUB_ENV"
+                  echo "END_DATE=$END" >> "$GITHUB_ENV"
+                  echo "Computed window: $START -> $END"
+
+            - name: Run JMeter (non-GUI)
+              run: |
+                  set -e
+                  mkdir -p artifacts
+                  BASE="${{ secrets.API_BASE_URL }}"
+                  PROTO=$(echo "$BASE" | sed -E 's#^(https?)://.*#\1#')
+                  HOST=$(echo "$BASE"  | sed -E 's#^https?://([^/]+)/?.*#\1#')
+
+                  jmeter -n -t "${TEST_PLAN}" \
+                    -JbaseUrl="$BASE" \
+                    -Jproto="$PROTO" \
+                    -Jhost="$HOST" \
+                    -Jemail="${{ secrets.JMETER_USER }}" \
+                    -Jpassword="${{ secrets.JMETER_PASS }}" \
+                    -Jthreads="${THREADS}" \
+                    -Jramp="${RAMP}" \
+                    -Jduration="${DURATION}" \
+                    -JstartDate="${START_DATE}" \
+                    -JendDate="${END_DATE}" \
+                    -l "artifacts/results.jtl" \
+                    -e -o "artifacts/report"
+
+            - name: Gate on errors & p90
+              run: |
+                  STATS=$(find artifacts/report -type f -name "statistics.json" | head -n1)
+                  if [ -z "$STATS" ]; then
+                    echo "::error::statistics.json not found"; ls -R artifacts/report || true; exit 1
+                  fi
+                  MEAN=$(jq '.Overall.meanResTime' "$STATS")
+                  P90=$(jq '.Overall.pct1ResTime' "$STATS")
+                  ERR=$(jq '.Overall.errorPct' "$STATS")
+                  echo "mean=${MEAN} ms, p90=${P90} ms, errors=${ERR}%"
+                  if [ "$(echo "$ERR > ${ERR_PCT}" | bc -l)" -eq 1 ]; then
+                    echo "::error::Error percentage ${ERR}% is higher than allowed ${ERR_PCT}%"; exit 1; fi
+                  if [ "$(echo "$P90 > ${P90_MS}" | bc -l)" -eq 1 ]; then
+                    echo "::error::90th percentile ${P90}ms exceeds threshold ${P90_MS}ms"; exit 1; fi
+
+            - name: Upload JMeter report & results
+              uses: actions/upload-artifact@v4
+              with:
+                  name: jmeter-report
+                  path: artifacts/
+                  if-no-files-found: error
