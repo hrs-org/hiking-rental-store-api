@@ -13,11 +13,12 @@
     </TestPlan>
     <hashTree>
 
+      <!-- HTTP 默认项：使用 proto 和 host 参数 -->
       <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
         <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
           <collectionProp name="Arguments.arguments"/>
         </elementProp>
-        <stringProp name="HTTPSampler.arguments"></stringProp>
+        <stringProp name="HTTPsampler.Arguments"></stringProp>
         <stringProp name="HTTPSampler.domain">${__P(host,)}</stringProp>
         <stringProp name="HTTPSampler.port"></stringProp>
         <stringProp name="HTTPSampler.protocol">${__P(proto,https)}</stringProp>
@@ -41,7 +42,7 @@
           <boolProp name="LoopController.continue_forever">true</boolProp>
           <stringProp name="LoopController.loops">-1</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">${__P(threads,100)}</stringProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(threads,50)}</stringProp>
         <stringProp name="ThreadGroup.ramp_time">${__P(ramp,1)}</stringProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.duration">${__P(duration,60)}</stringProp>
@@ -50,6 +51,7 @@
       </ThreadGroup>
       <hashTree>
 
+        <!-- login -->
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="login" enabled="true">
           <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
@@ -114,6 +116,8 @@
           </JSR223Assertion>
           <hashTree/>
         </hashTree>
+
+        <!-- get catalog -->
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="get catalog" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">

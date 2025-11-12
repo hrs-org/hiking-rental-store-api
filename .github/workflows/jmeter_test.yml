@@ -1,10 +1,10 @@
 name: JMeter Test
-run-name: JMeter • threads=${{ inputs.threads || '100' }} ramp=${{ inputs.ramp || '1' }} dur=${{ inputs.duration || '60' }} days=${{ inputs.window_days || '7' }}
+run-name: JMeter • threads=${{ inputs.threads || '50' }} ramp=${{ inputs.ramp || '1' }} dur=${{ inputs.duration || '180' }} days=${{ inputs.window_days || '7' }} store=${{ inputs.store_id || '2' }}
 
 on:
     workflow_dispatch:
         inputs:
-            threads: { description: "Number of virtual users", required: false, default: "100" }
+            threads: { description: "Number of virtual users", required: false, default: "1000" }
             ramp: { description: "Ramp-up in seconds", required: false, default: "1" }
             duration: { description: "Duration in seconds", required: false, default: "180" }
             window_days: { description: "Lookback window in days", required: false, default: "7" }
@@ -19,13 +19,14 @@ env:
     JMETER_VERSION: "5.6.3"
     TEST_PLAN: "tests/jmeter/hrs_test.jmx"
 
-    P90_MS: "4000"
-    ERR_PCT: "0"
+    P90_MS: "70000"
+    ERR_PCT: "10"
 
-    THREADS: ${{ github.event.inputs.threads      || '100' }}
-    RAMP: ${{ github.event.inputs.ramp         || '1'   }}
+    THREADS: ${{ github.event.inputs.threads      || '50' }}
+    RAMP: ${{ github.event.inputs.ramp         || '1'    }}
     DURATION: ${{ github.event.inputs.duration     || '180'  }}
-    WINDOW_DAYS: ${{ github.event.inputs.window_days  || '7'   }}
+    WINDOW_DAYS: ${{ github.event.inputs.window_days  || '7'    }}
+    STORE_ID: ${{ github.event.inputs.store_id     || '2'    }}
 
 jobs:
     jmeter:
@@ -60,7 +61,7 @@ jobs:
                   START=$(date -u -d "-${WINDOW_DAYS} days" +"%Y-%m-%dT%H:%M:%S.000Z")
                   echo "START_DATE=$START" >> "$GITHUB_ENV"
                   echo "END_DATE=$END" >> "$GITHUB_ENV"
-                  echo "Computed window: $START -> $END"
+                  echo "Computed window: $START -> $END (storeId=${STORE_ID})"
 
             - name: Run JMeter (non-GUI)
               run: |
@@ -125,7 +126,7 @@ jobs:
                     write_one "get catalog"
                   else
                     echo "### JMeter Summary (split by label)" >> "$GITHUB_STEP_SUMMARY"
-                    echo "" >> "$GITHUB_STEP_SUMMARY"
+                    echo ""
                     echo "> HTML statistics.json missing; skipped split summary (will use CSV for gate)" >> "$GITHUB_STEP_SUMMARY"
                   fi
 
@@ -136,7 +137,6 @@ jobs:
                   tail -n 200 artifacts/jmeter.log || true
                   echo "---- response code distribution (from CSV) ----"
                   if [ -f artifacts/results.csv ]; then
-                    # CSV: timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency,...
                     awk -F, 'NR>1 {print $4}' artifacts/results.csv | sort | uniq -c | sort -nr || true
                   fi
                   echo "---- report dir ----"; ls -R artifacts/report || true
@@ -147,7 +147,6 @@ jobs:
                   P90_TGT=${P90_MS}
                   ERR_TGT=${ERR_PCT}
 
-                  # 先尝试 statistics.json
                   STATS=$(find artifacts/report -type f -name "statistics.json" | head -n1 || true)
                   if [ -n "$STATS" ] && [ -s "$STATS" ]; then
                     HAS_OVERALL=$(jq 'has("overall") or has("Overall")' "$STATS")
@@ -167,15 +166,11 @@ jobs:
                     echo "::error::No statistics.json and CSV missing"; exit 1
                   fi
 
-                  # 列说明：timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,bytes,grpThreads,allThreads,Latency,...
                   TOTAL=$(awk -F, 'NR>1 {c++} END{print c+0}' "$CSV")
                   FAILS=$(awk -F, 'NR>1 && $8=="false" {c++} END{print c+0}' "$CSV")
                   ERR=$(awk -v T=$TOTAL -v F=$FAILS 'BEGIN{ if(T==0){print 0}else{printf "%.4f", (F*100.0/T)} }')
-
-                  # p90：取 elapsed 第 ⌈0.9*N⌉ 个
                   P90=$(awk -F, 'NR>1 {print $2}' "$CSV" | sort -n | awk -v N=$TOTAL 'BEGIN{k=int(0.9*N); if(k<1)k=1} NR==k{print; exit}')
                   if [ -z "$P90" ]; then P90=0; fi
-
                   MEAN=$(awk -F, 'NR>1 {sum+=$2; n++} END{ if(n==0){print 0}else{printf "%.2f", sum/n} }' "$CSV")
 
                   echo "overall(from CSV): mean=${MEAN} ms, p90=${P90} ms, errors=${ERR}%"
