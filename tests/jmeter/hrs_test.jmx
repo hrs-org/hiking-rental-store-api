@@ -13,7 +13,6 @@
     </TestPlan>
     <hashTree>
 
-      <!-- HTTP 默认项：使用 proto 和 host 参数 -->
       <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
         <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
           <collectionProp name="Arguments.arguments"/>
