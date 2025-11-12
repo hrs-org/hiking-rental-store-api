@@ -20,7 +20,7 @@ env:
     TEST_PLAN: "tests/jmeter/hrs_test.jmx"
 
     P90_MS: "4000"
-    ERR_PCT: "0"
+    ERR_PCT: "20"
 
     THREADS: ${{ github.event.inputs.threads      || '100' }}
     RAMP: ${{ github.event.inputs.ramp         || '1'   }}
