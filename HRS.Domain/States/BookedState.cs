@@ -10,21 +10,21 @@ namespace HRS.Domain.States;
 /// </summary>
 public class BookedState : BaseRentalOrderState
 {
-  public override void MarkAsRented(RentalOrder order, int updatedById)
-  {
-    order.Status = RentalStatus.Rented;
-    UpdateOrderMetadata(order, updatedById);
-    order.State = new RentedState();
-  }
-
-  public override string GetStateName() => "Booked";
-
-  public override bool CanTransitionTo(string targetState)
-  {
-    return targetState switch
+    public override void MarkAsRented(RentalOrder order, int updatedById)
     {
-      "Rented" => true,
-      _ => false
-    };
-  }
+        order.Status = RentalStatus.Rented;
+        UpdateOrderMetadata(order, updatedById);
+        order.State = new RentedState();
+    }
+
+    public override string GetStateName() => "Booked";
+
+    public override bool CanTransitionTo(string targetState)
+    {
+        return targetState switch
+        {
+            "Rented" => true,
+            _ => false
+        };
+    }
 }

@@ -7,11 +7,11 @@ namespace HRS.Domain.States;
 /// </summary>
 public class CancelledState : BaseRentalOrderState
 {
-  public override string GetStateName() => "Cancelled";
+    public override string GetStateName() => "Cancelled";
 
-  public override bool CanTransitionTo(string targetState)
-  {
-    // Terminal state - no transitions allowed
-    return false;
-  }
+    public override bool CanTransitionTo(string targetState)
+    {
+        // Terminal state - no transitions allowed
+        return false;
+    }
 }

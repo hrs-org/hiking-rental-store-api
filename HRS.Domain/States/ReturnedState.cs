@@ -10,23 +10,23 @@ namespace HRS.Domain.States;
 /// </summary>
 public class ReturnedState : BaseRentalOrderState
 {
-  public override void Close(RentalOrder order, int closedById)
-  {
-    order.Status = RentalStatus.Completed;
-    order.ClosedById = closedById;
-    order.ClosedAt = DateTime.UtcNow;
-    UpdateOrderMetadata(order, closedById);
-    order.State = new CompletedState();
-  }
-
-  public override string GetStateName() => "Returned";
-
-  public override bool CanTransitionTo(string targetState)
-  {
-    return targetState switch
+    public override void Close(RentalOrder order, int closedById)
     {
-      "Completed" => true,
-      _ => false
-    };
-  }
+        order.Status = RentalStatus.Completed;
+        order.ClosedById = closedById;
+        order.ClosedAt = DateTime.UtcNow;
+        UpdateOrderMetadata(order, closedById);
+        order.State = new CompletedState();
+    }
+
+    public override string GetStateName() => "Returned";
+
+    public override bool CanTransitionTo(string targetState)
+    {
+        return targetState switch
+        {
+            "Completed" => true,
+            _ => false
+        };
+    }
 }
