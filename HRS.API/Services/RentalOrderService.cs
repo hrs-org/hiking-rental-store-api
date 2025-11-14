@@ -202,6 +202,9 @@ public class RentalOrderService : IRentalOrderService
 
             entity.TotalAmount = totalAmount;
 
+            // Initialize state based on the determined status
+            entity.InitializeState();
+
             await _rentalOrderRepository.AddAsync(entity);
             await _rentalOrderRepository.SaveChangesAsync();
 
@@ -274,23 +277,12 @@ public class RentalOrderService : IRentalOrderService
             };
             await _paymentRepository.AddAsync(payment);
 
-            if (order.Status != RentalStatus.PendingPayment)
-                throw new InvalidOperationException("Only pending payment orders can be approved.");
+            // Initialize state if needed (when loaded from DB)
+            order.InitializeState();
 
-            order.Status = order.Channel switch
-            {
-                OrderChannel.POS => RentalStatus.Rented,
-                OrderChannel.Manual => RentalStatus.Booked,
-                _ => RentalStatus.Pending
-            };
-            order.UpdatedById = user.Id;
-            order.UpdatedAt = DateTime.UtcNow;
-
-            if (order.Status is RentalStatus.Rented or RentalStatus.Booked)
-            {
-                order.ApprovedById = user.Id;
-                order.ApprovedAt = DateTime.UtcNow;
-            }
+            // Use State pattern - state handles validation and transition
+            var channelString = order.Channel.ToString();
+            order.State.ApprovePayment(order, user.Id, channelString);
 
             _rentalOrderRepository.Update(order);
             await _rentalOrderRepository.SaveChangesAsync();
@@ -317,14 +309,11 @@ public class RentalOrderService : IRentalOrderService
             var order = await _rentalOrderRepository.GetByIdWithDetailsAsync(id)
                         ?? throw new KeyNotFoundException(OrderNotFound);
 
-            if (order.Status != RentalStatus.Pending)
-                throw new InvalidOperationException("Only pending orders can be approved.");
+            // Initialize state if needed (when loaded from DB)
+            order.InitializeState();
 
-            order.Status = RentalStatus.Booked;
-            order.ApprovedById = user.Id;
-            order.ApprovedAt = DateTime.UtcNow;
-            order.UpdatedById = user.Id;
-            order.UpdatedAt = DateTime.UtcNow;
+            // Use State pattern - state handles validation and transition
+            order.State.Approve(order, user.Id);
 
             _rentalOrderRepository.Update(order);
             await _rentalOrderRepository.SaveChangesAsync();
@@ -350,14 +339,11 @@ public class RentalOrderService : IRentalOrderService
             var order = await _rentalOrderRepository.GetByIdWithDetailsAsync(id)
                         ?? throw new KeyNotFoundException(OrderNotFound);
 
-            if (order.Status != RentalStatus.Pending && order.Status != RentalStatus.PendingPayment)
-                throw new InvalidOperationException("Only pending orders can be cancelled.");
+            // Initialize state if needed (when loaded from DB)
+            order.InitializeState();
 
-            order.Status = RentalStatus.Cancelled;
-            order.ApprovedById = user.Id;
-            order.ApprovedAt = DateTime.UtcNow;
-            order.UpdatedById = user.Id;
-            order.UpdatedAt = DateTime.UtcNow;
+            // Use State pattern - state handles validation and transition
+            order.State.Cancel(order, user.Id);
 
             _rentalOrderRepository.Update(order);
             await _rentalOrderRepository.SaveChangesAsync();
@@ -383,12 +369,11 @@ public class RentalOrderService : IRentalOrderService
             var order = await _rentalOrderRepository.GetByIdWithDetailsAsync(id)
                         ?? throw new KeyNotFoundException(OrderNotFound);
 
-            if (order.Status != RentalStatus.Booked)
-                throw new InvalidOperationException("Only booked orders can be marked as rented.");
+            // Initialize state if needed (when loaded from DB)
+            order.InitializeState();
 
-            order.Status = RentalStatus.Rented;
-            order.UpdatedById = user.Id;
-            order.UpdatedAt = DateTime.UtcNow;
+            // Use State pattern - state handles validation and transition
+            order.State.MarkAsRented(order, user.Id);
 
             _rentalOrderRepository.Update(order);
             await _rentalOrderRepository.SaveChangesAsync();
@@ -413,8 +398,8 @@ public class RentalOrderService : IRentalOrderService
             var order = await _rentalOrderRepository.GetByIdWithDetailsAsync(id)
                         ?? throw new KeyNotFoundException($"Rental order {id} not found.");
 
-            if (order.Status != RentalStatus.Rented)
-                throw new InvalidOperationException("Only rented orders can be returned.");
+            // Initialize state if needed (when loaded from DB)
+            order.InitializeState();
 
             ValidateReturnedQuantitiesAsync(order, dto);
 
@@ -464,13 +449,9 @@ public class RentalOrderService : IRentalOrderService
                                     + order.RentalOrderPackages.SelectMany(p => p.Items).Count(i => i.HasIssues);
 
             order.HasIssues = order.ItemsIssueCount > 0;
-            order.Status = RentalStatus.Returned;
-            order.ReturnedAt = DateTime.UtcNow;
-            order.ReturnedById = user.Id;
-            order.ReturnedAt = DateTime.UtcNow;
-            order.ReturnRemarks = dto.Remarks;
-            order.UpdatedById = user.Id;
-            order.UpdatedAt = DateTime.UtcNow;
+
+            // Use State pattern - state handles validation and transition
+            order.State.MarkAsReturned(order, user.Id, dto.Remarks);
 
             _rentalOrderRepository.Update(order);
             await _rentalOrderRepository.SaveChangesAsync();
@@ -493,14 +474,11 @@ public class RentalOrderService : IRentalOrderService
         var order = await _rentalOrderRepository.GetByIdWithDetailsAsync(id)
                     ?? throw new KeyNotFoundException(OrderNotFound);
 
-        if (order.Status != RentalStatus.Returned)
-            throw new InvalidOperationException("Only returned orders can be closed.");
+        // Initialize state if needed (when loaded from DB)
+        order.InitializeState();
 
-        order.Status = RentalStatus.Completed;
-        order.ClosedById = user.Id;
-        order.ClosedAt = DateTime.UtcNow;
-        order.UpdatedById = user.Id;
-        order.UpdatedAt = DateTime.UtcNow;
+        // Use State pattern - state handles validation and transition
+        order.State.Close(order, user.Id);
 
         _rentalOrderRepository.Update(order);
         await _rentalOrderRepository.SaveChangesAsync();

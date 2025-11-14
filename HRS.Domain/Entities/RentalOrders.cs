@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using HRS.Domain.Enums;
+using HRS.Domain.States;
 
 namespace HRS.Domain.Entities;
 
@@ -37,6 +38,11 @@ public class RentalOrder
     public int ItemsIssueCount { get; set; }
     public string? ReturnRemarks { get; set; }
     public string? StripeSessionId { get; set; }
+
+    // State Pattern: Current state of the rental order
+    [NotMapped]
+    public IRentalOrderState State { get; set; } = new PendingState();
+
     public ICollection<RentalOrderItem> RentalOrderItems { get; set; } = [];
     public ICollection<RentalOrderPackage> RentalOrderPackages { get; set; } = [];
     public ICollection<Payment> Payments { get; set; } = [];
@@ -46,4 +52,23 @@ public class RentalOrder
     public int? UpdatedById { get; set; }
     [ForeignKey(nameof(UpdatedById))] public User? UpdatedBy { get; set; }
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Initialize the state based on current status
+    /// This is called when loading from database to restore the correct state object
+    /// </summary>
+    public void InitializeState()
+    {
+        State = Status switch
+        {
+            RentalStatus.PendingPayment => new PendingPaymentState(),
+            RentalStatus.Pending => new PendingState(),
+            RentalStatus.Booked => new BookedState(),
+            RentalStatus.Rented => new RentedState(),
+            RentalStatus.Returned => new ReturnedState(),
+            RentalStatus.Completed => new CompletedState(),
+            RentalStatus.Cancelled => new CancelledState(),
+            _ => new PendingState()
+        };
+    }
 }
