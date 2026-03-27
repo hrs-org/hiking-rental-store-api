@@ -12,4 +12,6 @@ public interface IUserService
     Task<UserDto?> UpdateEmployee(UpdateEmployeeDto dto);
     Task<bool> DeleteEmployee(int id);
     Task<UserDto> CreateNewEmployee(RegisterEmployeeDetailDto dto);
+    Task<bool> AssignCustomerRole(AssignCustomerRoleDto dto);
+    Task<bool> HasCompletedOnboarding(string auth0UserId);
 }

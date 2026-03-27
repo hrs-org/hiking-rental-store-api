@@ -29,7 +29,7 @@ public class AppConfiguration : IAppConfiguration
     private void Setup()
     {
         SmtpHost = _configuration["Email:SmtpHost"] ?? "";
-        SmtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "0");
+        SmtpPort = ParseIntOrDefault(_configuration["Email:SmtpPort"], 0);
         SmtpUsername = _configuration["Email:SmtpUsername"] ?? "";
         SmtpPassword = _configuration["Email:SmtpPassword"] ?? "";
         FromEmail = _configuration["Email:FromEmail"] ?? "";
@@ -39,6 +39,14 @@ public class AppConfiguration : IAppConfiguration
         JwtAudience = _configuration["Jwt:Audience"] ?? "";
         StripeApiKey = _configuration["Payment:Stripe:ApiKey"] ?? "";
         PaymentReturnPath = FrontendUrl + (_configuration["Payment:ReturnPath"] ?? "");
-        PendingPaymentCleanupTimeoutMinutes = int.Parse(_configuration["PendingPaymentCleanup:TimeoutMinutes"] ?? "1");
+        PendingPaymentCleanupTimeoutMinutes = ParseIntOrDefault(
+            _configuration["PendingPaymentCleanup:TimeoutMinutes"],
+            1
+        );
+    }
+
+    private static int ParseIntOrDefault(string? raw, int defaultValue)
+    {
+        return int.TryParse(raw, out var value) ? value : defaultValue;
     }
 }

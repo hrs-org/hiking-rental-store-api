@@ -1,9 +1,12 @@
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 using FluentValidation;
+using HRS.API.Configuration;
 using HRS.API.Filters;
 using HRS.API.Middleware;
 using HRS.API.Services;
 using HRS.API.Services.Interfaces;
+using HRS.API.Validators.Store;
 using HRS.API.Validators.Auth;
 using HRS.API.Validators.Item;
 using HRS.API.Validators.Maintenance;
@@ -38,9 +41,11 @@ builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IPendingPaymentCleanupService, PendingPaymentCleanupService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IStoreService, StoreService>();
 
 builder.Services.AddScoped(typeof(ICrudRepository<>), typeof(CrudRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IStoreRepository, StoreRepository>();
 builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();
 builder.Services.AddScoped<IUserVerificationRepository, UserVerificationRepository>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
@@ -69,6 +74,11 @@ builder.Services.AddValidatorsFromAssemblyContaining<ReturnRentalOrderRequestVal
 builder.Services.AddValidatorsFromAssemblyContaining<PaymentRequestDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<VerifyPaymentRequestDtoValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<ItemMaintenanceRequestDtoValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<StoreOnboardingRequestDtoValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<AssignCustomerRoleDtoValidator>();
+
+builder.Services.Configure<Auth0Options>(builder.Configuration.GetSection("Auth0"));
+builder.Services.AddHttpClient<IAuth0ManagementService, Auth0ManagementService>();
 
 
 builder.Services.AddEndpointsApiExplorer();
@@ -126,6 +136,79 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
             )
+        };
+    })
+    .AddJwtBearer("Auth0", options =>
+    {
+        var domain = builder.Configuration["Auth0:Domain"];
+        var audience = builder.Configuration["Auth0:Audience"];
+
+        options.Authority = string.IsNullOrWhiteSpace(domain) ? string.Empty : $"https://{domain}/";
+        options.Audience = audience;
+        options.IncludeErrorDetails = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            NameClaimType = "sub"
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("Auth0Jwt");
+
+                var authHeader = context.Request.Headers.Authorization.ToString();
+                var token = authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                    ? authHeader["Bearer ".Length..].Trim()
+                    : string.Empty;
+
+                string? tokenIssuer = null;
+                string? tokenAudience = null;
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    try
+                    {
+                        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+                        tokenIssuer = jwt.Issuer;
+                        tokenAudience = string.Join(",", jwt.Audiences);
+                    }
+                    catch
+                    {
+                        // Ignore token parsing errors and log only validation exception below.
+                    }
+                }
+
+                logger.LogError(
+                    context.Exception,
+                    "Auth0 JWT validation failed. ExpectedAudience={ExpectedAudience}; Authority={Authority}; TokenIssuer={TokenIssuer}; TokenAudience={TokenAudience}",
+                    audience,
+                    options.Authority,
+                    tokenIssuer,
+                    tokenAudience
+                );
+
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("Auth0Jwt");
+
+                logger.LogWarning(
+                    "Auth0 JWT challenge triggered. Error={Error}; ErrorDescription={ErrorDescription}; ErrorUri={ErrorUri}",
+                    context.Error,
+                    context.ErrorDescription,
+                    context.ErrorUri
+                );
+
+                return Task.CompletedTask;
+            }
         };
     });
 

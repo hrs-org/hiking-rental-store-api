@@ -14,14 +14,23 @@ public class UserRepository : CrudRepository<User>, IUserRepository
     public async Task<User?> GetByEmailAsync(string email)
         => await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
 
+    public async Task<User?> GetByAuth0UserIdAsync(string auth0UserId)
+        => await _db.Users.FirstOrDefaultAsync(u => u.Auth0UserId == auth0UserId);
+
     public async Task UpdateUserAsync(User user)
     {
-        var dbUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+        var dbUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == user.Id)
+                     ?? throw new KeyNotFoundException($"User with Id {user.Id} not found");
 
-        if (dbUser == null)
-            throw new KeyNotFoundException($"User with Id {user.Id} not found");
-
+        dbUser.FirstName = user.FirstName;
+        dbUser.LastName = user.LastName;
+        dbUser.Email = user.Email;
+        dbUser.PasswordHash = user.PasswordHash;
+        dbUser.IsVerified = user.IsVerified;
+        dbUser.Role = user.Role;
+        dbUser.Auth0UserId = user.Auth0UserId;
         dbUser.UpdatedAt = DateTime.UtcNow;
+        dbUser.UpdatedBy = user.UpdatedBy;
 
         await _db.SaveChangesAsync();
     }

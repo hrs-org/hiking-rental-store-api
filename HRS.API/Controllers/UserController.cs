@@ -3,6 +3,7 @@ using HRS.API.Contracts.DTOs.User;
 using HRS.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HRS.API.Controllers;
 
@@ -38,6 +39,26 @@ public class UsersController : ControllerBase
     {
         var res = await _userService.Register(dto);
         return Ok(ApiResponse<bool>.OkResponse(res, "Registration successful"));
+    }
+
+    [HttpPost("onboarding/customer")]
+    [Authorize(AuthenticationSchemes = "Auth0")]
+    public async Task<ActionResult<bool>> AssignCustomerRole([FromBody] AssignCustomerRoleDto dto)
+    {
+        var res = await _userService.AssignCustomerRole(dto);
+        return Ok(ApiResponse<bool>.OkResponse(res, "Customer onboarding completed"));
+    }
+
+    [HttpGet("onboarding/status")]
+    [Authorize(AuthenticationSchemes = "Auth0")]
+    public async Task<ActionResult<bool>> GetOnboardingStatus()
+    {
+        var auth0UserId = User.FindFirstValue("sub");
+        if (string.IsNullOrWhiteSpace(auth0UserId))
+            return Unauthorized(ApiResponse<bool>.FailResponse("Missing Auth0 user id claim"));
+
+        var res = await _userService.HasCompletedOnboarding(auth0UserId);
+        return Ok(ApiResponse<bool>.OkResponse(res));
     }
 
     [HttpGet("employees")]

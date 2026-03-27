@@ -7,6 +7,7 @@ namespace HRS.Domain.Entities;
 
 [Table("Users")]
 [Index(nameof(Email), IsUnique = true)]
+[Index(nameof(Auth0UserId), IsUnique = true)]
 public class User
 {
     [Key] public int Id { get; set; }
@@ -16,6 +17,8 @@ public class User
     [Required][MaxLength(100)] public string LastName { get; set; } = null!;
 
     [Required][MaxLength(150)] public string Email { get; set; } = null!;
+
+    [MaxLength(100)] public string? Auth0UserId { get; set; }
 
     [Required] public string PasswordHash { get; set; } = null!;
 

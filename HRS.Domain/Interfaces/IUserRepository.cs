@@ -5,6 +5,7 @@ namespace HRS.Domain.Interfaces;
 public interface IUserRepository : ICrudRepository<User>
 {
     Task<User?> GetByEmailAsync(string email);
+    Task<User?> GetByAuth0UserIdAsync(string auth0UserId);
     Task UpdateUserAsync(User user);
 
     Task<List<User>> GetAllEmployee(bool includeManagers = false);

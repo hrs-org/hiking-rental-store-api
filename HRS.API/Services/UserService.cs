@@ -155,4 +155,47 @@ public class UserService : IUserService
         //Send email to user with password setup link
         return _mapper.Map<UserDto>(user);
     }
+
+    public async Task<bool> AssignCustomerRole(AssignCustomerRoleDto dto)
+    {
+        var user = await _userRepository.GetByAuth0UserIdAsync(dto.Auth0UserId) ??
+                   await _userRepository.GetByEmailAsync(dto.Email);
+
+        if (user == null)
+        {
+            user = new User
+            {
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Email = dto.Email,
+                Auth0UserId = dto.Auth0UserId,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString("N")),
+                IsVerified = true,
+                Role = UserRole.Customer,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+            return true;
+        }
+
+        user.FirstName = dto.FirstName;
+        user.LastName = dto.LastName;
+        user.Email = dto.Email;
+        user.Auth0UserId = dto.Auth0UserId;
+        user.IsVerified = true;
+        user.Role = UserRole.Customer;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _userRepository.UpdateUserAsync(user);
+        return true;
+    }
+
+    public async Task<bool> HasCompletedOnboarding(string auth0UserId)
+    {
+        var user = await _userRepository.GetByAuth0UserIdAsync(auth0UserId);
+        return user != null;
+    }
 }

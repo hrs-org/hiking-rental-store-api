@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<RentalOrderPackageItem> RentalOrderPackageItems { get; set; } = default!;
     public DbSet<ItemMaintenance> ItemMaintenances { get; set; } = default!;
     public DbSet<Payment> Payments { get; set; } = default!;
+    public DbSet<Store> Stores { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,5 +43,6 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new RentalOrderPackageConfiguration());
         modelBuilder.ApplyConfiguration(new RentalOrderPackageItemConfiguration());
         modelBuilder.ApplyConfiguration(new PaymentConfiguration());
+        modelBuilder.ApplyConfiguration(new StoreConfiguration());
     }
 }
